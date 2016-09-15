@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Thierry Leconte (f4dwv)
+ *  Copyright (c) 2015 Thierry Leconte
  */
 static const unsigned char  numbits[256]={
 0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,

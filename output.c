@@ -7,6 +7,8 @@
 #include <netdb.h>
 #include "acarsdec.h"
 
+extern int inmode;
+
 typedef struct {
 	unsigned char mode;
 	unsigned char addr[8];
@@ -150,19 +152,21 @@ void outsv(acarsmsg_t * msg, int chn, time_t tm)
 
 static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 {
-#ifdef WITH_RTL
-	if (channel[chn].inmode == 3)
+#if defined (WITH_RTL) || defined (WITH_AIR)
+	if (inmode >= 3)
 		fprintf(fdout, "\n[#%1d (F:%3.3f L:%3d E:%1d) ", chn + 1,
 			channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
 		fprintf(fdout, "\n[#%1d (E:%1d) ", chn + 1, msg->err);
-	if (channel[chn].inmode != 2)
+	if (inmode != 2)
 		printtime(t);
 	fprintf(fdout, " --------------------------------\n");
-	fprintf(fdout, "Aircraft reg: %s ", msg->addr);
-	fprintf(fdout, "Flight id: %s", msg->fid);
-	fprintf(fdout, "\n");
+	if(msg->mode < 0x5d) {
+		fprintf(fdout, "Aircraft reg: %s ", msg->addr);
+		fprintf(fdout, "Flight id: %s", msg->fid);
+		fprintf(fdout, "\n");
+	}
 	fprintf(fdout, "Mode: %1c ", msg->mode);
 	fprintf(fdout, "Msg. label: %s\n", msg->label);
 	fprintf(fdout, "Block id: %c ", msg->bid);
@@ -186,12 +190,12 @@ static void printoneline(acarsmsg_t * msg, int chn, time_t t)
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
 
-	if (channel[chn].inmode == 3)
+	if (inmode >= 3)
 		fprintf(fdout, "#%1d (L:%3d E:%1d) ", chn + 1, msg->lvl,
 			msg->err);
 	else
 		fprintf(fdout, "#%1d (E:%1d) ", chn + 1, msg->err);
-	if (channel[chn].inmode != 2)
+	if (inmode != 2)
 		printtime(t);
 	fprintf(fdout, " %7s %6s %1c %2s %4s ", msg->addr, msg->fid, msg->mode,
 		msg->label, msg->no);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Thierry Leconte (f4dwv)
+ *  Copyright (c) 2015 Thierry Leconte
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -19,7 +19,8 @@
 #include <time.h>
 #include <pthread.h>
 
-#define MAXNBCHANNELS 4
+#define MAXNBCHANNELS 8
+#define INTRATE 12500
 
 typedef float sample_t;
 
@@ -35,25 +36,22 @@ typedef struct mskblk_s {
 
 typedef struct {
 	int chn;
-	int inmode;
-	int Infs;
 
-#ifdef WITH_RTL
+#if defined(WITH_RTL) || defined(WITH_AIR)
 	float Fr;
 	float *swf;
 	float *cwf;
 #endif
-
+	float *dm_buffer;
 	float MskPhi;
 	float MskFreq,MskDf;
 	float Mska,MskKa;
 	float Mskdc,Mskdcf;
 	float MskClk;
-	unsigned int   MskS;
+	unsigned int MskS,idx;
+	float DI,DQ;
 
 	sample_t  *I,*Q;
-	float *h;
-	int flen,idx;
 
 	unsigned char outbits;
 	int	nbits;
@@ -86,16 +84,17 @@ extern int initOutput(char*,char *);
 extern int initAlsa(char **argv,int optind);
 extern int runAlsaSample(void);
 #endif
-#ifdef WITH_SNDFILE
-extern int initSoundfile(char **argv,int optind);
-extern int runSoundfileSample(void);
-#endif
 #ifdef WITH_RTL
-extern int initRTL(char **argv,int optind);
-extern int runRTLSample(void);
+extern int initRtl(char **argv,int optind);
+extern int runRtlSample(void);
+#endif
+#ifdef WITH_AIR
+extern int initAIR(char **argv,int optind);
+extern int runAIRSample(void);
 #endif
 extern int  initMsk(channel_t *);
-extern void demodMsk(float in,channel_t *);
+extern void demodMSK(channel_t *ch,int len);
+
 
 extern int  initAcars(channel_t *);
 extern void decodeAcars(channel_t *);

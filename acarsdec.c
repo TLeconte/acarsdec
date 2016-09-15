@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Thierry Leconte (f4dwv)
+ *  Copyright (c) 2015 Thierry Leconte
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <signal.h>
 #include <getopt.h>
 #include <sched.h>
@@ -33,8 +34,13 @@ int verbose = 0;
 int outtype = 2;
 int netout;
 int airflt = 0;
+#ifdef WITH_RTL
 int gain = 1000;
 int ppm = 0;
+#endif
+#ifdef WITH_AIR
+int gain = 10;
+#endif
 
 char *Rawaddr = NULL;
 char *logfilename = NULL;
@@ -42,14 +48,11 @@ char *logfilename = NULL;
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv 3.1 Copyright (c) 2015 Thierry Leconte \n\n");
+		"Acarsdec/acarsserv 3.2 Copyright (c) 2015 Thierry Leconte \n\n");
 	fprintf(stderr,
 		"Usage: acarsdec  [-v] [-o lv] [-A] [-n ipaddr:port] [-l logfile]");
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice  |");
-#endif
-#ifdef WITH_SNDFILE
-	fprintf(stderr, " -f sndfile |");
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
@@ -69,10 +72,6 @@ static void usage(void)
 		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdev nativ format\n");
 	fprintf(stderr,
 		" -i stationid\t\t: station id used in acarsdec network format.\n\n");
-#ifdef WITH_SNDFILE
-	fprintf(stderr,
-		" -f sndfile\t\t: decode from sound file (ie: a .wav file)\n");
-#endif
 #ifdef WITH_ALSA
 	fprintf(stderr,
 		" -a alsapcmdevice\t: decode from soundcard input alsapcmdevice (ie: hw:0,0)\n");
@@ -84,6 +83,10 @@ static void usage(void)
 	fprintf(stderr,
 		" -r rtldevice f1 [f2]...[f4]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionaly f2 to f4 in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
 #endif
+#ifdef WITH_AIR
+	fprintf(stderr,
+		" -s f1 [f2]...[f4]\t: decode from airspy receiving at VHF frequencies f1 and optionaly f2 to f4 in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
+#endif
 	fprintf(stderr,
 		"\nFor any input source , up to 4 channels  could be simultanously decoded\n");
 	exit(1);
@@ -92,7 +95,6 @@ static void usage(void)
 static void sighandler(int signum)
 {
 	fprintf(stderr, "Signal caught, exiting!\n");
-	sleep(1);
 	exit(1);
 }
 
@@ -102,7 +104,7 @@ int main(int argc, char **argv)
 	int res, n;
 	struct sigaction sigact;
 
-	while ((c = getopt(argc, argv, "vafro:g:Ap:n:N:l:c:i:")) != EOF) {
+	while ((c = getopt(argc, argv, "vafrso:g:Ap:n:N:l:c:i:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -117,25 +119,24 @@ int main(int argc, char **argv)
 			inmode = 1;
 			break;
 #endif
-#ifdef WITH_SNDFILE
-		case 'f':
-			res = initSoundfile(argv, optind);
-			inmode = 2;
-			break;
-#endif
 #ifdef WITH_RTL
 		case 'r':
-
 			res = initRtl(argv, optind);
 			inmode = 3;
-			break;
-		case 'g':
-			gain = atoi(optarg);
 			break;
 		case 'p':
 			ppm = atoi(optarg);
 			break;
 #endif
+#ifdef WITH_AIR
+		case 's':
+			res = initAirspy(argv, optind);
+			inmode = 4;
+			break;
+#endif
+		case 'g':
+			gain = atoi(optarg);
+			break;
 		case 'n':
 			Rawaddr = optarg;
 			netout = 0;
@@ -177,19 +178,14 @@ int main(int argc, char **argv)
 	sigaction(SIGQUIT, &sigact, NULL);
 
 	for (n = 0; n < nbch; n++) {
+		channel[n].chn = n;
 
-		if (channel[n].Infs) {
-
-			channel[n].chn = n;
-			channel[n].inmode = inmode;
-
-			res = initMsk(&(channel[n]));
-			if (res)
-				break;
-			res = initAcars(&(channel[n]));
-			if (res)
-				break;
-		}
+		res = initMsk(&(channel[n]));
+		if (res)
+			break;
+		res = initAcars(&(channel[n]));
+		if (res)
+			break;
 	}
 
 	if (res) {
@@ -202,10 +198,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Unable to init output\n");
 		exit(res);
 	}
-#ifdef DEBUG
-	initSndWrite();
-#endif
-
 	if (verbose)
 		fprintf(stderr, "Decoding %d channels\n", nbch);
 
@@ -216,21 +208,20 @@ int main(int argc, char **argv)
 		res = runAlsaSample();
 		break;
 #endif
-#ifdef WITH_SNDFILE
-	case 2:
-		res = runSoundfileSample();
-		break;
-#endif
 #ifdef WITH_RTL
 	case 3:
 		res = runRtlSample();
+		break;
+#endif
+#ifdef WITH_AIR
+	case 4:
+		res = runAirspy();
 		break;
 #endif
 	default:
 		res = -1;
 	}
 
-	sleep(1);
 	exit(res);
 
 }

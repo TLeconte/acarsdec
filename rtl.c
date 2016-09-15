@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Thierry Leconte (f4dwv)
+ *  Copyright (c) 2015 Thierry Leconte
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -27,9 +27,8 @@
 #include <rtl-sdr.h>
 #include "acarsdec.h"
 
-#define RTLRATE 12500
-#define RTLMULT 100
-#define RTLINRATE (RTLRATE*RTLMULT)
+#define RTLMULT 200
+#define RTLINRATE (INTRATE*RTLMULT)
 
 static rtlsdr_dev_t *dev = NULL;
 static int status = 0;
@@ -134,16 +133,16 @@ static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
 		}
 	} while (ne);
 
-	if ((Fd[nbch - 1] - Fd[0]) > RTLINRATE - 4 * RTLRATE) {
+	if ((Fd[nbch - 1] - Fd[0]) > RTLINRATE - 4 * INTRATE) {
 		fprintf(stderr, "Frequencies to far apart\n");
 		return -1;
 	}
 
-	for (Fc = Fd[nbch - 1] + 2 * RTLRATE; Fc > Fd[0] - 2 * RTLRATE; Fc--) {
+	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
 		for (n = 0; n < nbch; n++) {
-			if (abs(Fc - Fd[n]) > RTLINRATE / 2 - 2 * RTLRATE)
+			if (abs(Fc - Fd[n]) > RTLINRATE / 2 - 2 * INTRATE)
 				break;
-			if (abs(Fc - Fd[n]) < 2 * RTLRATE)
+			if (abs(Fc - Fd[n]) < 2 * INTRATE)
 				break;
 			if (n > 0 && Fc - Fd[n - 1] == Fd[n] - Fc)
 				break;
@@ -215,14 +214,15 @@ int initRtl(char **argv, int optind)
 	nbch = 0;
 	while ((argF = argv[optind]) && nbch < MAXNBCHANNELS) {
 		Fd[nbch] =
-		    ((int)(1000000 * atof(argF) + RTLRATE / 2) / RTLRATE) *
-		    RTLRATE;
+		    ((int)(1000000 * atof(argF) + INTRATE / 2) / INTRATE) *
+		    INTRATE;
 		optind++;
 		if (Fd[nbch] < 118000000 || Fd[nbch] > 138000000) {
 			fprintf(stderr, "WARNING: Invalid frequency %d\n",
 				Fd[nbch]);
 			continue;
 		}
+		channel[nbch].chn = nbch;
 		channel[nbch].Fr = (float)Fd[nbch];
 		nbch++;
 	};
@@ -245,16 +245,15 @@ int initRtl(char **argv, int optind)
 		int ind;
 		float AMFreq;
 
-		ch->Infs = RTLRATE;
-
 		ch->cwf = malloc(RTLMULT * sizeof(float));
 		ch->swf = malloc(RTLMULT * sizeof(float));
-		AMFreq = (ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI;
+		ch->dm_buffer=malloc(RTLOUTBUFSZ*sizeof(float));
 
+		AMFreq = (ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI;
 		for (ind = 0; ind < RTLMULT; ind++) {
 			sincosf(AMFreq * ind, &(ch->swf[ind]), &(ch->cwf[ind]));
-			ch->swf[ind] /= RTLMULT;
-			ch->cwf[ind] /= RTLMULT;
+			ch->swf[ind] /= RTLMULT/2;
+			ch->cwf[ind] /= RTLMULT/2;
 		}
 	}
 
@@ -291,39 +290,35 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 		return;
 
 	}
-	status = 0;
+	status=0;
 
 	for (n = 0; n < nbch; n++) {
 		channel_t *ch = &(channel[n]);
-		int i;
+		int i,m;
 		float DI, DQ;
 		float *swf, *cwf;
-		float out[2];
 
 		swf = ch->swf;
 		cwf = ch->cwf;
+		m=0;
 		for (i = 0; i < RTLINBUFSZ;) {
 			int ind;
-			float V;
 
 			DI = DQ = 0;
 			for (ind = 0; ind < RTLMULT; ind++) {
 				float I, Q;
 				float sp, cp;
 
-				I = (float)rtlinbuff[i] - (float)127.5;
-				i++;
-				Q = (float)rtlinbuff[i] - (float)127.5;
-				i++;
+				I = (float)rtlinbuff[i] - (float)127.5; i++;
+				Q = (float)rtlinbuff[i] - (float)127.5; i++;
 
-				sp = swf[ind];
-				cp = cwf[ind];
+				sp = swf[ind]; cp = cwf[ind];
 				DI += cp * I + sp * Q;
 				DQ += -sp * I + cp * Q;
 			}
-			V = hypotf(DI, DQ);
-			demodMsk(V, ch);
+			ch->dm_buffer[m++]=hypotf(DI,DQ);
 		}
+		demodMSK(ch,m);
 	}
 }
 

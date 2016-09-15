@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Thierry Leconte (f4dwv)
+ *  Copyright (c) 2015 Thierry Leconte
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -230,10 +230,7 @@ void decodeAcars(channel_t * ch)
 
 	case SOH1:
 		if (r == SOH) {
-			if (ch->inmode != 2)
-				time(&(ch->blk->tm));
-			else
-				ch->blk->tm = 0;
+			time(&(ch->blk->tm));
 			ch->Acarsstate = TXT;
 			ch->blk->len = 0;
 			ch->blk->err = 0;
@@ -293,7 +290,7 @@ void decodeAcars(channel_t * ch)
 	case CRC2:
 		ch->blk->crc[1] = r;
  putmsg_lbl:
-		ch->blk->lvl = 20 * log10(ch->Mskdc + 1e-5) - 36.0;
+		ch->blk->lvl = 20*log10(ch->Mskdc)-48;
 
 		pthread_mutex_lock(&blkmtx);
 		ch->blk->prev = NULL;

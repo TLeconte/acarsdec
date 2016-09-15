@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Thierry Leconte (f4dwv)
+ *  Copyright (c) 2015 Thierry Leconte
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -22,34 +22,39 @@
 #include <math.h>
 #include "acarsdec.h"
 
-#define DCCF 240.0
+#define DCCF 0.02
 
 #define PLLKa 1.8991680918e+02
 #define PLLKb 9.8503292076e-01
 #define PLLKc 0.9995
 
+
+pthread_mutex_t chmtx;
+pthread_cond_t chprcd,chcscd;
+int chmsk,tmsk;
+
+#define FLEN 11
+static float h[FLEN];
+
 int initMsk(channel_t * ch)
 {
 	int i;
 
-	ch->MskFreq = 1800.0 / (float)(ch->Infs) * 2.0 * M_PI;
+	ch->MskFreq = 1800.0 / INTRATE * 2.0 * M_PI;
 	ch->MskPhi = ch->MskClk = 0;
 	ch->MskS = 0;
 
-	ch->MskKa = PLLKa / (float)(ch->Infs);
+	ch->MskKa = PLLKa / INTRATE;
 	ch->MskDf = ch->Mska = 0;
 
 	ch->Mskdc = 0;
-	ch->Mskdcf = DCCF / (float)ch->Infs;
 
-	ch->flen = (ch->Infs / 1200 + 0.5);
 	ch->idx = 0;
-	ch->I = calloc(ch->flen, sizeof(float));
-	ch->Q = calloc(ch->flen, sizeof(float));
-	ch->h = calloc(ch->flen, sizeof(float));
+	ch->I = calloc(FLEN, sizeof(float));
+	ch->Q = calloc(FLEN, sizeof(float));
 
-	for (i = 0; i < ch->flen; i++) {
-		ch->h[i] = sinf(2 * M_PI * 600 / ch->Infs * (i + 1));
+	for (i = 0; i < FLEN; i++) {
+		if(ch->chn==0)  h[i] = cosf(2.0*M_PI*600.0/INTRATE*(i-FLEN/2));
 		ch->I[i] = ch->Q[i] = 0;
 	}
 
@@ -84,56 +89,41 @@ static inline void putbit(float v, channel_t * ch)
 		decodeAcars(ch);
 }
 
-void demodMsk(float in, channel_t * ch)
+void demodMSK(channel_t *ch,int len)
 {
-	int idx, j;
+   /* MSK demod */
+   float dphi;
+   float p, s, sp, cp, in;
+   int idx=ch->idx;
+   int n;
 
-	float iv, qv, s, bit;
-	float dphi;
-	float p, sp, cp;
-
+   for(n=0;n<len;n++) {	
 	/* oscilator */
 	p = ch->MskFreq + ch->MskDf;
 	ch->MskClk += p;
 	p = ch->MskPhi + p;
-	if (p >= 2.0 * M_PI) {
-		p -= 2.0 * M_PI;
-	}
+	if (p >= 2.0*M_PI) p -= 2.0*M_PI; 
 	ch->MskPhi = p;
 
-	idx = ch->idx;
+	if (ch->MskClk > 3*M_PI/2) {
+		int j;
+		float iv,qv,bit;
 
-	if (ch->MskClk > 3 * M_PI / 2) {
-		ch->MskClk -= 3 * M_PI / 2;
+		ch->MskClk -= 3*M_PI/2;
 
 		/* matched filter */
-		for (j = 0, iv = qv = 0; j < ch->flen - 1; j++) {
-			int k = (idx + 1 + j) % ch->flen;
-			iv += ch->h[j] * ch->I[k];
-			qv += ch->h[j] * ch->Q[k];
+		for (j = 0, iv = qv = 0; j < FLEN; j++) {
+			int k = (idx+j)%FLEN;
+			iv += h[j] * ch->I[k]; qv += h[j] * ch->Q[k];
 		}
 
 		if ((ch->MskS & 1) == 0) {
-			if (iv >= 0)
-				dphi = fst_atan2(-qv, iv);
-			else
-				dphi = fst_atan2(qv, -iv);
-			if (ch->MskS & 2) {
-				bit = iv;
-			} else {
-				bit = -iv;
-			}
+			if (iv >= 0) dphi = fst_atan2(-qv, iv); else dphi = fst_atan2(qv, -iv);
+			if (ch->MskS & 2) bit = iv; else bit = -iv;
 			putbit(bit, ch);
 		} else {
-			if (qv >= 0)
-				dphi = fst_atan2(iv, qv);
-			else
-				dphi = fst_atan2(-iv, -qv);
-			if (ch->MskS & 2) {
-				bit = -qv;
-			} else {
-				bit = qv;
-			}
+			if (qv >= 0) dphi = fst_atan2(iv, qv); else dphi = fst_atan2(-iv, -qv);
+			if (ch->MskS & 2) bit = -qv;  else  bit = qv;
 			putbit(bit, ch);
 		}
 		ch->MskS = (ch->MskS + 1) & 3;
@@ -145,13 +135,18 @@ void demodMsk(float in, channel_t * ch)
 	}
 
 	/* DC blocking */
+	in = ch->dm_buffer[n];
 	s = in - ch->Mskdc;
-	ch->Mskdc = (1.0 - ch->Mskdcf) * ch->Mskdc + ch->Mskdcf * in;
+	ch->Mskdc = (1.0 - DCCF) * ch->Mskdc + DCCF * in;
 
 	/* FI */
 	sincosf(p, &sp, &cp);
 	ch->I[idx] = s * cp;
 	ch->Q[idx] = s * sp;
 
-	ch->idx = (idx + 1) % ch->flen;
+	idx=(idx+1)%FLEN;
+    }
+    ch->idx=idx;
+
 }
+

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014 Thierry Leconte (f4dwv)
+ *  Copyright (c) 2015 Thierry Leconte
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 #include <alsa/asoundlib.h>
 #include "acarsdec.h"
 
-#define MAXNBFRAMES 8192
+#define MAXNBFRAMES 4096
 
 static snd_pcm_t *capture_handle;
 int initAlsa(char **argv, int optind)
@@ -63,30 +63,25 @@ int initAlsa(char **argv, int optind)
 	}
 
 	if ((err =
-	     snd_pcm_hw_params_set_format(capture_handle, hw_params,
-					  SND_PCM_FORMAT_S16)) < 0) {
+	     snd_pcm_hw_params_set_format(capture_handle, hw_params, SND_PCM_FORMAT_FLOAT)) < 0) {
 		fprintf(stderr, "Alsa cannot set sample format (%s)\n",
 			snd_strerror(err));
 		return 1;
 	}
 
 	snd_pcm_hw_params_set_rate_resample(capture_handle, hw_params, 0);
-	Fs = 12500;
+	Fs = INTRATE;
 	n = 1;
-	if ((err =
-	     snd_pcm_hw_params_set_rate_near(capture_handle, hw_params, &Fs,
-					     &n)) < 0) {
+	if ((err = snd_pcm_hw_params_set_rate_near(capture_handle, hw_params, &Fs, &n)) < 0) {
 		fprintf(stderr, "Alsa cannot set sample rate (%s)\n",
 			snd_strerror(err));
 		return 1;
 	}
-	fprintf(stderr, "Alsa sample rate %d\n", Fs);
-
 	if (snd_pcm_hw_params_get_channels(hw_params, &nbch) != 0) {
 		fprintf(stderr, "Alsa cannot get number of channels\n");
 		return 1;
 	}
-	if (nbch > MAXNBCHANNELS) {
+	if (nbch > 1) {
 		fprintf(stderr, "Alsa too much channels : %d\n", nbch);
 		return 1;
 
@@ -105,9 +100,8 @@ int initAlsa(char **argv, int optind)
 		return 1;
 	}
 
-	for (n = 0; n < nbch; n++) {
-		channel[n].Infs = Fs;
-	}
+        channel[0].chn = 0;
+	channel[0].dm_buffer=malloc(MAXNBFRAMES*sizeof(float));
 
 	return (0);
 }
@@ -115,10 +109,9 @@ int initAlsa(char **argv, int optind)
 int runAlsaSample(void)
 {
 	int r, n, i;
-	signed short sndbuff[MAXNBFRAMES * MAXNBCHANNELS];
 
 	do {
-		r = snd_pcm_readi(capture_handle, sndbuff, MAXNBFRAMES);
+		r = snd_pcm_readi(capture_handle, channel[0].dm_buffer,MAXNBFRAMES);
 		if (r <= 0) {
 			fprintf(stderr,
 				"Alsa cannot read from interface (%s)\n",
@@ -126,13 +119,8 @@ int runAlsaSample(void)
 			return -1;
 		}
 
-		for (n = 0; n < nbch; n++) {
-			int len = r;
-			for (i = 0; i < len; i++)
-				demodMsk((float)(sndbuff[n + i * nbch]) /
-					 32768.0, &(channel[n]));
+		demodMSK(&(channel[0]),r);
 
-		}
 
 	} while (1);
 	return 0;
