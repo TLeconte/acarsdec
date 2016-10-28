@@ -34,12 +34,9 @@ int verbose = 0;
 int outtype = 2;
 int netout;
 int airflt = 0;
-#ifdef WITH_RTL
+#if defined(WITH_RTL) || defined(WITH_AIR)
 int gain = 1000;
 int ppm = 0;
-#endif
-#ifdef WITH_AIR
-int gain = 10;
 #endif
 
 char *Rawaddr = NULL;
@@ -56,7 +53,7 @@ static void usage(void)
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
-		" [-g gain] [-p ppm] -r rtldevicenumber  f1 [f2] ... [f4]");
+		" [-g gain] [-p ppm] -r rtldevicenumber  f1 [f2] ... [fN]");
 #endif
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
@@ -81,14 +78,14 @@ static void usage(void)
 		" -g gain\t\t: set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use AGC\n");
 	fprintf(stderr, " -p ppm\t\t\t: set rtl ppm frequency correction\n");
 	fprintf(stderr,
-		" -r rtldevice f1 [f2]...[f4]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionaly f2 to f4 in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
+		" -r rtldevice f1 [... fN]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionaly f2 to fN in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
-		" -s f1 [f2]...[f4]\t: decode from airspy receiving at VHF frequencies f1 and optionaly f2 to f4 in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
+		" -s f1 [... fN]\t: decode from airspy receiving at VHF frequencies f1 and optionaly f2 to fN in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
 #endif
 	fprintf(stderr,
-		"\nFor any input source , up to 4 channels  could be simultanously decoded\n");
+		"\nFor any input source , up to %d channels may be simultanously decoded\n", MAXNBCHANNELS);
 	exit(1);
 }
 
@@ -121,6 +118,7 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_RTL
 		case 'r':
+			gain = 1000;
 			res = initRtl(argv, optind);
 			inmode = 3;
 			break;
@@ -130,6 +128,7 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_AIR
 		case 's':
+			gain = 10;
 			res = initAirspy(argv, optind);
 			inmode = 4;
 			break;
