@@ -66,7 +66,7 @@ static void usage(void)
 	fprintf(stderr,
 		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n");
 	fprintf(stderr,
-		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdev nativ format\n");
+		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdev native format\n");
 	fprintf(stderr,
 		" -i stationid\t\t: station id used in acarsdec network format.\n\n");
 #ifdef WITH_ALSA
@@ -78,11 +78,11 @@ static void usage(void)
 		" -g gain\t\t: set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use AGC\n");
 	fprintf(stderr, " -p ppm\t\t\t: set rtl ppm frequency correction\n");
 	fprintf(stderr,
-		" -r rtldevice f1 [... fN]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionaly f2 to fN in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
+		" -r rtldevice f1 [... fN]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
-		" -s f1 [... fN]\t: decode from airspy receiving at VHF frequencies f1 and optionaly f2 to fN in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
+		" -s f1 [... fN]\t: decode from airspy receiving at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
 #endif
 	fprintf(stderr,
 		"\nFor any input source , up to %d channels may be simultanously decoded\n", MAXNBCHANNELS);
