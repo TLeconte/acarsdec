@@ -89,8 +89,8 @@ extern int initRtl(char **argv,int optind);
 extern int runRtlSample(void);
 #endif
 #ifdef WITH_AIR
-extern int initAIR(char **argv,int optind);
-extern int runAIRSample(void);
+extern int initAirspy(char **argv,int optind);
+extern int runAirspy(void);
 #endif
 extern int  initMsk(channel_t *);
 extern void demodMSK(channel_t *ch,int len);
