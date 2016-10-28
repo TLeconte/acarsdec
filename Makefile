@@ -21,4 +21,4 @@ acarsserv.o:	acarsserv.h
 dbmgm.o:	acarsserv.h
 
 clean:
-	@rm *.o acarsdec acarsserv
+	@rm -f *.o acarsdec acarsserv
