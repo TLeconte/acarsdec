@@ -1,10 +1,16 @@
-# See README 
-CFLAGS= -Ofast -msse2 -funroll-loops -pthread -D WITH_RTL -D WITH_ALSA
-#CFLAGS= -Ofast -mfpu=vfpv4 -funroll-loops -pthread -D WITH_RTL -I. 
-#CFLAGS= -Ofast -mfpu=neon-vfpv4 -funroll-loops -pthread -D WITH_RTL -I.  `pkg-config --cflags libairspy`
-LDLIBS= -lm -pthread  -lrtlsdr -lasound
-#LDLIBS= -lm -pthread  `pkg-config --libs libairspy` -lusb-1.0
+# See README for more information about choosing the right optimization
+# flags for the target platform
 
+OPT=-Ofast -msse2 -funroll-loops
+#OPT= -Ofast -mfpu=vfpv4 -funroll-loops
+#OPT= -Ofast -mfpu=neon-vfpv4 -funroll-loops
+#OPT= -Ofast -mfpu=neon -ffast-math -funsafe-math-optimizations -fsingle-precision-constant
+
+REQS="alsa libairspy librtlsdr libusb-1.0"
+PCFLAGS!=pkg-config --cflags ${REQS}
+PCLIBS!=pkg-config --libs ${REQS}
+CFLAGS= ${OPT} -pthread -D WITH_RTL -D WITH_AIR -D WITH_ALSA  ${PCFLAGS}
+LDLIBS= -lm -pthread ${PCLIBS}
 
 acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o
 	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o -o $@ $(LDLIBS)
@@ -17,6 +23,7 @@ acars.o:	acars.c acarsdec.h syndrom.h
 msk.o:	msk.c acarsdec.h
 output.o:	output.c acarsdec.h
 rtl.o:	rtl.c acarsdec.h
+air.o:	air.c acarsdec.h
 acarsserv.o:	acarsserv.h
 dbmgm.o:	acarsserv.h
 
