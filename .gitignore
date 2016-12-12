@@ -240,3 +240,8 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+
+getopt
+pthreads-win32
+RelWithDebInfo.zip
+rtl-sdr-release
