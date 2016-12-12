@@ -228,6 +228,22 @@ int bindsock(char *argaddr)
 	return 0;
 }
 
+static time_t my_timegm(struct tm* tm)
+{
+	time_t ret;
+	char* tz;
+	tz = getenv("TZ");
+	putenv("TZ=");
+	tzset();
+	ret = mktime(tm);
+	size_t tzlen = strlen(tz) + sizeof("TZ=");
+	char* tzput = (char*)alloca(tzlen);
+	snprintf(tzput, tzlen, "TZ=%s", tz);
+	putenv(tzput);
+	tzset();
+	return ret;
+}
+
 #define MAXACARSLEN 500
 int main(int argc, char **argv)
 {
