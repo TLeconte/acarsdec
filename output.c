@@ -2,8 +2,6 @@
 //#include <Windows.h>
 #include <Ws2tcpip.h>
 #include <io.h>
-#define close closesocket
-#define write _write
 #else // !_WIN32
 #include <unistd.h>   
 #include <sys/types.h>
@@ -30,7 +28,11 @@ typedef struct {
 	int err, lvl;
 } acarsmsg_t;
 
+#ifdef _WIN32
+static SOCKET sockfd = INVALID_SOCKET;
+#else // !_WIN32
 static int sockfd = -1;
+#endif // !_WIN32
 static FILE *fdout;
 
 int initOutput(char *logfilename, char *Rawaddr)
@@ -106,7 +108,11 @@ int initOutput(char *logfilename, char *Rawaddr)
 		}
 
 		if (connect(sockfd, p->ai_addr, (int)p->ai_addrlen) == -1) {
+			#ifdef _WIN32
+			closesocket(sockfd);
+			#else // !_WIN32
 			close(sockfd);
+			#endif // !_WIN32
 			continue;
 		}
 		break;
@@ -150,7 +156,17 @@ void outpp(acarsmsg_t * msg)
 		msg->mode, msg->addr, msg->ack, msg->label, msg->bid, msg->no,
 		msg->fid, txt);
 
+	#ifdef _WIN32
+	int iResult = send(sockfd, pkt, (int)strlen(pkt), 0);
+	if (iResult == SOCKET_ERROR)
+	{
+		char winSockErrorString[1024];
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, WSAGetLastError(), 0, winSockErrorString, sizeof(winSockErrorString), NULL);
+		fprintf(stderr, "Failed to send data.\n  %.*s\n", (int)sizeof(winSockErrorString), winSockErrorString);
+	}
+	#else // !_WIN32
 	write(sockfd, pkt, strlen(pkt));
+	#endif // !_WIN32
 }
 
 void outsv(acarsmsg_t * msg, int chn, time_t tm)
@@ -167,7 +183,17 @@ void outsv(acarsmsg_t * msg, int chn, time_t tm)
 		msg->err, msg->lvl, msg->mode, msg->addr, msg->ack, msg->label,
 		msg->bid, msg->no, msg->fid, msg->txt);
 
+	#ifdef _WIN32
+	int iResult = send(sockfd, pkt, (int)strlen(pkt), 0);
+	if (iResult == SOCKET_ERROR)
+	{
+		char winSockErrorString[1024];
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, WSAGetLastError(), 0, winSockErrorString, sizeof(winSockErrorString), NULL);
+		fprintf(stderr, "Failed to send data.\n  %.*s\n", (int)sizeof(winSockErrorString), winSockErrorString);
+	}
+	#else // !_WIN32
 	write(sockfd, pkt, strlen(pkt));
+	#endif // !_WIN32
 }
 
 static void printmsg(acarsmsg_t * msg, int chn, time_t t)

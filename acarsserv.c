@@ -4,8 +4,6 @@
 //#include <Windows.h>
 #include <Ws2tcpip.h>
 #include <io.h>
-#define close closesocket
-#define write _write
 #define bzero(s, n) memset((s), 0, (n))
 #else // !_WIN32
 #include <unistd.h>
@@ -176,7 +174,11 @@ static void usage(void)
 
 }
 
+#ifdef _WIN32
+static SOCKET sockfd = INVALID_SOCKET;
+#else // !_WIN32
 static int sockfd = -1;
+#endif // _WIN32
 int bindsock(char *argaddr)
 {
 	char *bindaddr;
