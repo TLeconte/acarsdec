@@ -28,6 +28,17 @@
 #define PLLKb 9.8503292076e-01
 #define PLLKc 0.9995
 
+#ifdef _MSC_VER
+static void sincosf(float x, float* sin, float* cos)
+{
+	float _sin = sinf(x);
+	float _cos = cosf(x);
+	if (sin)
+		*sin = _sin;
+	if (cos)
+		*cos = _cos;
+}
+#endif // _MSC_VER
 
 pthread_mutex_t chmtx;
 pthread_cond_t chprcd,chcscd;

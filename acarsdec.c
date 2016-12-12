@@ -25,6 +25,27 @@
 #include <sched.h>
 #include "acarsdec.h"
 
+#ifdef _WIN32
+static char* strndup(const char* s, size_t n)
+{
+	size_t len = strlen(s);
+	if (len < n)
+		n = len;
+	char* cpy = (char*)malloc(n + 1);
+	if (cpy)
+	{
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+		strncpy_s(cpy, n + 1, s, n);
+#else // !_MSC_VER || _MSC_VER < 1400
+		strncpy(cpy, s, n);
+#endif // !_MSC_VER || _MSC_VER < 1400
+
+		cpy[n] = '\0';
+	}
+	return cpy;
+}
+#endif // _WIN32
+
 channel_t channel[MAXNBCHANNELS];
 unsigned int nbch;
 
@@ -101,8 +122,7 @@ static void sighandler(int signum)
 int main(int argc, char **argv)
 {
 	int c;
-	int res, n;
-	struct sigaction sigact;
+	int res = 0, n;
 
 	while ((c = getopt(argc, argv, "vafrso:g:Ap:n:N:l:c:i:")) != EOF) {
 
@@ -170,12 +190,19 @@ int main(int argc, char **argv)
 		exit(res);
 	}
 
+#ifdef _WIN32
+	signal(SIGINT, sighandler);
+	signal(SIGTERM, sighandler);
+	//signal(SIGINT, sighandler);
+#else // !_WIN32
+	struct sigaction sigact;
 	sigact.sa_handler = sighandler;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;
 	sigaction(SIGINT, &sigact, NULL);
 	sigaction(SIGTERM, &sigact, NULL);
 	sigaction(SIGQUIT, &sigact, NULL);
+#endif // !_WIN32
 
 	for (n = 0; n < nbch; n++) {
 		channel[n].chn = n;

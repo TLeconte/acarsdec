@@ -27,6 +27,18 @@
 #include <rtl-sdr.h>
 #include "acarsdec.h"
 
+#ifdef _MSC_VER
+static void sincosf(float x, float* sin, float* cos)
+{
+	float _sin = sinf(x);
+	float _cos = cosf(x);
+	if (sin)
+		*sin = _sin;
+	if (cos)
+		*cos = _cos;
+}
+#endif // _MSC_VER
+
 #define RTLMULT 200
 #define RTLINRATE (INTRATE*RTLMULT)
 

@@ -1,10 +1,21 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define _CRT_SECURE_NO_WARNINGS 1  
+#endif // _MSC_VER >= 1400
+#ifdef _WIN32
+//#include <Windows.h>
+#include <Ws2tcpip.h>
+#include <io.h>
+#define close closesocket
+#define write _write
+#else // !_WIN32
+#include <unistd.h>   
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <time.h>
 #include <netdb.h>
+#endif // _WIN32
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
 #include "acarsdec.h"
 
 extern int inmode;
