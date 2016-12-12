@@ -245,3 +245,5 @@ getopt
 pthreads-win32
 RelWithDebInfo.zip
 rtl-sdr-release
+sqlite-*
+*.sqb

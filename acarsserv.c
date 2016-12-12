@@ -1,14 +1,30 @@
 #include <stdlib.h>
+#include <malloc.h>
+#ifdef _WIN32
+//#include <Windows.h>
+#include <Ws2tcpip.h>
+#include <io.h>
+#define close closesocket
+#define write _write
+#define bzero(s, n) memset((s), 0, (n))
+#else // !_WIN32
 #include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#endif // !_WIN32
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
 #include <time.h>
 #include <getopt.h>
 #include "acarsserv.h"
+
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define strdup _strdup
+#define tzset _tzset
+#define putenv _putenv
+#endif // _MSC_VER >= 1400
 
 #define DFLTPORT "5555"
 
@@ -205,6 +221,9 @@ int bindsock(char *argaddr)
 
 	if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
 		fprintf(stderr, "Invalid/unknown address %s\n", addr);
+#if _WIN32
+		fprintf(stderr, "  %s\n", gai_strerror(rv));
+#endif // _WIN32
 		return -1;
 	}
 
@@ -279,6 +298,19 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 	}
+
+#ifdef _WIN32
+	WORD wsaVersion = MAKEWORD(2, 2);
+	WSADATA wsaData;
+	int wsaError = WSAStartup(wsaVersion, &wsaData);
+	if (wsaError)
+	{
+		char wsaErrorString[1024];
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, wsaError, 0, wsaErrorString, sizeof(wsaErrorString), NULL);
+		fprintf(stderr, "%.*s\n", (int)sizeof(wsaErrorString), wsaErrorString);
+	}
+#endif // _WIN32
+
 
 	if (bindsock(bindaddr)) {
 		fprintf(stderr, "failed to connect\n");

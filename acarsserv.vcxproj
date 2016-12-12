@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" InitialTargets="CheckGnuWin32BasePath;CopyGetOptHFile" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{73C7EA91-5C6F-4AD5-B90C-C4D8DECF1735}</ProjectGuid>
+    <RootNamespace>acarsdec</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\$(Platform)\$(MSBuildProjectName)\</IntDir>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>HAVE_STRING_H;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;timegm=my_timegm;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>getopt;sqlite-amalgamation-3150200;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <Link>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="acarsserv.h" />
+    <ClCompile Include="acarsserv.c" />
+    <ClCompile Include="dbmgn.c" />
+    <ClInclude Include="getopt.h" />
+    <ClCompile Include="$(GnuWin32BasePath)\share\gengetopt\*.c" />
+    <ClCompile Include="sqlite-amalgamation-3150200\sqlite3.c" />
+    <ClInclude Include="sqlite-amalgamation-3150200\sqlite3.h" />
+    <ClInclude Include="sqlite-amalgamation-3150200\sqlite3ext.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <Target Name="BeforeRebuild" DependsOnTargets="DownloadSQLiteAmalgamation" />
+  <Target Name="CheckGnuWin32BasePath">
+    <Warning Condition="'$(GnuWin32BasePath)'==''" Text="The GnuWin32BasePath property is not set." />
+  </Target>
+  <Target Name="CopyGetOptHFile" Inputs="$(GnuWin32BasePath)\share\gengetopt\gnugetopt.h" Outputs="$(ProjectDir)getopt\getopt.h">
+    <Copy SourceFiles="$(GnuWin32BasePath)\share\gengetopt\gnugetopt.h" DestinationFiles="$(ProjectDir)getopt\getopt.h" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="DownloadSQLiteAmalgamation" Outputs="$(ProjectDir)sqlite-amalgamation-3150200\sqlite3.h;$(ProjectDir)sqlite-amalgamation-3150200\sqlite3.c;$(ProjectDir)sqlite-amalgamation-3150200\sqlite3ext.h">
+    <Exec Command="wget -N --no-check-certificate https://www.sqlite.org/2016/sqlite-amalgamation-3150200.zip" WorkingDirectory="$(ProjectDir)" />
+    <Exec Command="unzip -n sqlite-amalgamation-3150200.zip" WorkingDirectory="$(ProjectDir)" />
+  </Target>
+</Project>
