@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <time.h>
+#include <getopt.h>
 #include "acarsserv.h"
 
 #define DFLTPORT "5555"
