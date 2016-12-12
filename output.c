@@ -52,6 +52,18 @@ int initOutput(char *logfilename, char *Rawaddr)
 	if (Rawaddr == NULL)
 		return 0;
 
+#ifdef _WIN32
+	WORD wsaVersion = MAKEWORD(2, 2);
+	WSADATA wsaData;
+	int wsaError = WSAStartup(wsaVersion, &wsaData);
+	if (wsaError)
+	{
+		char wsaErrorString[1024];
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, wsaError, 0, wsaErrorString, sizeof(wsaErrorString), NULL);
+		fprintf(stderr, "%.*s\n", (int)sizeof(wsaErrorString), wsaErrorString);
+	}
+#endif // _WIN32
+
 	memset(&hints, 0, sizeof hints);
 	if (Rawaddr[0] == '[') {
 		hints.ai_family = AF_INET6;
