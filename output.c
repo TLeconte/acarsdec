@@ -105,7 +105,7 @@ int initOutput(char *logfilename, char *Rawaddr)
 			continue;
 		}
 
-		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+		if (connect(sockfd, p->ai_addr, (int)p->ai_addrlen) == -1) {
 			close(sockfd);
 			continue;
 		}

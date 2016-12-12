@@ -109,7 +109,7 @@ int verbose_device_search(char *s)
 	/* does string suffix match a serial */
 	for (i = 0; i < device_count; i++) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		offset = strlen(serial) - strlen(s);
+		offset = (int)(strlen(serial) - strlen(s));
 		if (offset < 0) {
 			continue;
 		}
@@ -129,7 +129,7 @@ int verbose_device_search(char *s)
 
 static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
 {
-	int n;
+	unsigned int n;
 	int ne;
 	int Fc;
 	do {
@@ -150,7 +150,7 @@ static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
 		return -1;
 	}
 
-	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
+	for (Fc = (int)(Fd[nbch - 1] + 2 * INTRATE); Fc > (int)(Fd[0] - 2 * INTRATE); Fc--) {
 		for (n = 0; n < nbch; n++) {
 			if (abs(Fc - Fd[n]) > RTLINRATE / 2 - 2 * INTRATE)
 				break;
@@ -192,7 +192,8 @@ int nearest_gain(int target_gain)
 
 int initRtl(char **argv, int optind)
 {
-	int r, n;
+	int r;
+	unsigned int n;
 	int dev_index;
 	char *argF;
 	unsigned int Fc;
@@ -261,7 +262,7 @@ int initRtl(char **argv, int optind)
 		ch->swf = malloc(RTLMULT * sizeof(float));
 		ch->dm_buffer=malloc(RTLOUTBUFSZ*sizeof(float));
 
-		AMFreq = (ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI;
+		AMFreq = (float)((ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI);
 		for (ind = 0; ind < RTLMULT; ind++) {
 			sincosf(AMFreq * ind, &(ch->swf[ind]), &(ch->cwf[ind]));
 			ch->swf[ind] /= RTLMULT/2;
@@ -295,7 +296,7 @@ int initRtl(char **argv, int optind)
 
 static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
-	int r, n;
+	unsigned int n;
 
 	if (nread != RTLINBUFSZ) {
 		fprintf(stderr, "warning: partial read\n");

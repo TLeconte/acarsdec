@@ -51,11 +51,11 @@ int initMsk(channel_t * ch)
 {
 	int i;
 
-	ch->MskFreq = 1800.0 / INTRATE * 2.0 * M_PI;
+	ch->MskFreq = (float)(1800.0 / INTRATE * 2.0 * M_PI);
 	ch->MskPhi = ch->MskClk = 0;
 	ch->MskS = 0;
 
-	ch->MskKa = PLLKa / INTRATE;
+	ch->MskKa = (float)(PLLKa / INTRATE);
 	ch->MskDf = ch->Mska = 0;
 
 	ch->Mskdc = 0;
@@ -65,7 +65,7 @@ int initMsk(channel_t * ch)
 	ch->Q = calloc(FLEN, sizeof(float));
 
 	for (i = 0; i < FLEN; i++) {
-		if(ch->chn==0)  h[i] = cosf(2.0*M_PI*600.0/INTRATE*(i-FLEN/2));
+		if(ch->chn==0)  h[i] = cosf((float)(2.0*M_PI*600.0/INTRATE*(i-FLEN/2)));
 		ch->I[i] = ch->Q[i] = 0;
 	}
 
@@ -75,13 +75,13 @@ int initMsk(channel_t * ch)
 static inline float fst_atan2(float y, float x)
 {
 	float r, angle;
-	float abs_y = fabs(y) + 1e-10;	// kludge to prevent 0/0 condition
+	float abs_y = (float)(fabs(y) + 1e-10);	// kludge to prevent 0/0 condition
 	if (x >= 0) {
 		r = (x - abs_y) / (x + abs_y);
-		angle = M_PI_4 - M_PI_4 * r;
+		angle = (float)(M_PI_4 - M_PI_4 * r);
 	} else {
 		r = (x + abs_y) / (abs_y - x);
-		angle = 3 * M_PI_4 - M_PI_4 * r;
+		angle = (float)(3 * M_PI_4 - M_PI_4 * r);
 	}
 	if (y < 0)
 		return (-angle);	// negate if in quad III or IV
@@ -113,14 +113,14 @@ void demodMSK(channel_t *ch,int len)
 	p = ch->MskFreq + ch->MskDf;
 	ch->MskClk += p;
 	p = ch->MskPhi + p;
-	if (p >= 2.0*M_PI) p -= 2.0*M_PI; 
+	if (p >= 2.0*M_PI) p -= (float)(2.0*M_PI); 
 	ch->MskPhi = p;
 
 	if (ch->MskClk > 3*M_PI/2) {
 		int j;
 		float iv,qv,bit;
 
-		ch->MskClk -= 3*M_PI/2;
+		ch->MskClk -= (float)(3*M_PI/2);
 
 		/* matched filter */
 		for (j = 0, iv = qv = 0; j < FLEN; j++) {
@@ -141,14 +141,14 @@ void demodMSK(channel_t *ch,int len)
 
 		/* PLL */
 		dphi *= ch->MskKa;
-		ch->MskDf = PLLKc * ch->MskDf + dphi - PLLKb * ch->Mska;
+		ch->MskDf = (float)(PLLKc * ch->MskDf + dphi - PLLKb * ch->Mska);
 		ch->Mska = dphi;
 	}
 
 	/* DC blocking */
 	in = ch->dm_buffer[n];
 	s = in - ch->Mskdc;
-	ch->Mskdc = (1.0 - DCCF) * ch->Mskdc + DCCF * in;
+	ch->Mskdc = (float)((1.0 - DCCF) * ch->Mskdc + DCCF * in);
 
 	/* FI */
 	sincosf(p, &sp, &cp);

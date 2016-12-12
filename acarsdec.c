@@ -122,7 +122,8 @@ static void sighandler(int signum)
 int main(int argc, char **argv)
 {
 	int c;
-	int res = 0, n;
+	int res = 0;
+	unsigned int n;
 
 	while ((c = getopt(argc, argv, "vafrso:g:Ap:n:N:l:c:i:")) != EOF) {
 

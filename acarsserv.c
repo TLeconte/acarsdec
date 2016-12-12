@@ -69,7 +69,7 @@ int dupmess = 0;
 void fixreg(unsigned char *reg, unsigned char *add)
 {
 	unsigned char *p, *t;
-	int i, f;
+	int i;
 	for (p = add; *p == '.'; p++) ;
 
 	if (strlen(p) >= 4) {
@@ -233,7 +233,7 @@ int bindsock(char *argaddr)
 			    p->ai_protocol)) == -1) {
 			continue;
 		}
-		if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+		if (bind(sockfd, p->ai_addr, (int)p->ai_addrlen) == -1) {
 			continue;
 		}
 		break;
@@ -255,7 +255,7 @@ static time_t my_timegm(struct tm* tm)
 	putenv("TZ=");
 	tzset();
 	ret = mktime(tm);
-	size_t tzlen = strlen(tz) + sizeof("TZ=");
+	size_t tzlen = (tz ? strlen(tz) : 0) + sizeof("TZ=");
 	char* tzput = (char*)alloca(tzlen);
 	snprintf(tzput, tzlen, "TZ=%s", tz);
 	putenv(tzput);
@@ -270,7 +270,6 @@ int main(int argc, char **argv)
 	char *basename = "acarsserv.sqb";
 	char *bindaddr = "[::]";
 	int c;
-	int res;
 
 	while ((c = getopt(argc, argv, "vb:N:asd")) != EOF) {
 

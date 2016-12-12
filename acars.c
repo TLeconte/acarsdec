@@ -290,7 +290,7 @@ void decodeAcars(channel_t * ch)
 	case CRC2:
 		ch->blk->crc[1] = r;
  putmsg_lbl:
-		ch->blk->lvl = 20*log10(ch->Mskdc)-48;
+		ch->blk->lvl = (int)(20*log10(ch->Mskdc)-48);
 
 		pthread_mutex_lock(&blkmtx);
 		ch->blk->prev = NULL;
