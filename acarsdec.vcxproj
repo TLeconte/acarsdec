@@ -49,7 +49,7 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>HAVE_STRING_H;HAVE_STRUCT_TIMESPEC;_USE_MATH_DEFINES;WITH_RTL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_STRING_H;HAVE_STRUCT_TIMESPEC;_USE_MATH_DEFINES;WITH_RTL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>getopt;pthreads-win32\include;rtl-sdr-release;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>

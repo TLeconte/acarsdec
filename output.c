@@ -1,6 +1,3 @@
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-#define _CRT_SECURE_NO_WARNINGS 1  
-#endif // _MSC_VER >= 1400
 #ifdef _WIN32
 //#include <Windows.h>
 #include <Ws2tcpip.h>
