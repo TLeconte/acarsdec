@@ -1,13 +1,12 @@
 # See README 
-CFLAGS= -Ofast -msse2 -funroll-loops -pthread -D WITH_RTL -D WITH_ALSA
-#CFLAGS= -Ofast -mfpu=vfpv4 -funroll-loops -pthread -D WITH_RTL -I. 
-#CFLAGS= -Ofast -mfpu=neon-vfpv4 -funroll-loops -pthread -D WITH_RTL -I.  `pkg-config --cflags libairspy`
-LDLIBS= -lm -pthread  -lrtlsdr -lasound
+CFLAGS= -g  -pthread -D WITH_RTL -D WITH_ALSA -D WITH_SNDFILE
+#CFLAGS= -Ofast -pthread -D WITH_RTL -I.  `pkg-config --cflags libairspy`
+LDLIBS= -lm -pthread  -lrtlsdr -lasound -lsndfile
 #LDLIBS= -lm -pthread  `pkg-config --libs libairspy` -lusb-1.0
 
 
-acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o
-	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o -o $@ $(LDLIBS)
+acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o soundfile.o
+	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o soundfile.o -o $@ $(LDLIBS)
 
 acarsserv:	acarsserv.o dbmgn.o
 	$(CC) -Ofast acarsserv.o dbmgn.o -o $@ -lsqlite3
@@ -21,4 +20,4 @@ acarsserv.o:	acarsserv.h
 dbmgm.o:	acarsserv.h
 
 clean:
-	@rm *.o acarsdec acarsserv
+	@\rm -f *.o acarsdec acarsserv

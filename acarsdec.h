@@ -84,6 +84,10 @@ extern int initOutput(char*,char *);
 extern int initAlsa(char **argv,int optind);
 extern int runAlsaSample(void);
 #endif
+#ifdef WITH_SNDFILE
+extern int initSoundfile(char **argv,int optind);
+extern int runSoundfileSample(void);
+#endif
 #ifdef WITH_RTL
 extern int initRtl(char **argv,int optind);
 extern int runRtlSample(void);

@@ -24,7 +24,7 @@
 #include <sndfile.h>
 #include "acarsdec.h"
 
-#define MAXNBFRAMES 1024
+#define MAXNBFRAMES 4096
 static SNDFILE *insnd;
 
 int initSoundfile(char **argv, int optind)
@@ -43,13 +43,13 @@ int initSoundfile(char **argv, int optind)
 		fprintf(stderr, "Too much input channels : %d\n", nbch);
 		return (1);
 	}
-	if (infsnd.samplerate < 9600) {
-		fprintf(stderr, "Too low sample rate : %d\n",
-			infsnd.samplerate);
+	if(infsnd.samplerate!=INTRATE) {
+		fprintf(stderr, "unsupported sample rate : %d (must be %d)\n",infsnd.samplerate,INTRATE);
 		return (1);
 	}
+	
 	for (n = 0; n < nbch; n++) {
-		channel[n].Infs = infsnd.samplerate;
+		channel[n].dm_buffer=malloc(sizeof(float)*MAXNBFRAMES);
 	}
 
 	return (0);
@@ -71,7 +71,9 @@ int runSoundfileSample(void)
 		for (n = 0; n < nbch; n++) {
 			int len = nbi / nbch;
 			for (i = 0; i < len; i++)
-				demodMsk(sndbuff[n + i * nbch], &(channel[n]));
+				channel[n].dm_buffer[i]=sndbuff[n + i * nbch];
+
+			demodMSK(&(channel[n]),len);
 		}
 
 	} while (1);
@@ -85,7 +87,7 @@ void initSndWrite(void)
 	SF_INFO infsnd;
 
 	infsnd.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-	infsnd.samplerate = 12500;
+	infsnd.samplerate = INTRATE;
 	infsnd.channels = 2;
 	outsnd = sf_open("data.wav", SFM_WRITE, &infsnd);
 	if (outsnd == NULL) {
