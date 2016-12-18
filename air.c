@@ -65,7 +65,7 @@ int initAirspy(char **argv, int optind)
 		if(Fd[nbch]>maxFc) maxFc= Fd[nbch];
 		nbch++;
 	};
-	if (nbch >= MAXNBCHANNELS)
+	if (nbch > MAXNBCHANNELS)
 		fprintf(stderr,
 			"WARNING: too much frequencies, taking only the %d firsts\n",
 			MAXNBCHANNELS);
