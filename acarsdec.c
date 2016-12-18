@@ -233,7 +233,7 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_AIR
 	case 4:
-		res = runAirspy();
+		res = runAirspySample();
 		break;
 #endif
 	default:
