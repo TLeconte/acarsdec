@@ -69,11 +69,14 @@ char *logfilename = NULL;
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv 3.2 Copyright (c) 2015 Thierry Leconte \n\n");
+		"Acarsdec/acarsserv 3.x Copyright (c) 2016 Thierry Leconte \n\n");
 	fprintf(stderr,
 		"Usage: acarsdec  [-v] [-o lv] [-A] [-n ipaddr:port] [-l logfile]");
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice  |");
+#endif
+#ifdef WITH_SNDFILE
+	fprintf(stderr, " -f inputwavfile  |");
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
@@ -97,6 +100,10 @@ static void usage(void)
 	fprintf(stderr,
 		" -a alsapcmdevice\t: decode from soundcard input alsapcmdevice (ie: hw:0,0)\n");
 #endif
+#ifdef WITH_SNDFILE
+	fprintf(stderr,
+		" -f inputwavfile\t: decode from a wav file at %d sampling rate\n",INTRATE);
+#endif
 #ifdef WITH_RTL
 	fprintf(stderr,
 		" -g gain\t\t: set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use AGC\n");
@@ -109,7 +116,7 @@ static void usage(void)
 		" -s f1 [f2]...[f4]\t: decode from airspy receiving at VHF frequencies f1 and optionaly f2 to f4 in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
 #endif
 	fprintf(stderr,
-		"\nFor any input source , up to 4 channels  could be simultanously decoded\n");
+		"\nFor any input source , up to %d channels  could be simultanously decoded\n",MAXNBCHANNELS);
 	exit(1);
 }
 
@@ -125,7 +132,7 @@ int main(int argc, char **argv)
 	int res = 0;
 	unsigned int n;
 
-	while ((c = getopt(argc, argv, "vafrso:g:Ap:n:N:l:c:i:")) != EOF) {
+	while ((c = getopt(argc, argv, "vafrso:g:Ap:n:N:l:c:i:f:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -138,6 +145,12 @@ int main(int argc, char **argv)
 		case 'a':
 			res = initAlsa(argv, optind);
 			inmode = 1;
+			break;
+#endif
+#ifdef WITH_SNDFILE
+		case 'f':
+			res = initSoundfile(argv, optind);
+			inmode = 2;
 			break;
 #endif
 #ifdef WITH_RTL
@@ -236,6 +249,11 @@ int main(int argc, char **argv)
 		res = runAlsaSample();
 		break;
 #endif
+#ifdef WITH_SNDFILE
+	case 2:
+		res = runSoundfileSample();
+		break;
+#endif
 #ifdef WITH_RTL
 	case 3:
 		res = runRtlSample();
@@ -243,7 +261,7 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_AIR
 	case 4:
-		res = runAirspy();
+		res = runAirspySample();
 		break;
 #endif
 	default:

@@ -65,7 +65,7 @@ int initAirspy(char **argv, int optind)
 		if(Fd[nbch]>maxFc) maxFc= Fd[nbch];
 		nbch++;
 	};
-	if (nbch >= MAXNBCHANNELS)
+	if (nbch > MAXNBCHANNELS)
 		fprintf(stderr,
 			"WARNING: too much frequencies, taking only the %d firsts\n",
 			MAXNBCHANNELS);
@@ -90,16 +90,13 @@ int initAirspy(char **argv, int optind)
 		double AMFreq;
 	        pthread_t th;
 
-		ch->cwf = malloc(AIRMULT * sizeof(float));
-		ch->swf = malloc(AIRMULT * sizeof(float));
+		ch->wf = malloc(AIRMULT * sizeof(float complex));
 		ch->dm_buffer = malloc(1000 * sizeof(float));
-		ch->DI=ch->DQ=0;
+		ch->D=0;
 
 		AMFreq = 2.0*M_PI*(double)(F0-ch->Fr)/(double)(AIRINRATE);
 		for (ind = 0; ind < AIRMULT; ind++) {
-			sincosf((float)(AMFreq*ind), &(ch->swf[ind]), &(ch->cwf[ind]));
-			ch->swf[ind] /= AIRMULT/2;
-			ch->cwf[ind] /= AIRMULT/2;
+			ch->wf[ind]=cexpf(AMFreq*ind*-I)/AIRMULT*2;
 		}
 	}
 
@@ -193,39 +190,34 @@ static int rx_callback(airspy_transfer_t* transfer)
         	channel_t *ch = &(channel[n]);
                 float S,in;
                 int k,bn,m;
-        	float DI,DQ;
+        	float complex D;
 
-        	DI=ch->DI;
-        	DQ=ch->DQ;
+        	D=ch->D;
 
                 /* compute */
                 m=0;k=0;
                 for (i=ind; i < AIRMULT;i++,k++) {
                         S = pt_rx_buffer[k];
-                        DI += ch->cwf[i] * S;
-                        DQ += ch->swf[i] * S;
+                        D += ch->wf[i] * S;
                  }
-                 ch->dm_buffer[m++]=hypotf(DI,DQ);
+                 ch->dm_buffer[m++]=cabsf(D);
 
                  for (bn=0; bn<nbk;bn++) {
-                        DI=DQ=0;
+                        D=0;
                         for (i=0; i < AIRMULT;i++,k++) {
                                 S = pt_rx_buffer[k];
-                                DI += ch->cwf[i] * S;
-                                DQ += ch->swf[i] * S;
+                                D += ch->wf[i] * S;
                         }
-                        ch->dm_buffer[m++]=hypotf(DI,DQ);
+                        ch->dm_buffer[m++]=cabsf(D);
                  }
 
-                 DI=DQ=0;
+                 D=0;
                  for (i=0; i<ben;i++,k++) {
                         S = pt_rx_buffer[k];
-                        DI += ch->cwf[i] * S;
-                        DQ += ch->swf[i] * S;
+                        D += ch->wf[i] * S;
                  }
 
-        	 ch->DI=DI;
-        	 ch->DQ=DQ;
+        	 ch->D=D;
 
                  demodMSK(ch,m);
 	}
@@ -235,7 +227,7 @@ static int rx_callback(airspy_transfer_t* transfer)
 }
 
 
-int runAirspy(void) 
+int runAirspySample(void) 
 {
  int result ;
 

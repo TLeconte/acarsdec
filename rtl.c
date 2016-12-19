@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Thierry Leconte
+ *  Copyright (c) 2016 Thierry Leconte
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -261,15 +261,12 @@ int initRtl(char **argv, int optind)
 		int ind;
 		float AMFreq;
 
-		ch->cwf = malloc(RTLMULT * sizeof(float));
-		ch->swf = malloc(RTLMULT * sizeof(float));
+		ch->wf = malloc(RTLMULT * sizeof(float complex));
 		ch->dm_buffer=malloc(RTLOUTBUFSZ*sizeof(float));
 
 		AMFreq = (float)((ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI);
 		for (ind = 0; ind < RTLMULT; ind++) {
-			sincosf(AMFreq * ind, &(ch->swf[ind]), &(ch->cwf[ind]));
-			ch->swf[ind] /= RTLMULT/2;
-			ch->cwf[ind] /= RTLMULT/2;
+			ch->wf[ind]=cexpf(AMFreq*ind*-I)/RTLMULT*2;
 		}
 	}
 
@@ -311,28 +308,25 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	for (n = 0; n < nbch; n++) {
 		channel_t *ch = &(channel[n]);
 		int i,m;
-		float DI, DQ;
-		float *swf, *cwf;
+		float complex D,*wf;
 
-		swf = ch->swf;
-		cwf = ch->cwf;
+		wf = ch->wf;
 		m=0;
 		for (i = 0; i < RTLINBUFSZ;) {
 			int ind;
 
-			DI = DQ = 0;
+			D = 0;
 			for (ind = 0; ind < RTLMULT; ind++) {
-				float I, Q;
-				float sp, cp;
+				float r, g;
+				float complex v;
 
-				I = (float)rtlinbuff[i] - (float)127.5; i++;
-				Q = (float)rtlinbuff[i] - (float)127.5; i++;
+				r = (float)rtlinbuff[i] - (float)127.5; i++;
+				g = (float)rtlinbuff[i] - (float)127.5; i++;
 
-				sp = swf[ind]; cp = cwf[ind];
-				DI += cp * I + sp * Q;
-				DQ += -sp * I + cp * Q;
+				v=r+g*I;
+				D+=v*wf[ind];
 			}
-			ch->dm_buffer[m++]=hypotf(DI,DQ);
+			ch->dm_buffer[m++]=cabs(D);
 		}
 		demodMSK(ch,m);
 	}

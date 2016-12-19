@@ -61,12 +61,11 @@ int initMsk(channel_t * ch)
 	ch->Mskdc = 0;
 
 	ch->idx = 0;
-	ch->I = calloc(FLEN, sizeof(float));
-	ch->Q = calloc(FLEN, sizeof(float));
+	ch->inb = calloc(FLEN, sizeof(float complex));
 
 	for (i = 0; i < FLEN; i++) {
 		if(ch->chn==0)  h[i] = cosf((float)(2.0*M_PI*600.0/INTRATE*(i-FLEN/2)));
-		ch->I[i] = ch->Q[i] = 0;
+		ch->inb[i] = 0;
 	}
 
 	return 0;
@@ -104,7 +103,7 @@ void demodMSK(channel_t *ch,int len)
 {
    /* MSK demod */
    float dphi;
-   float p, s, sp, cp, in;
+   float p, s, in;
    int idx=ch->idx;
    int n;
 
@@ -118,23 +117,24 @@ void demodMSK(channel_t *ch,int len)
 
 	if (ch->MskClk > 3*M_PI/2) {
 		int j;
-		float iv,qv,bit;
+		float bit;
+		float complex v;
 
 		ch->MskClk -= (float)(3*M_PI/2);
 
 		/* matched filter */
-		for (j = 0, iv = qv = 0; j < FLEN; j++) {
+		for (j = 0, v = 0; j < FLEN; j++) {
 			int k = (idx+j)%FLEN;
-			iv += h[j] * ch->I[k]; qv += h[j] * ch->Q[k];
+			v += h[j] * ch->inb[k];
 		}
 
 		if ((ch->MskS & 1) == 0) {
-			if (iv >= 0) dphi = fst_atan2(-qv, iv); else dphi = fst_atan2(qv, -iv);
-			if (ch->MskS & 2) bit = iv; else bit = -iv;
+			if (crealf(v) >= 0) dphi = fst_atan2(-cimagf(v), crealf(v)); else dphi = fst_atan2(cimagf(v), -crealf(v));
+			if (ch->MskS & 2) bit = crealf(v); else bit = -crealf(v);
 			putbit(bit, ch);
 		} else {
-			if (qv >= 0) dphi = fst_atan2(iv, qv); else dphi = fst_atan2(-iv, -qv);
-			if (ch->MskS & 2) bit = -qv;  else  bit = qv;
+			if (cimagf(v) >= 0) dphi = fst_atan2(crealf(v), cimagf(v)); else dphi = fst_atan2(-crealf(v), -cimagf(v));
+			if (ch->MskS & 2) bit = -cimagf(v);  else  bit = cimagf(v);
 			putbit(bit, ch);
 		}
 		ch->MskS = (ch->MskS + 1) & 3;
@@ -150,10 +150,8 @@ void demodMSK(channel_t *ch,int len)
 	s = in - ch->Mskdc;
 	ch->Mskdc = (float)((1.0 - DCCF) * ch->Mskdc + DCCF * in);
 
-	/* FI */
-	sincosf(p, &sp, &cp);
-	ch->I[idx] = s * cp;
-	ch->Q[idx] = s * sp;
+	/* mixer */
+	ch->inb[idx] = s * cexpf(p*I);
 
 	idx=(idx+1)%FLEN;
     }
