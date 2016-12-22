@@ -154,7 +154,7 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 {
 #if defined (WITH_RTL) || defined (WITH_AIR)
 	if (inmode >= 3)
-		fprintf(fdout, "\n[#%1d (F:%3.3f L:%3d E:%1d) ", chn + 1,
+		fprintf(fdout, "\n[#%1d (F:%3.3f L:%4d E:%1d) ", chn + 1,
 			channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
@@ -167,12 +167,11 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 		fprintf(fdout, "Flight id: %s", msg->fid);
 		fprintf(fdout, "\n");
 	}
-	fprintf(fdout, "Mode: %1c ", msg->mode);
-	fprintf(fdout, "Msg. label: %s\n", msg->label);
-	fprintf(fdout, "Block id: %c ", msg->bid);
-	fprintf(fdout, "Ack: %c\n", msg->ack);
-	fprintf(fdout, "Msg. no: %s\n", msg->no);
-	fprintf(fdout, "Message :\n%s\n", msg->txt);
+	fprintf(fdout, "Mode : %1c ", msg->mode);
+	fprintf(fdout, "Label : %2s ", msg->label);
+	fprintf(fdout, "Id : %1c ", msg->bid);
+	fprintf(fdout, "Ack : %1c\n", msg->ack);
+	fprintf(fdout, "Message no: %4s :\n%s\n", msg->no,msg->txt);
 	if (verbose && msg->be == 0x17)
 		fprintf(fdout, "Block End\n");
 
@@ -191,7 +190,7 @@ static void printoneline(acarsmsg_t * msg, int chn, time_t t)
 			*pstr = ' ';
 
 	if (inmode >= 3)
-		fprintf(fdout, "#%1d (L:%3d E:%1d) ", chn + 1, msg->lvl,
+		fprintf(fdout, "#%1d (L:%4d E:%1d) ", chn + 1, msg->lvl,
 			msg->err);
 	else
 		fprintf(fdout, "#%1d (E:%1d) ", chn + 1, msg->err);
