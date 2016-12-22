@@ -310,7 +310,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 				v=r+g*I;
 				D+=v*wf[ind];
 			}
-			ch->dm_buffer[m++]=cabs(D);
+			ch->dm_buffer[m++]=cabsf(D);
 		}
 		demodMSK(ch,m);
 	}
