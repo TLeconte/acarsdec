@@ -24,9 +24,8 @@
 
 #define DCCF 0.02
 
-#define PLLKa 1.8991680918e+02
-#define PLLKb 9.8503292076e-01
-#define PLLKc 0.9995
+const float PLLKa=0.0127;
+const float PLLKb=0.9835;
 
 
 pthread_mutex_t chmtx;
@@ -44,7 +43,6 @@ int initMsk(channel_t * ch)
 	ch->MskPhi = ch->MskClk = 0;
 	ch->MskS = 0;
 
-	ch->MskKa = PLLKa / INTRATE;
 	ch->MskDf = ch->Mska = 0;
 
 	ch->Mskdc = 0;
@@ -129,8 +127,8 @@ void demodMSK(channel_t *ch,int len)
 		ch->MskS = (ch->MskS + 1) & 3;
 
 		/* PLL */
-		dphi *= ch->MskKa;
-		ch->MskDf = PLLKc * ch->MskDf + dphi - PLLKb * ch->Mska;
+		dphi *=PLLKa;
+		ch->MskDf += dphi - PLLKb*ch->Mska;
 		ch->Mska = dphi;
 	}
 

@@ -48,7 +48,7 @@ typedef struct {
 	float *dm_buffer;
 	float MskPhi;
 	float MskFreq,MskDf;
-	float Mska,MskKa;
+	float Mska;
 	float Mskdc,Mskdcf;
 	float MskClk;
 	unsigned int MskS,idx;
@@ -105,5 +105,4 @@ extern int  initAcars(channel_t *);
 extern void decodeAcars(channel_t *);
 
 extern void outputmsg(const msgblk_t*);
-
 
