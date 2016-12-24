@@ -60,6 +60,17 @@ LDLIBS= -lm -pthread -lrtlsdr
 Note : change compiler options to your hardware, particularly on arm platform -ffast-math -march -mfloat-abi -mtune -mfpu must be set correctly.
 See exemples in Makefile
 
+Compilation with Visual Studio:
+Open the acarsdec.sln solution file in Visual Studio. First time you will have to load the Windows Binaries. The ReBuild target in the project has been
+configured to Download the dependencies.
+The Visual Studio build process required the GnuWin32 tools. The ReBuild target requires the GNU tool wget to download dependencies, wget is included in the GnuWin32 toolchain.
+
+Compilation using ALSA or AirSpy is not yet supported. ACARS decoding using an RTL-SDR device works very well.
+
+Visual Studio supports compilation in Debug and Release configuration for both the Win32 and x64 Platform.
+You can also build the entire project from the command-line using MSBuild:
+MSBuild acarsdec.sln
+
 
 Acarsserv
 

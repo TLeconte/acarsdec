@@ -27,6 +27,18 @@
 #include <rtl-sdr.h>
 #include "acarsdec.h"
 
+#ifdef _MSC_VER
+static void sincosf(float x, float* sin, float* cos)
+{
+	float _sin = sinf(x);
+	float _cos = cosf(x);
+	if (sin)
+		*sin = _sin;
+	if (cos)
+		*cos = _cos;
+}
+#endif // _MSC_VER
+
 #define RTLMULT 200
 #define RTLINRATE (INTRATE*RTLMULT)
 
@@ -44,6 +56,9 @@ int verbose_device_search(char *s)
 	int i, device_count, device, offset;
 	char *s2;
 	char vendor[256], product[256], serial[256];
+	vendor[0] = '\0';
+	product[0] = '\0';
+	serial[0] = '\0';
 	device_count = rtlsdr_get_device_count();
 	if (!device_count) {
 		fprintf(stderr, "No supported devices found.\n");
@@ -54,8 +69,8 @@ int verbose_device_search(char *s)
 	for (i = 0; i < device_count; i++) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
 		if (verbose)
-			fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor,
-				product, serial);
+			fprintf(stderr, "  %d:  %.*s, %.*s, SN: %.*s\n", i, (int)sizeof(vendor), vendor,
+				(int)sizeof(product), product, (int)sizeof(serial), serial);
 	}
 	if (verbose)
 		fprintf(stderr, "\n");
@@ -97,7 +112,7 @@ int verbose_device_search(char *s)
 	/* does string suffix match a serial */
 	for (i = 0; i < device_count; i++) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		offset = strlen(serial) - strlen(s);
+		offset = (int)(strlen(serial) - strlen(s));
 		if (offset < 0) {
 			continue;
 		}
@@ -117,7 +132,7 @@ int verbose_device_search(char *s)
 
 static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
 {
-	int n;
+	unsigned int n;
 	int ne;
 	int Fc;
 	do {
@@ -138,7 +153,7 @@ static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
 		return -1;
 	}
 
-	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
+	for (Fc = (int)(Fd[nbch - 1] + 2 * INTRATE); Fc > (int)(Fd[0] - 2 * INTRATE); Fc--) {
 		for (n = 0; n < nbch; n++) {
 			if (abs(Fc - Fd[n]) > RTLINRATE / 2 - 2 * INTRATE)
 				break;
@@ -180,7 +195,8 @@ int nearest_gain(int target_gain)
 
 int initRtl(char **argv, int optind)
 {
-	int r, n;
+	int r;
+	unsigned int n;
 	int dev_index;
 	char *argF;
 	unsigned int Fc;
@@ -248,7 +264,7 @@ int initRtl(char **argv, int optind)
 		ch->wf = malloc(RTLMULT * sizeof(float complex));
 		ch->dm_buffer=malloc(RTLOUTBUFSZ*sizeof(float));
 
-		AMFreq = (ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI;
+		AMFreq = (float)((ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI);
 		for (ind = 0; ind < RTLMULT; ind++) {
 			ch->wf[ind]=cexpf(AMFreq*ind*-I)/RTLMULT*2;
 		}
@@ -280,7 +296,7 @@ int initRtl(char **argv, int optind)
 
 static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
-	int r, n;
+	unsigned int n;
 
 	if (nread != RTLINBUFSZ) {
 		fprintf(stderr, "warning: partial read\n");
