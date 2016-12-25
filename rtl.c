@@ -250,7 +250,7 @@ int initRtl(char **argv, int optind)
 
 		AMFreq = (ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI;
 		for (ind = 0; ind < RTLMULT; ind++) {
-			ch->wf[ind]=cexpf(AMFreq*ind*-I)/RTLMULT*2;
+			ch->wf[ind]=cexpf(AMFreq*ind*-I)/RTLMULT;
 		}
 	}
 

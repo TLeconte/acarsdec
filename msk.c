@@ -22,9 +22,7 @@
 #include <math.h>
 #include "acarsdec.h"
 
-#define DCCF 0.02
-
-const float PLLKa=0.0127;
+const float PLLKa=0.0063;
 const float PLLKb=0.9835;
 
 
@@ -39,13 +37,10 @@ int initMsk(channel_t * ch)
 {
 	int i;
 
-	ch->MskFreq = 1800.0 / INTRATE * 2.0 * M_PI;
 	ch->MskPhi = ch->MskClk = 0;
 	ch->MskS = 0;
 
 	ch->MskDf = ch->Mska = 0;
-
-	ch->Mskdc = 0;
 
 	ch->idx = 0;
 	ch->inb = calloc(FLEN, sizeof(float complex));
@@ -56,23 +51,6 @@ int initMsk(channel_t * ch)
 	}
 
 	return 0;
-}
-
-static inline float fst_atan2(float y, float x)
-{
-	float r, angle;
-	float abs_y = fabs(y) + 1e-10;	// kludge to prevent 0/0 condition
-	if (x >= 0) {
-		r = (x - abs_y) / (x + abs_y);
-		angle = M_PI_4 - M_PI_4 * r;
-	} else {
-		r = (x + abs_y) / (abs_y - x);
-		angle = 3 * M_PI_4 - M_PI_4 * r;
-	}
-	if (y < 0)
-		return (-angle);	// negate if in quad III or IV
-	else
-		return (angle);
 }
 
 static inline void putbit(float v, channel_t * ch)
@@ -96,7 +74,7 @@ void demodMSK(channel_t *ch,int len)
 
    for(n=0;n<len;n++) {	
 	/* oscilator */
-	p = ch->MskFreq + ch->MskDf;
+	p = 1800.0 / INTRATE*2.0*M_PI + ch->MskDf;
 	ch->MskClk += p;
 	p = ch->MskPhi + p;
 	if (p >= 2.0*M_PI) p -= 2.0*M_PI; 
@@ -105,6 +83,7 @@ void demodMSK(channel_t *ch,int len)
 	if (ch->MskClk > 3*M_PI/2) {
 		int j;
 		float bit;
+		int sI,sQ;
 		float complex v;
 
 		ch->MskClk -= 3*M_PI/2;
@@ -115,31 +94,32 @@ void demodMSK(channel_t *ch,int len)
 			v += h[j] * ch->inb[k];
 		}
 
+		if(crealf(v)>0) sI=1; else sI=-1;
+		if(cimagf(v)>0) sQ=1; else sQ=-1;
+		dphi=(sI*cimag(v)-sQ*crealf(v))/(cabsf(v)+1e-5);
+
 		if ((ch->MskS & 1) == 0) {
-			if (crealf(v) >= 0) dphi = fst_atan2(-cimagf(v), crealf(v)); else dphi = fst_atan2(cimagf(v), -crealf(v));
 			if (ch->MskS & 2) bit = crealf(v); else bit = -crealf(v);
 			putbit(bit, ch);
 		} else {
-			if (cimagf(v) >= 0) dphi = fst_atan2(crealf(v), cimagf(v)); else dphi = fst_atan2(-crealf(v), -cimagf(v));
 			if (ch->MskS & 2) bit = -cimagf(v);  else  bit = cimagf(v);
 			putbit(bit, ch);
 		}
+
+
 		ch->MskS = (ch->MskS + 1) & 3;
 
 		/* PLL */
 		dphi *=PLLKa;
-		ch->MskDf += dphi - PLLKb*ch->Mska;
+		ch->MskDf -= dphi - PLLKb*ch->Mska;
 		ch->Mska = dphi;
 	}
 
-	/* DC blocking */
-	in = ch->dm_buffer[n];
-	s = in - ch->Mskdc;
-	ch->Mskdc = (1.0 - DCCF) * ch->Mskdc + DCCF * in;
-
 	/* mixer */
-	ch->inb[idx] = s * cexpf(p*I);
+	in = ch->dm_buffer[n];
+	ch->inb[idx] = in * cexpf(p*I);
 
+	ch->Msklvl = 0.99 * ch->Msklvl + 0.01*in*in;
 	idx=(idx+1)%FLEN;
     }
     ch->idx=idx;

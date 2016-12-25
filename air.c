@@ -96,7 +96,7 @@ int initAirspy(char **argv, int optind)
 
 		AMFreq = 2.0*M_PI*(double)(F0-ch->Fr)/(double)(AIRINRATE);
 		for (ind = 0; ind < AIRMULT; ind++) {
-			ch->wf[ind]=cexpf(AMFreq*ind*-I)/AIRMULT*2;
+			ch->wf[ind]=cexpf(AMFreq*ind*-I)/AIRMULT;
 		}
 	}
 

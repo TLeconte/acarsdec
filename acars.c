@@ -225,6 +225,7 @@ void decodeAcars(channel_t * ch)
 			return;
 		}
 		ch->Acarsstate = WSYN;
+		ch->MskDf = 0;
 		ch->nbits = 1;
 		return;
 
@@ -235,9 +236,11 @@ void decodeAcars(channel_t * ch)
 			ch->blk->len = 0;
 			ch->blk->err = 0;
 			ch->nbits = 8;
+			ch->Msklvl = 0;
 			return;
 		}
 		ch->Acarsstate = WSYN;
+		ch->MskDf = 0;
 		ch->nbits = 1;
 		return;
 
@@ -253,6 +256,7 @@ void decodeAcars(channel_t * ch)
 						"#%d too many parity errors\n",
 						ch->chn + 1);
 				ch->Acarsstate = WSYN;
+				ch->MskDf = 0;
 				ch->nbits = 1;
 				return;
 			}
@@ -276,6 +280,7 @@ void decodeAcars(channel_t * ch)
 			if (verbose)
 				fprintf(stderr, "#%d too long\n", ch->chn + 1);
 			ch->Acarsstate = WSYN;
+			ch->MskDf = 0;
 			ch->nbits = 1;
 			return;
 		}
@@ -290,7 +295,7 @@ void decodeAcars(channel_t * ch)
 	case CRC2:
 		ch->blk->crc[1] = r;
  putmsg_lbl:
-		ch->blk->lvl = 20*log10(ch->Mskdc)-48;
+		ch->blk->lvl = 10*log10(ch->Msklvl);
 
 		pthread_mutex_lock(&blkmtx);
 		ch->blk->prev = NULL;
