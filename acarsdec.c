@@ -34,6 +34,8 @@ int verbose = 0;
 int outtype = 2;
 int netout;
 int airflt = 0;
+int mdly=600;
+
 #ifdef WITH_RTL
 int gain = 1000;
 int ppm = 0;
@@ -111,7 +113,7 @@ int main(int argc, char **argv)
 	int res, n;
 	struct sigaction sigact;
 
-	while ((c = getopt(argc, argv, "vafrso:g:Ap:n:N:l:c:i:f:")) != EOF) {
+	while ((c = getopt(argc, argv, "vafrso:t:g:Ap:n:N:l:c:i:f:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -119,6 +121,9 @@ int main(int argc, char **argv)
 			break;
 		case 'o':
 			outtype = atoi(optarg);
+			break;
+		case 't':
+			mdly = atoi(optarg);
 			break;
 #ifdef WITH_ALSA
 		case 'a':
@@ -211,6 +216,13 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Unable to init output\n");
 		exit(res);
 	}
+
+
+	if(outtype==3) {
+		verbose=0;
+		cls();
+	}
+
 	if (verbose)
 		fprintf(stderr, "Decoding %d channels\n", nbch);
 

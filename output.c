@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -101,7 +102,7 @@ int initOutput(char *logfilename, char *Rawaddr)
 	return 0;
 }
 
-static void printtime(time_t t)
+static void printdate(time_t t)
 {
 	struct tm *tmp;
 
@@ -112,6 +113,16 @@ static void printtime(time_t t)
 
 	fprintf(fdout, "%02d/%02d/%04d %02d:%02d:%02d",
 		tmp->tm_mday, tmp->tm_mon + 1, tmp->tm_year + 1900,
+		tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+}
+
+static void printtime(time_t t)
+{
+	struct tm *tmp;
+
+	tmp = gmtime(&t);
+
+	fprintf(fdout, "%02d:%02d:%02d",
 		tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
 }
 
@@ -158,9 +169,9 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 			channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
-		fprintf(fdout, "\n[#%1d (E:%1d) ", chn + 1, msg->err);
+		fprintf(fdout, "\n[#%1d ( L:%4d E:%1d) ", chn + 1, msg->lvl, msg->err);
 	if (inmode != 2)
-		printtime(t);
+		printdate(t);
 	fprintf(fdout, " --------------------------------\n");
 	if(msg->mode < 0x5d) {
 		fprintf(fdout, "Aircraft reg: %s ", msg->addr);
@@ -189,19 +200,110 @@ static void printoneline(acarsmsg_t * msg, int chn, time_t t)
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
 
-	if (inmode >= 3)
-		fprintf(fdout, "#%1d (L:%4d E:%1d) ", chn + 1, msg->lvl,
-			msg->err);
-	else
-		fprintf(fdout, "#%1d (E:%1d) ", chn + 1, msg->err);
+	fprintf(fdout, "#%1d (L:%4d E:%1d) ", chn + 1, msg->lvl, msg->err);
+
 	if (inmode != 2)
-		printtime(t);
+		printdate(t);
 	fprintf(fdout, " %7s %6s %1c %2s %4s ", msg->addr, msg->fid, msg->mode,
 		msg->label, msg->no);
 	fprintf(fdout, "%s", txt);
 	fprintf(fdout, "\n");
 	fflush(fdout);
 }
+
+typedef struct flight_s flight_t;
+struct flight_s {
+	flight_t *next;
+	char addr[8];
+	char fid[7];
+	time_t ts,tl;
+	int chm;
+	int nbm;
+};
+static flight_t  *flight_head=NULL;
+
+static void addFlight(acarsmsg_t * msg, int chn, time_t t)
+{
+	flight_t *fl,*flp;
+
+	fl=flight_head;
+	flp=NULL;
+	while(fl) {
+		if(strcmp(msg->addr,fl->addr)==0) break;
+		flp=fl;
+		fl=fl->next;
+	}
+
+	if(fl==NULL) {
+		fl=malloc(sizeof(flight_t));
+		fl->nbm=0;
+		fl->ts=t;
+		fl->chm=0;
+		strncpy(fl->addr,msg->addr,8);
+		strncpy(fl->fid,msg->fid,7);
+		fl->next=NULL;
+	}
+	fl->tl=t;
+	fl->chm|=(1<<chn);
+	fl->nbm+=1;
+
+	if(flp) {
+		flp->next=fl->next;
+		fl->next=flight_head;
+	}
+	flight_head=fl;
+
+	flp=NULL;
+	while(fl) {
+		if(fl->tl<(t-mdly)) {
+			if(flp) {
+				flp->next=fl->next;
+				free(fl);
+				fl=flp->next;
+			} else {
+				flight_head=fl->next;
+				free(fl);
+				fl=flight_head;
+			}
+		} else {
+			flp=fl;
+			fl=fl->next;
+		}
+	}
+}
+
+
+void cls(void)
+{
+	printf("\x1b[H\x1b[2J");
+}
+
+static void printmonitor(acarsmsg_t * msg, int chn, time_t t)
+{
+	flight_t *fl;
+
+	cls();
+
+	printf("             Acarsdec monitor\n");
+	printf(" Aircraft Flight  Nb Channels   Last     First\n");
+
+	fl=flight_head;
+	while(fl) {
+		int i;
+
+		printf("%8s %7s %3d ", fl->addr, fl->fid,fl->nbm);
+		for(i=0;i<nbch;i++) printf("%c",(fl->chm&(1<<i))?'x':'.');
+		for(;i<MAXNBCHANNELS;i++) printf(" ");
+		printf(" ");printtime(fl->tl);
+		printf(" ");printtime(fl->ts);
+		printf("\n");
+
+		fl=fl->next;
+	}
+
+	//printmsg(msg,chn,t);
+}
+
 
 void outputmsg(const msgblk_t * blk)
 {
@@ -264,6 +366,9 @@ void outputmsg(const msgblk_t * blk)
 				msg.fid[i] = blk->txt[k];
 			}
 			msg.fid[i] = '\0';
+
+			if(outtype==3)
+				addFlight(&msg,blk->chn,blk->tm);
 		}
 
 		/* Message txt */
@@ -290,6 +395,9 @@ void outputmsg(const msgblk_t * blk)
 		break;
 	case 2:
 		printmsg(&msg, blk->chn, blk->tm);
+		break;
+	case 3:
+		printmonitor(&msg, blk->chn, blk->tm);
 		break;
 	}
 }

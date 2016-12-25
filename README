@@ -10,11 +10,12 @@ Features :
 
 The multi channels decoding is particularly useful with the rtl dongle. It allows to directly listen simultaneously to 8 different frequencies , with a very low cost hardware.
 
-Usage: acarsdec  [-v] [-o lv] [-A] [-n|N ipaddr:port] [i- stationid] [-l logfile]  -a alsapcmdevice  |   -r rtldevicenumber  f1 [f2] [f....] | -s f1 [f2] [f....]
+Usage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N ipaddr:port] [i- stationid] [-l logfile]  -a alsapcmdevice  |   -r rtldevicenumber  f1 [f2] [f....] | -s f1 [f2] [f....]
 
  -v :			verbose
  -A :			don't display uplink messages (ie : only aircraft messages)
- -o lv :		output format : 0: no log, 1 one line by msg., 2 full (default) 
+ -o lv :		output format : 0: no log, 1 one line by msg., 2 full (default), 3 monitor mode
+ -t time :		set forget time in secondes in monitor mode(default=600s)
  -l logfile :		Append log messages to logfile (Default : stdout).
 
  -n ipaddr:port :	send acars messages to addr:port via UDP in planeplotter compatible format

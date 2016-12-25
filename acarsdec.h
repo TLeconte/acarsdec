@@ -75,6 +75,8 @@ extern int verbose;
 extern int outtype;
 extern int netout;
 extern int airflt;
+extern int mdly;
+
 extern int gain;
 extern int ppm;
 
@@ -104,4 +106,4 @@ extern int  initAcars(channel_t *);
 extern void decodeAcars(channel_t *);
 
 extern void outputmsg(const msgblk_t*);
-
+extern void cls(void);
