@@ -50,9 +50,9 @@ char *logfilename = NULL;
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv 3.x Copyright (c) 2016 Thierry Leconte \n\n");
+		"Acarsdec/acarsserv 3.3 Copyright (c) 2016 Thierry Leconte \n\n");
 	fprintf(stderr,
-		"Usage: acarsdec  [-v] [-o lv] [-A] [-n ipaddr:port] [-l logfile]");
+		"Usage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile]");
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice  |");
 #endif
@@ -68,7 +68,9 @@ static void usage(void)
 	fprintf(stderr,
 		" -A\t\t\t: don't display uplink messages (ie : only aircraft messages)\n");
 	fprintf(stderr,
-		"\n -o lv\t\t\t: output format : 0: no log, 1 one line by msg., 2 full (default) \n");
+		"\n -o lv\t\t\t: output format : 0: no log, 1 one line by msg., 2 full (default) , 3 monitor mode\n");
+	fprintf(stderr,
+		"\n -t time\t\t\t: set forget time in s for monitor mode (default=600s)\n");
 	fprintf(stderr,
 		" -l logfile\t\t: Append log messages to logfile (Default : stdout).\n");
 	fprintf(stderr,
