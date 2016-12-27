@@ -1,3 +1,7 @@
+---
+layout: default
+title : Acarsdec
+---
 #ACARSDEC
 Acarsdec is a multi-channels acars decoder with built-in rtl_sdr front end.
 Since 3.0, It comes with a database backend : acarsserv to store receved acars messages.(See acarsserv chapter below).
