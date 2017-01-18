@@ -46,8 +46,9 @@ typedef struct {
 	float complex D;
 #endif
 	float *dm_buffer;
-	float MskPhi,MskDf;
-	float Mska;
+	double MskPhi;
+	double MskDf,Mska;
+	float Mskpv;
 	float Msklvl;
 	float MskClk;
 	unsigned int MskS,idx;
