@@ -173,18 +173,20 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 	if (inmode != 2)
 		printdate(t);
 	fprintf(fdout, " --------------------------------\n");
-	if(msg->mode < 0x5d) {
-		fprintf(fdout, "Aircraft reg: %s ", msg->addr);
-		fprintf(fdout, "Flight id: %s", msg->fid);
-		fprintf(fdout, "\n");
-	}
 	fprintf(fdout, "Mode : %1c ", msg->mode);
 	fprintf(fdout, "Label : %2s ", msg->label);
-	fprintf(fdout, "Id : %1c ", msg->bid);
-	fprintf(fdout, "Ack : %1c\n", msg->ack);
-	fprintf(fdout, "Message no: %4s :\n%s\n", msg->no,msg->txt);
-	if (verbose && msg->be == 0x17)
-		fprintf(fdout, "Block End\n");
+	if(msg->bid) {
+		fprintf(fdout, "Id : %1c ", msg->bid);
+		fprintf(fdout, "Ack : %1c\n", msg->ack==0x15?'N':msg->ack);
+		fprintf(fdout, "Aircraft reg: %s ", msg->addr);
+		if(msg->mode <= 'Z') {
+			fprintf(fdout, "Flight id: %s\n", msg->fid);
+			fprintf(fdout, "No: %4s", msg->no);
+		}
+	}
+	fprintf(fdout, "\n");
+	if(msg->txt[0]) fprintf(fdout, "%s\n", msg->txt);
+	if (msg->be == 0x17) fprintf(fdout, "ETB\n");
 
 	fflush(fdout);
 }
@@ -204,8 +206,7 @@ static void printoneline(acarsmsg_t * msg, int chn, time_t t)
 
 	if (inmode != 2)
 		printdate(t);
-	fprintf(fdout, " %7s %6s %1c %2s %4s ", msg->addr, msg->fid, msg->mode,
-		msg->label, msg->no);
+	fprintf(fdout, " %7s %6s %1c %2s %4s ", msg->addr, msg->fid, msg->mode, msg->label, msg->no);
 	fprintf(fdout, "%s", txt);
 	fprintf(fdout, "\n");
 	fflush(fdout);
@@ -325,21 +326,16 @@ void outputmsg(const msgblk_t * blk)
 
 	/* ACK/NAK */
 	msg.ack = blk->txt[k];
-	if (msg.ack == 0x15)
-		msg.ack = '!';
 	k++;
 
 	msg.label[0] = blk->txt[k];
 	k++;
 	msg.label[1] = blk->txt[k];
-	if (msg.label[1] == 0x7f)
-		msg.label[1] = 'd';
+	if(msg.label[1]==0x7f) msg.label[1]='d';
 	k++;
 	msg.label[2] = '\0';
 
 	msg.bid = blk->txt[k];
-	if (msg.bid == 0)
-		msg.bid = ' ';
 	k++;
 
 	/* txt start  */
@@ -350,11 +346,11 @@ void outputmsg(const msgblk_t * blk)
 	msg.fid[0] = '\0';
 	msg.txt[0] = '\0';
 
-	if ((msg.bs == 0x03 || msg.mode > 'Z' || msg.bid > '9') && airflt)
+	if ((msg.bs == 0x03 || msg.mode > 'Z') && airflt)
 		return;
 
 	if (msg.bs != 0x03) {
-		if (msg.mode <= 'Z' && msg.bid <= '9') {
+		if (msg.mode <= 'Z') {
 			/* message no */
 			for (i = 0; i < 4 && k < blk->len - 1; i++, k++) {
 				msg.no[i] = blk->txt[k];
