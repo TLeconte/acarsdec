@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Thierry Leconte
+ *  Copyright (c) 2017 Thierry Leconte
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -11,10 +11,6 @@
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Library General Public License for more details.
  *
- *   You should have received a copy of the GNU Library General Public
- *   License along with this library; if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
  */
 #define _GNU_SOURCE
 #include <stdlib.h>
@@ -22,16 +18,12 @@
 #include <math.h>
 #include "acarsdec.h"
 
-const float PLLKa=0.0063;
-const float PLLKb=0.9835;
-
-
 pthread_mutex_t chmtx;
 pthread_cond_t chprcd,chcscd;
 int chmsk,tmsk;
 
-#define FLEN 11
-static float h[FLEN];
+#define FLEN ((INTRATE/1200)+1)
+static float h[2*FLEN];
 
 int initMsk(channel_t * ch)
 {
@@ -46,7 +38,9 @@ int initMsk(channel_t * ch)
 	ch->inb = calloc(FLEN, sizeof(float complex));
 
 	for (i = 0; i < FLEN; i++) {
-		if(ch->chn==0)  h[i] = cosf(2.0*M_PI*600.0/INTRATE*(i-FLEN/2));
+		if(ch->chn==0)  {
+			h[i] = h[i+FLEN]= cosf(2.0*M_PI*600.0/INTRATE*(i-FLEN/2));
+		}
 		ch->inb[i] = 0;
 	}
 
@@ -58,71 +52,94 @@ static inline void putbit(float v, channel_t * ch)
 	ch->outbits >>= 1;
 	if (v > 0) {
 		ch->outbits |= 0x80;
-	}
+	} 
+
 	ch->nbits--;
 	if (ch->nbits <= 0)
 		decodeAcars(ch);
 }
 
+const float PLLC1=4e-8;
+const float PLLC2=3.5e-3;
+
 void demodMSK(channel_t *ch,int len)
 {
    /* MSK demod */
-   float dphi;
-   float p, s, in;
-   int idx=ch->idx;
    int n;
+   int idx=ch->idx;
+   double p=ch->MskPhi;
 
    for(n=0;n<len;n++) {	
-	/* oscilator */
-	p = 1800.0 / INTRATE*2.0*M_PI + ch->MskDf;
-	ch->MskClk += p;
-	p = ch->MskPhi + p;
+   	float in;
+	double s;
+	float complex v;
+	int j,o;
+	float out[4];
+
+	/* VCO */
+	s = 1800.0/INTRATE*2.0*M_PI + ch->MskDf;
+	p+=s;
 	if (p >= 2.0*M_PI) p -= 2.0*M_PI; 
-	ch->MskPhi = p;
-
-	if (ch->MskClk > 3*M_PI/2) {
-		int j;
-		float bit;
-		int sI,sQ;
-		float complex v;
-
-		ch->MskClk -= 3*M_PI/2;
-
-		/* matched filter */
-		for (j = 0, v = 0; j < FLEN; j++) {
-			int k = (idx+j)%FLEN;
-			v += h[j] * ch->inb[k];
-		}
-
-		if(crealf(v)>0) sI=1; else sI=-1;
-		if(cimagf(v)>0) sQ=1; else sQ=-1;
-		dphi=(sI*cimag(v)-sQ*crealf(v))/(cabsf(v)+1e-5);
-
-		if ((ch->MskS & 1) == 0) {
-			if (ch->MskS & 2) bit = crealf(v); else bit = -crealf(v);
-			putbit(bit, ch);
-		} else {
-			if (ch->MskS & 2) bit = -cimagf(v);  else  bit = cimagf(v);
-			putbit(bit, ch);
-		}
-
-
-		ch->MskS = (ch->MskS + 1) & 3;
-
-		/* PLL */
-		dphi *=PLLKa;
-		ch->MskDf -= dphi - PLLKb*ch->Mska;
-		ch->Mska = dphi;
-	}
 
 	/* mixer */
 	in = ch->dm_buffer[n];
-	ch->inb[idx] = in * cexpf(p*I);
-
-	ch->Msklvl = 0.99 * ch->Msklvl + 0.01*in*in;
+	ch->inb[idx] = in * cexp(-p*I);
 	idx=(idx+1)%FLEN;
+
+
+	/* bit clock */
+	ch->MskClk+=s;
+	if (ch->MskClk >=3*M_PI/2.0) {
+		int sI,sQ;
+		double dphi;
+		float vo,lvl;
+
+		ch->MskClk -= 3*M_PI/2.0;
+
+		/* matched filter */
+		o=FLEN-idx;
+		v=0;
+		for (j = 0; j < FLEN; j++,o++) {
+			v += h[o]*ch->inb[j];
+		}
+		/* normalize */
+		lvl=cabsf(v);
+		v/=lvl+1e-6;
+		ch->Msklvl = 0.99 * ch->Msklvl + 0.01*lvl/5.2;
+
+		switch(ch->MskS&3) {
+			case 0:
+				vo=crealf(v);
+				putbit(vo, ch);
+				if(vo>=0) dphi=cimagf(v); else dphi=-cimagf(v);
+				break;
+			case 1:
+				vo=cimagf(v);
+				putbit(vo, ch);
+				if(vo>=0) dphi=-crealf(v); else dphi=crealf(v);
+				break;
+			case 2:
+				vo=crealf(v);
+				putbit(-vo, ch);
+				if(vo>=0) dphi=cimagf(v); else dphi=-cimagf(v);
+				break;
+			case 3:
+				vo=cimagf(v);
+				putbit(-vo, ch);
+				if(vo>=0) dphi=-crealf(v); else dphi=crealf(v);
+				break;
+		}
+		ch->MskS++;
+
+		/* PLL filter */
+		ch->MskDf=PLLC2*dphi+ch->Mska;
+		ch->Mska+=PLLC1*dphi;
+
+	}
     }
+
     ch->idx=idx;
+    ch->MskPhi=p;
 
 }
 
