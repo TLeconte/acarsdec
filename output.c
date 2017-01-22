@@ -177,7 +177,7 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 	fprintf(fdout, "Label : %2s ", msg->label);
 	if(msg->bid) {
 		fprintf(fdout, "Id : %1c ", msg->bid);
-		fprintf(fdout, "Ack : %1c\n", msg->ack==0x15?'N':msg->ack);
+		if(msg->ack==0x15) fprintf(fdout, "Nak\n"); else fprintf(fdout, "Ack : %1c\n", msg->ack);
 		fprintf(fdout, "Aircraft reg: %s ", msg->addr);
 		if(msg->mode <= 'Z') {
 			fprintf(fdout, "Flight id: %s\n", msg->fid);
