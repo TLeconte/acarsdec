@@ -50,7 +50,7 @@ char *logfilename = NULL;
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv 3.3 Copyright (c) 2016 Thierry Leconte \n\n");
+		"Acarsdec/acarsserv 3.4 Copyright (c) 2017 Thierry Leconte \n\n");
 	fprintf(stderr,
 		"Usage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile]");
 #ifdef WITH_ALSA
