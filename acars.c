@@ -11,9 +11,6 @@
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Library General Public License for more details.
  *
- *   You should have received a copy of the GNU Library General Public
- *   License along with this library; if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
 #include <stdlib.h>
@@ -35,27 +32,28 @@ static pthread_mutex_t blkmtx;
 static pthread_cond_t blkwcd;
 static msgblk_t *blkq_s = NULL;
 static msgblk_t *blkq_e = NULL;
-static unsigned char prev_crc[2] = { 0, 0 };
 
 static time_t prev_t = 0;
 
-static int fixerr(msgblk_t * blk, const unsigned short crc, int *pr, int pn)
+static int fixprerr(msgblk_t * blk, const unsigned short crc, int *pr, int pn)
 {
 	int i;
 
 	if (pn > 0) {
+		/* try to recursievly fix parity error */
 		for (i = 0; i < 8; i++) {
-			if (fixerr
-			    (blk, crc ^ syndrom[i + 8 * (blk->len - *pr + 1)],
-			     pr + 1, pn - 1)) {
+			if (fixprerr(blk, crc ^ syndrom[i + 8 * (blk->len - *pr + 1)], pr + 1, pn - 1)) {
 				blk->txt[*pr] ^= (1 << i);
 				return 1;
 			}
 		}
 		return 0;
 	} else {
+		/* end of recursion : no more parity error */
 		if (crc == 0)
 			return 1;
+
+		/* test remainding error in crc */
 		for (i = 0; i < 2 * 8; i++)
 			if (syndrom[i] == crc) {
 				return 1;
@@ -64,7 +62,33 @@ static int fixerr(msgblk_t * blk, const unsigned short crc, int *pr, int pn)
 	}
 }
 
-#define MAXPERR 2
+static int fixdberr(msgblk_t * blk, const unsigned short crc)
+{
+	int i,j,k;
+
+	/* test remainding error in crc */
+	for (i = 0; i < 2 * 8; i++)
+		if (syndrom[i] == crc) {
+			return 1;
+		}
+
+	/* test double error in bytes */
+	for (k = 0; k < blk->len ; k++) {
+	  int bo=8*(blk->len-k+1);
+	  for (i = 0; i < 8; i++)
+	   for (j = 0; j < 8; j++) {
+		   if(i==j) continue;
+		   if((crc^syndrom[i+bo]^syndrom[j+bo])==0) {
+			   blk->txt[k] ^= (1 << i);
+			   blk->txt[k] ^= (1 << j);
+			   return 1;
+		   }
+	   }
+	}
+	return 0;
+}
+
+#define MAXPERR 3
 static void *blk_thread(void *arg)
 {
 	do {
@@ -130,12 +154,28 @@ static void *blk_thread(void *arg)
 			fprintf(stderr, "#%d crc error\n", blk->chn + 1);
 
 		/* try to fix error */
-		if (fixerr(blk, crc, pr, pn) == 0) {
+		if(pn) {
+		  if (fixprerr(blk, crc, pr, pn) == 0) {
 			if (verbose)
-				fprintf(stderr, "#%d not able to fix errors\n",
-					blk->chn + 1);
+				fprintf(stderr, "#%d not able to fix errors\n", blk->chn + 1);
 			free(blk);
 			continue;
+		  }
+			if (verbose)
+				fprintf(stderr, "#%d errors fixed\n", blk->chn + 1);
+		} else {
+		
+
+		  if (crc) {
+			 if(fixdberr(blk, crc) == 0) {
+				if (verbose)
+					fprintf(stderr, "#%d not able to fix errors\n", blk->chn + 1);
+				free(blk);
+				continue;
+		  	}
+		  	if (verbose)
+				fprintf(stderr, "#%d errors fixed\n", blk->chn + 1);
+		  }
 		}
 
 		/* redo parity checking and removing */
@@ -152,18 +192,8 @@ static void *blk_thread(void *arg)
 			free(blk);
 			continue;
 		}
-		if (prev_t == blk->tm &&
-		    prev_crc[0] == blk->crc[0] && prev_crc[1] == blk->crc[1]) {
-			if (verbose)
-				fprintf(stderr, "#%d duplicate %d\n",
-					blk->chn + 1, blk->lvl);
-			free(blk);
-			continue;
-		}
 
 		prev_t = blk->tm;
-		prev_crc[0] = blk->crc[0];
-		prev_crc[1] = blk->crc[1];
 
 		outputmsg(blk);
 
