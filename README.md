@@ -1,18 +1,18 @@
 #ACARSDEC
 Acarsdec is a multi-channels acars decoder with built-in rtl_sdr front end.
-Since 3.0, It comes with a database backend : acarsserv to store receved acars messages.(See acarsserv chapter below).
+Since 3.0, It comes with a database backend : acarsserv to store receved acars messages. (See acarsserv chapter below).
 
 ##Features :
 
  * up to 8 channels decoded simultaneously
  * error detection AND correction
- * input alsa sound card or software defined radio (SRD) via a [rtl dongle](http://sdr.osmocom.org/trac/wiki/rtl-sdr) or [airspy ](http://airspy.com/)
- * could send packet over UDP in planeplotter format or in its own format to acarsserv to store in a sqlite database.
+ * input via alsa sound card, [rtl_sdr](http://sdr.osmocom.org/trac/wiki/rtl-sdr), or [airspy](http://airspy.com/) software defined radios (SDR)
+ * logging data over UDP in planeplotter or acarsserv formats to store in an sqlite database.
 
-The multi channels decoding is particularly useful with the rtl dongle. It allows to directly listen simultaneously to 8 different frequencies , with a very low cost hardware.
+Multi-channel decoding is particularly useful with the RTL dongle. It allows the user to directly monitor 8 different frequencies simultaneously with very low cost hardware.
 
 ##Usage
-> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N ipaddr:port] [i- stationid] [-l logfile]  -a alsapcmdevice  |   -r rtldevicenumber  f1 [f2] [f....] | -s f1 [f2] [f....]
+> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N ipaddr:port] [-i stationid] [-l logfile]  -a alsapcmdevice  |   -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
 
  -v :			verbose
  
@@ -20,7 +20,7 @@ The multi channels decoding is particularly useful with the rtl dongle. It allow
  
  -o lv :		output format : 0: no log, 1 one line by msg., 2 full (default), 3 monitor mode
  
- -t time :		set forget time in secondes in monitor mode(default=600s)
+ -t time :		set forget time (TTL) in seconds in monitor mode(default=600s)
  
  -l logfile :		Append log messages to logfile (Default : stdout)
  
@@ -32,13 +32,13 @@ The multi channels decoding is particularly useful with the rtl dongle. It allow
 
  -a alsapcmdevice :	decode from soundcard input alsapcmdevice (ie: hw:0,0)
 
- -r rtldevice f1 [f2] ... [f8] :		decode from rtl dongle number or S/N "rtldevice" receiving at VHF frequencies "f1" and optionaly "f2" to "f8" in Mhz (ie : -r 0 131.525 131.725 131.825 ). Frequencies must be in the SAME TWO MHZ.
+ -r rtldevice f1 [f2] ... [fN] :		decode from rtl dongle number or S/N "rtldevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -r 0 131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
  
  -g gain :		set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use maximum gain
  
  -p ppm :		set rtl ppm frequency correction
 
- -s f1 [f2] ... [f8] :		decode from airspy receiving at VHF frequencies "f1" and optionaly "f2" to "f8" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be in the same two Megahertz.
+ -s f1 [f2] ... [fN] :		decode from airspy receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
 
 
 ##Examples
@@ -50,7 +50,7 @@ Decoding from rtl dongle number 0 on 3 frequencies , sending aircraft messages o
 and no other loging :
 > acarsdec -A -N 192.168.1.1:5555 -o0 -r 0 131.525 131.725 131.825
 
-Decoding from airspy on 3 frequecies with verbose  logging
+Decoding from airspy on 3 frequencies with verbose logging
 > acarsdec -s 131.525 131.725 131.825
 
 Decoding from sound file test.wav (included) :
@@ -100,10 +100,10 @@ Decoding from sound file test.wav (included) :
 
 ##Compilation
 acarsdec must compile directly on any modern Linux distrib.
-It has been tested on x86_64 with fedora 19-25 and on RaspberryPI (only rtl source tested)
+It has been tested on x86_64 with fedora 19-25, Ubuntu 16, and on RaspberryPI (only RTL source tested)
 
-It depends of some external libraries :
- * libasound  for sound card input (rpm package alsa-lib-devel on fedora)
+It depends on some external libraries :
+ * libasound for sound card input (rpm package alsa-lib-devel on fedora)
  * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  * libairspy for airspy software radio input 
 
@@ -112,20 +112,20 @@ Ie for rtl decoding only :
 > CFLAGS= -Ofast -D WITH_RTL -pthread
 > LDLIBS= -lm -pthread -lrtlsdr
 
-Note : change compiler options to your hardware, particularly on arm platform -ffast-math -march -mfloat-abi -mtune -mfpu must be set correctly.
-See exemples in Makefile
+Note : change compiler options to suit your hardware, particularly on ARM platform -ffast-math -march -mfloat-abi -mtune -mfpu must be set correctly.
+Consult your processor's datasheets for details about your FPU (NEON, VFP, single or double precision vectorization); there are examples in Makefile.
 
 
 #Acarsserv
 
-acarsserv is a companion program for acarsdec. It listens to acars messages on UDP coming from one or more acarsdec processes and store them in a sqlite database.
+acarsserv is a companion program for acarsdec. It listens to acars messages on UDP coming from one or more acarsdec processes and stores them in a sqlite database.
 
 To compile it, just type : 
 > make acarsserv
 
-acarsserv need sqlite3 dev libraries (on Fedora : sqlite-devel rpm).
+acarsserv need sqlite3 dev libraries (on Fedora : sqlite-devel rpm, on Ubuntu : libsqlite3-dev ).
 
-By default, it listens to any adresses on port 5555.
+By default, it listens to any addresses on port 5555.
 So running : 
 > acarserv &
 
@@ -138,6 +138,6 @@ Then run (possibly on an other computer) :
 acarsserv will create by default an acarsserv.sqb database file where it will store received messages.
 You could read its content with sqlite3 command (or more sophisticated graphical interfaces).
 
-acarsserv have some messages filtering and network options (UTSL).
+acarsserv has some messages filtering and network options (UTSL).
 
 

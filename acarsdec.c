@@ -61,7 +61,7 @@ static void usage(void)
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
-		" [-g gain] [-p ppm] -r rtldevicenumber  f1 [f2] ... [f4]");
+		" [-g gain] [-p ppm] -r rtldevicenumber  f1 [f2] ... [fN]");
 #endif
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
@@ -70,13 +70,13 @@ static void usage(void)
 	fprintf(stderr,
 		"\n -o lv\t\t\t: output format : 0: no log, 1 one line by msg., 2 full (default) , 3 monitor mode\n");
 	fprintf(stderr,
-		"\n -t time\t\t\t: set forget time in s for monitor mode (default=600s)\n");
+		"\n -t time\t\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
 	fprintf(stderr,
 		" -l logfile\t\t: Append log messages to logfile (Default : stdout).\n");
 	fprintf(stderr,
 		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n");
 	fprintf(stderr,
-		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdev nativ format\n");
+		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdev native format\n");
 	fprintf(stderr,
 		" -i stationid\t\t: station id used in acarsdec network format.\n\n");
 #ifdef WITH_ALSA
@@ -92,14 +92,14 @@ static void usage(void)
 		" -g gain\t\t: set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use AGC\n");
 	fprintf(stderr, " -p ppm\t\t\t: set rtl ppm frequency correction\n");
 	fprintf(stderr,
-		" -r rtldevice f1 [f2]...[f4]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionaly f2 to f4 in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
+		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
-		" -s f1 [f2]...[f4]\t: decode from airspy receiving at VHF frequencies f1 and optionaly f2 to f4 in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
+		" -s f1 [f2]...[f%d]\t: decode from airspy receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNEL, MAXNBCHANNELSS);
 #endif
 	fprintf(stderr,
-		"\nFor any input source , up to %d channels  could be simultanously decoded\n",MAXNBCHANNELS);
+		"\nFor any input source, up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
 	exit(1);
 }
 
