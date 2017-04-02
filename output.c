@@ -191,6 +191,124 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 	fflush(fdout);
 }
 
+static void printbinarystringasjson(unsigned char* start,unsigned char* end)
+{
+	unsigned char* pos;
+	char special=0;
+	for (pos=start;pos<end;pos++)
+	{
+		unsigned char ch=*pos;
+		if (ch==0) {
+			end=pos;
+			break;
+		}
+		else {
+			switch (ch)
+			{
+			case '\\':
+			case '/':
+			case '\b':
+			case '\f':
+			case '\n':
+			case '\r':
+			case '\t':
+				break;
+			default:
+				if ((ch<32)||(ch>=127))
+				{
+					special=1;
+				}
+				break;
+			}
+		}
+	}
+	if (special)
+	{
+		fprintf(fdout, "[");
+		for (pos=start;pos<end;pos++)
+		{
+			if (pos!=start) fprintf(fdout, ",");
+			fprintf(fdout, "%d",*pos);
+		}
+		fprintf(fdout, "]");
+	}
+	else
+	{
+		fprintf(fdout, "\"");
+		for (pos=start;pos<end;pos++)
+		{
+			unsigned char ch=*pos;
+			switch (ch)
+			{
+			case '\\':
+				fprintf(fdout, "\\\\");
+				break;
+			case '/':
+				fprintf(fdout, "\\/");
+				break;
+			case '\b':
+				fprintf(fdout, "\\b");
+				break;
+			case '\f':
+				fprintf(fdout, "\\f");
+				break;
+			case '\n':
+				fprintf(fdout, "\\n");
+				break;
+			case '\r':
+				fprintf(fdout, "\\r");
+				break;
+			case '\t':
+				fprintf(fdout, "\\t");
+				break;
+			default:
+				fprintf(fdout, "%c", ch);
+				break;
+			}
+		}
+		fprintf(fdout, "\"");
+	}
+}
+
+#define PRINTC(X) printbinarystringasjson(&(X),&(X)+1)
+#define PRINTS(X) printbinarystringasjson(&(X)[0],&(X)[0]+sizeof(X))
+
+static void printjson(acarsmsg_t * msg, int chn, time_t t)
+{
+	fprintf(fdout,"{\"timestamp\":%lf,\"channel\":%d,\"level\":%d,\"error\":%d", (double)t, chn, msg->lvl, msg->err);
+	fprintf(fdout,",\"mode\":");
+	PRINTC(msg->mode);
+	fprintf(fdout,",\"label\":");
+	PRINTS(msg->label);
+	if(msg->bid) {
+		fprintf(fdout, ",\"block_id\":");
+		PRINTC(msg->bid);
+		fprintf(fdout, ",\"ack\":");
+		if(msg->ack==0x15) {
+			fprintf(fdout, "false");
+		} else {
+			PRINTC(msg->ack);
+		}
+		fprintf(fdout, ",\"tail\":");
+		PRINTS(msg->addr);
+		if(msg->mode <= 'Z') {
+			fprintf(fdout, ",\"flight\":");
+			PRINTS(msg->fid);
+			fprintf(fdout, ",\"msgno\":");
+			PRINTS(msg->no);
+		}
+	}
+	fprintf(fdout, ",\"text\":");
+	PRINTS(msg->txt);
+	if (msg->be == 0x17)
+		fprintf(fdout, ",\"end\":true");
+	fprintf(fdout,"}\n");
+	fflush(fdout);
+}
+
+#undef PRINTC
+#undef PRINTS
+
 static void printoneline(acarsmsg_t * msg, int chn, time_t t)
 {
 	char txt[30];
@@ -394,6 +512,9 @@ void outputmsg(const msgblk_t * blk)
 		break;
 	case 3:
 		printmonitor(&msg, blk->chn, blk->tm);
+		break;
+	case 4:
+		printjson(&msg, blk->chn, blk->tm);
 		break;
 	}
 }
