@@ -33,8 +33,6 @@ static pthread_cond_t blkwcd;
 static msgblk_t *blkq_s = NULL;
 static msgblk_t *blkq_e = NULL;
 
-static time_t prev_t = 0;
-
 static int fixprerr(msgblk_t * blk, const unsigned short crc, int *pr, int pn)
 {
 	int i;
@@ -192,8 +190,6 @@ static void *blk_thread(void *arg)
 			free(blk);
 			continue;
 		}
-
-		prev_t = blk->tm;
 
 		outputmsg(blk);
 
