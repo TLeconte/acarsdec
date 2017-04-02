@@ -60,6 +60,12 @@ typedef struct {
 	enum { WSYN, SYN2, SOH1, TXT, CRC1,CRC2, END } Acarsstate;
 	msgblk_t *blk;
 
+	pthread_mutex_t blkmtx;
+	pthread_cond_t blkwcd;
+	msgblk_t *blkq_s;
+	msgblk_t *blkq_e;
+	pthread_t th;
+	char acars_shutdown;
 } channel_t;
 
 extern channel_t channel[MAXNBCHANNELS];
@@ -105,6 +111,7 @@ extern void demodMSK(channel_t *ch,int len);
 
 extern int  initAcars(channel_t *);
 extern void decodeAcars(channel_t *);
+extern int  deinitAcars(channel_t *);
 
 extern void outputmsg(const msgblk_t*);
 extern void cls(void);
