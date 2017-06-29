@@ -350,7 +350,7 @@ void outputmsg(const msgblk_t * blk)
 		return;
 
 	if (msg.bs != 0x03) {
-		if (msg.mode <= 'Z') {
+		if (msg.mode <= 'Z' && msg.bid <= '9') {
 			/* message no */
 			for (i = 0; i < 4 && k < blk->len - 1; i++, k++) {
 				msg.no[i] = blk->txt[k];
