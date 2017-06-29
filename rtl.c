@@ -134,7 +134,7 @@ static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
 	} while (ne);
 
 	if ((Fd[nbch - 1] - Fd[0]) > RTLINRATE - 4 * INTRATE) {
-		fprintf(stderr, "Frequencies to far apart\n");
+		fprintf(stderr, "Frequencies too far apart\n");
 		return -1;
 	}
 
@@ -228,11 +228,11 @@ int initRtl(char **argv, int optind)
 	};
 	if (nbch >= MAXNBCHANNELS)
 		fprintf(stderr,
-			"WARNING: too much frequencies, taking only the %d firsts\n",
+			"WARNING: too many frequencies, using only the first %d\n",
 			MAXNBCHANNELS);
 
 	if (nbch == 0) {
-		fprintf(stderr, "Need a least one  frequencies\n");
+		fprintf(stderr, "Need a least one frequency\n");
 		return 1;
 	}
 
