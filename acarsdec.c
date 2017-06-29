@@ -256,6 +256,9 @@ int main(int argc, char **argv)
 		res = -1;
 	}
 
+	for (n = 0; n < nbch; n++)
+		deinitAcars(&(channel[n]));
+
 	exit(res);
 
 }
