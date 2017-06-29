@@ -184,7 +184,7 @@ int initRtl(char **argv, int optind)
 	int dev_index;
 	char *argF;
 	unsigned int Fc;
-	unsigned int Fd[4];
+	unsigned int Fd[MAXNBCHANNELS];
 
 	if (argv[optind] == NULL) {
 		fprintf(stderr, "Need device name or index (ex: 0) after -r\n");
