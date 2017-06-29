@@ -97,11 +97,10 @@ static void processpkt(acarsmsg_t * msg, char *ipaddr)
 	int lm;
 
 	pr = strtok(msg->reg, " ");
-	pf = strtok(msg->fid, " ");
 	strtok(msg->no, " ");
 
 	lm = 0;
-	if (msg->mode < 0x5d && pr && pf)
+	if (msg->mode < 0x5d && pr)
 		lm = 1;
 
 	if ((lm || station) &&
