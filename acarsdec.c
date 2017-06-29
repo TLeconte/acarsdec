@@ -96,7 +96,7 @@ static void usage(void)
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
-		" -s f1 [f2]...[f%d]\t: decode from airspy receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNEL, MAXNBCHANNELSS);
+		" -s f1 [f2]...[f%d]\t: decode from airspy receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 	fprintf(stderr,
 		"\nFor any input source, up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
