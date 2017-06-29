@@ -1,14 +1,14 @@
 # See README for compiler options
-CFLAGS= -Ofast  -pthread -D WITH_RTL -D WITH_ALSA -D WITH_SNDFILE
-LDLIBS= -lm -pthread  -lrtlsdr -lasound -lsndfile 
+CFLAGS= -Ofast  -pthread -D WITH_RTL -D WITH_ALSA -D WITH_SNDFILE `pkg-config --cflags librtlsdr`
+LDLIBS= -lm -pthread  -lasound -lsndfile `pkg-config --libs librtlsdr`
 
 # Airspy conf 
 # CFLAGS= -Ofast -pthread -D WITH_AIR -I.  `pkg-config --cflags libairspy`
 # LDLIBS= -lm -pthread  `pkg-config --libs libairspy` -lusb-1.0
 
 # RTL only conf
-#CFLAGS= -Ofast -pthread -D WITH_RTL -I. 
-#LDLIBS= -lm -pthread   -lrtlsdr
+#CFLAGS= -Ofast -pthread -D WITH_RTL -I.  `pkg-config --cflags librtlsdr`
+#LDLIBS= -lm -pthread   -lrtlsdr `pkg-config --libs librtlsdr`
 
 acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o soundfile.o
 	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o soundfile.o -o $@ $(LDLIBS)
