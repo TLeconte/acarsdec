@@ -154,9 +154,11 @@ int main(int argc, char **argv)
 			inmode = 4;
 			break;
 #endif
+#ifdef WITH_RTL
 		case 'g':
 			gain = atoi(optarg);
 			break;
+#endif
 		case 'n':
 			Rawaddr = optarg;
 			netout = 0;
