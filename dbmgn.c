@@ -88,7 +88,7 @@ static sqlite3_int64 updatedb_st(char *ipaddr, char *idst, sqlite3_int64 * sidp)
 
 	res = sqlite3_reset(stm[TSELST]);
 	if (res != SQLITE_OK) {
-		fprintf(stderr, "Failed to reset %s\n");
+		fprintf(stderr, "Failed to reset %d\n", res);
 		return 0;
 	}
 
@@ -113,7 +113,7 @@ static sqlite3_int64 updatedb_st(char *ipaddr, char *idst, sqlite3_int64 * sidp)
 
 		res = sqlite3_reset(stm[TINSST]);
 		if (res != SQLITE_OK) {
-			fprintf(stderr, "Failed to reset %s\n");
+			fprintf(stderr, "Failed to reset %d\n", res);
 			return 0;
 		}
 
@@ -164,7 +164,7 @@ static sqlite3_int64 updatedb_fl(char *reg, char *fnum, time_t tm,
 
 	res = sqlite3_reset(stm[TSELFLG]);
 	if (res != SQLITE_OK) {
-		fprintf(stderr, "Failed to reset %s\n");
+		fprintf(stderr, "Failed to reset %d\n", res);
 		return 0;
 	}
 
@@ -194,7 +194,7 @@ static sqlite3_int64 updatedb_fl(char *reg, char *fnum, time_t tm,
 
 		res = sqlite3_reset(stm[TINSFLG]);
 		if (res != SQLITE_OK) {
-			fprintf(stderr, "Failed to reset %s\n");
+			fprintf(stderr, "Failed to reset %d\n", res);
 			return 0;
 		}
 
@@ -230,7 +230,7 @@ static sqlite3_int64 updatedb_fl(char *reg, char *fnum, time_t tm,
 
 		res = sqlite3_reset(stm[TUPFLG]);
 		if (res != SQLITE_OK) {
-			fprintf(stderr, "Failed to reset %s\n");
+			fprintf(stderr, "Failed to reset %d\n", res);
 			return 0;
 		}
 
@@ -269,7 +269,7 @@ static int updatedb_ms(acarsmsg_t * msg, sqlite3_int64 fid, sqlite3_int64 sid,
 	if ((lm & 4) == 0 && fid != 0) {
 		res = sqlite3_reset(stm[TSELMSG]);
 		if (res != SQLITE_OK) {
-			fprintf(stderr, "Failed to reset %s\n");
+			fprintf(stderr, "Failed to reset %d\n", res);
 			return 0;
 		}
 
@@ -294,7 +294,7 @@ static int updatedb_ms(acarsmsg_t * msg, sqlite3_int64 fid, sqlite3_int64 sid,
 
 		res = sqlite3_reset(stm[TINSMSG]);
 		if (res != SQLITE_OK) {
-			fprintf(stderr, "Failed to reset %s\n");
+			fprintf(stderr, "Failed to reset %d\n", res);
 			return 0;
 		}
 
