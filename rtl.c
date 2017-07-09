@@ -321,7 +321,7 @@ int runRtlSample(void)
 	int r;
 
 	status = 1;
-	r = rtlsdr_read_async(dev, in_callback, NULL, 32, RTLINBUFSZ);
+	r = rtlsdr_read_async(dev, in_callback, NULL, 8, RTLINBUFSZ);
 	if (r) {
 		fprintf(stderr, "Read async %d\n", r);
 	}
