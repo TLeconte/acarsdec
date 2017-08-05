@@ -10,8 +10,8 @@ LDLIBS= -lm -pthread  -lasound -lsndfile `pkg-config --libs librtlsdr`
 #CFLAGS= -Ofast -pthread -D WITH_RTL -I.  `pkg-config --cflags librtlsdr`
 #LDLIBS= -lm -pthread   -lrtlsdr `pkg-config --libs librtlsdr`
 
-acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o soundfile.o
-	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o soundfile.o -o $@ $(LDLIBS)
+acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o soundfile.o raw.o
+	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o alsa.o soundfile.o raw.o -o $@ $(LDLIBS)
 
 acarsserv:	acarsserv.o dbmgn.o
 	$(CC) -Ofast acarsserv.o dbmgn.o -o $@ -lsqlite3

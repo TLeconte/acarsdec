@@ -63,6 +63,7 @@ static void usage(void)
 	fprintf(stderr,
 		" [-g gain] [-p ppm] -r rtldevicenumber  f1 [f2] ... [fN]");
 #endif
+	fprintf(stderr, " -R < /stdin@%d:1channel:float32native  |",INTRATE);
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
 	fprintf(stderr,
@@ -94,6 +95,8 @@ static void usage(void)
 	fprintf(stderr,
 		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
+	fprintf(stderr,
+		" -R \t: decode from stdin at %d sampling rate, 1 channel, native float32\n",INTRATE);
 #ifdef WITH_AIR
 	fprintf(stderr,
 		" -s f1 [f2]...[f%d]\t: decode from airspy receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNEL, MAXNBCHANNELSS);
@@ -115,7 +118,7 @@ int main(int argc, char **argv)
 	int res, n;
 	struct sigaction sigact;
 
-	while ((c = getopt(argc, argv, "vafrso:t:g:Ap:n:N:l:c:i:f:")) != EOF) {
+	while ((c = getopt(argc, argv, "vafrsRo:t:g:Ap:n:N:l:c:i:f:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -147,6 +150,9 @@ int main(int argc, char **argv)
 		case 'p':
 			ppm = atoi(optarg);
 			break;
+    case 'g':
+			gain = atoi(optarg);
+			break;
 #endif
 #ifdef WITH_AIR
 		case 's':
@@ -154,11 +160,10 @@ int main(int argc, char **argv)
 			inmode = 4;
 			break;
 #endif
-#ifdef WITH_RTL
-		case 'g':
-			gain = atoi(optarg);
+		case 'R':
+			res = initRaw(argv, optind);
+			inmode = 5;
 			break;
-#endif
 		case 'n':
 			Rawaddr = optarg;
 			netout = 0;
@@ -183,7 +188,7 @@ int main(int argc, char **argv)
 	}
 
 	if (inmode == 0) {
-		fprintf(stderr, "Need at least one of -a|-f|-r options\n");
+		fprintf(stderr, "Need at least one of -a|-f|-r|-R options\n");
 		usage();
 	}
 
@@ -252,6 +257,9 @@ int main(int argc, char **argv)
 		res = runAirspySample();
 		break;
 #endif
+	case 5:
+		res = runRawSample();
+		break;
 	default:
 		res = -1;
 	}

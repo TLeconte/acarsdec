@@ -105,6 +105,8 @@ extern int runRtlSample(void);
 extern int initAirspy(char **argv,int optind);
 extern int runAirspySample(void);
 #endif
+extern int initRaw(char **argv,int optind);
+extern int runRawSample(void);
 extern int  initMsk(channel_t *);
 extern void demodMSK(channel_t *ch,int len);
 
