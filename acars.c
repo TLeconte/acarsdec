@@ -28,13 +28,6 @@
 
 #include "syndrom.h"
 
-static pthread_mutex_t blkmtx;
-static pthread_cond_t blkwcd;
-static msgblk_t *blkq_s = NULL;
-static msgblk_t *blkq_e = NULL;
-
-static time_t prev_t = 0;
-
 static int fixprerr(msgblk_t * blk, const unsigned short crc, int *pr, int pn)
 {
 	int i;
@@ -91,21 +84,26 @@ static int fixdberr(msgblk_t * blk, const unsigned short crc)
 #define MAXPERR 3
 static void *blk_thread(void *arg)
 {
+	channel_t* ch = (channel_t*)arg;
 	do {
 		msgblk_t *blk;
 		int i, pn;
 		unsigned short crc;
 		int pr[MAXPERR];
 
-		pthread_mutex_lock(&blkmtx);
-		while (blkq_e == NULL)
-			pthread_cond_wait(&blkwcd, &blkmtx);
+		pthread_mutex_lock(&ch->blkmtx);
+		while ((ch->blkq_e == NULL)&&!ch->acars_shutdown)
+			pthread_cond_wait(&ch->blkwcd, &ch->blkmtx);
 
-		blk = blkq_e;
-		blkq_e = blk->prev;
-		if (blkq_e == NULL)
-			blkq_s = NULL;
-		pthread_mutex_unlock(&blkmtx);
+		if (ch->acars_shutdown) {
+			pthread_mutex_unlock(&ch->blkmtx);
+			break;
+		}
+		blk = ch->blkq_e;
+		ch->blkq_e = blk->prev;
+		if (ch->blkq_e == NULL)
+			ch->blkq_s = NULL;
+		pthread_mutex_unlock(&ch->blkmtx);
 
 		if (blk->len < 13) {
 			if (verbose)
@@ -193,8 +191,6 @@ static void *blk_thread(void *arg)
 			continue;
 		}
 
-		prev_t = blk->tm;
-
 		outputmsg(blk);
 
 		free(blk);
@@ -205,19 +201,21 @@ static void *blk_thread(void *arg)
 
 int initAcars(channel_t * ch)
 {
-	pthread_t th;
-
 	ch->outbits = 0;
 	ch->nbits = 8;
 	ch->Acarsstate = WSYN;
 
+	ch->blkq_s = NULL;
+	ch->blkq_e = NULL;
+	ch->acars_shutdown = 0;
+
 	ch->blk = malloc(sizeof(msgblk_t));
 	ch->blk->chn = ch->chn;
 
-	pthread_mutex_init(&blkmtx, NULL);
-	pthread_cond_init(&blkwcd, NULL);
+	pthread_mutex_init(&ch->blkmtx, NULL);
+	pthread_cond_init(&ch->blkwcd, NULL);
 
-	pthread_create(&th, NULL, blk_thread, NULL);
+	pthread_create(&ch->th, NULL, blk_thread, ch);
 
 	return 0;
 }
@@ -327,15 +325,15 @@ void decodeAcars(channel_t * ch)
  putmsg_lbl:
 		ch->blk->lvl = 10*log10(ch->Msklvl);
 
-		pthread_mutex_lock(&blkmtx);
+		pthread_mutex_lock(&ch->blkmtx);
 		ch->blk->prev = NULL;
-		if (blkq_s)
-			blkq_s->prev = ch->blk;
-		blkq_s = ch->blk;
-		if (blkq_e == NULL)
-			blkq_e = blkq_s;
-		pthread_cond_signal(&blkwcd);
-		pthread_mutex_unlock(&blkmtx);
+		if (ch->blkq_s)
+			ch->blkq_s->prev = ch->blk;
+		ch->blkq_s = ch->blk;
+		if (ch->blkq_e == NULL)
+			ch->blkq_e = ch->blkq_s;
+		pthread_cond_signal(&ch->blkwcd);
+		pthread_mutex_unlock(&ch->blkmtx);
 
 		ch->blk = malloc(sizeof(msgblk_t));
 		ch->blk->chn = ch->chn;
@@ -349,4 +347,17 @@ void decodeAcars(channel_t * ch)
 		ch->nbits = 8;
 		return;
 	}
+}
+
+
+int deinitAcars(channel_t * ch)
+{
+	pthread_mutex_lock(&ch->blkmtx);
+	ch->acars_shutdown = 1;
+	pthread_cond_signal(&ch->blkwcd);
+	pthread_mutex_unlock(&ch->blkmtx);
+
+	pthread_join(ch->th, NULL);
+
+	return 0;
 }

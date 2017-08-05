@@ -148,7 +148,7 @@ static void usage(void)
 	fprintf(stderr,
 		"	-b filepath	: use filepath as sqlite3 database file (default : ./acaraserv.sqb)\n");
 	fprintf(stderr,
-		"	-N address:port : listen on given addresse:port (default : *:5555)\n");
+		"	-N address:port : listen on given address:port (default : *:5555)\n");
 	fprintf(stderr,
 		"	-s		: store acars messages comming from base station (default : don't store )\n");
 	fprintf(stderr,

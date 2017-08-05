@@ -27,7 +27,12 @@
 #include <rtl-sdr.h>
 #include "acarsdec.h"
 
-#define RTLMULT 200
+// set the sameple rate by changing RTMULT
+// 2.5Ms/s is the best but could be over limit for some hardware
+// 2.0Ms/s is safer
+//#define RTLMULT 160	// 2.0000 Ms/s
+//#define RTLMULT 192	// 2.4000 Ms/s
+#define RTLMULT 200   // 2.5000 Ms/s
 #define RTLINRATE (INTRATE*RTLMULT)
 
 static rtlsdr_dev_t *dev = NULL;
@@ -134,8 +139,8 @@ static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
 	} while (ne);
 
 	if ((Fd[nbch - 1] - Fd[0]) > RTLINRATE - 4 * INTRATE) {
-		fprintf(stderr, "Frequencies to far apart\n");
-		return -1;
+		fprintf(stderr, "Frequencies too far apart\n");
+		return 0;
 	}
 
 	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
@@ -184,7 +189,7 @@ int initRtl(char **argv, int optind)
 	int dev_index;
 	char *argF;
 	unsigned int Fc;
-	unsigned int Fd[4];
+	unsigned int Fd[MAXNBCHANNELS];
 
 	if (argv[optind] == NULL) {
 		fprintf(stderr, "Need device name or index (ex: 0) after -r\n");
@@ -228,11 +233,11 @@ int initRtl(char **argv, int optind)
 	};
 	if (nbch >= MAXNBCHANNELS)
 		fprintf(stderr,
-			"WARNING: too much frequencies, taking only the %d firsts\n",
+			"WARNING: too many frequencies, using only the first %d\n",
 			MAXNBCHANNELS);
 
 	if (nbch == 0) {
-		fprintf(stderr, "Need a least one  frequencies\n");
+		fprintf(stderr, "Need a least one frequency\n");
 		return 1;
 	}
 
@@ -321,7 +326,7 @@ int runRtlSample(void)
 	int r;
 
 	status = 1;
-	r = rtlsdr_read_async(dev, in_callback, NULL, 32, RTLINBUFSZ);
+	r = rtlsdr_read_async(dev, in_callback, NULL, 8, RTLINBUFSZ);
 	if (r) {
 		fprintf(stderr, "Read async %d\n", r);
 	}

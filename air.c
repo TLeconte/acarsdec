@@ -67,11 +67,11 @@ int initAirspy(char **argv, int optind)
 	};
 	if (nbch > MAXNBCHANNELS)
 		fprintf(stderr,
-			"WARNING: too much frequencies, taking only the %d firsts\n",
+			"WARNING: too many frequencies, taking only the first %d\n",
 			MAXNBCHANNELS);
 
 	if (nbch == 0) {
-		fprintf(stderr, "Need a least one  frequencies\n");
+		fprintf(stderr, "Need a least one frequency\n");
 		return 1;
 	}
 
