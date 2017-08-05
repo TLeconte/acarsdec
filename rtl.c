@@ -135,7 +135,7 @@ static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
 
 	if ((Fd[nbch - 1] - Fd[0]) > RTLINRATE - 4 * INTRATE) {
 		fprintf(stderr, "Frequencies too far apart\n");
-		return -1;
+		return 0;
 	}
 
 	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
