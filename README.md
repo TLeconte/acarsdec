@@ -112,8 +112,9 @@ Ie for rtl decoding only :
 > CFLAGS= -Ofast -D WITH_RTL -pthread
 > LDLIBS= -lm -pthread -lrtlsdr
 
-Note : change compiler options to suit your hardware, particularly on ARM platform -ffast-math -march -mfloat-abi -mtune -mfpu must be set correctly.
-Consult your processor's datasheets for details about your FPU (NEON, VFP, single or double precision vectorization); there are examples in Makefile.
+Notes : 
+ * change compiler options to suit your hardware, particularly on ARM platform -ffast-math -march -mfloat-abi -mtune -mfpu must be set correctly.
+ * You could change the sample rate by changing RTLMULT in rtl.c. For rtl sdr default is 2.5Ms/s which is the best but could be over the limits of some hardware. Lowering sample rate will decrease CPU usage too. 
 
 
 # Acarsserv
