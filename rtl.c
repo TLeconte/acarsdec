@@ -231,7 +231,7 @@ int initRtl(char **argv, int optind)
 		channel[nbch].Fr = (float)Fd[nbch];
 		nbch++;
 	};
-	if (nbch >= MAXNBCHANNELS)
+	if (nbch > MAXNBCHANNELS)
 		fprintf(stderr,
 			"WARNING: too many frequencies, using only the first %d\n",
 			MAXNBCHANNELS);
