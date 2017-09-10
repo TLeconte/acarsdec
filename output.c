@@ -355,12 +355,14 @@ struct flight_s {
 	time_t ts,tl;
 	int chm;
 	int nbm;
+	oooi_t oooi;
 };
 static flight_t  *flight_head=NULL;
 
 static void addFlight(acarsmsg_t * msg, int chn, time_t t)
 {
 	flight_t *fl,*flp;
+	oooi_t oooi;
 
 	fl=flight_head;
 	flp=NULL;
@@ -371,17 +373,28 @@ static void addFlight(acarsmsg_t * msg, int chn, time_t t)
 	}
 
 	if(fl==NULL) {
-		fl=malloc(sizeof(flight_t));
+		fl=calloc(1,sizeof(flight_t));
+		strncpy(fl->addr,msg->addr,8);
 		fl->nbm=0;
 		fl->ts=t;
 		fl->chm=0;
-		strncpy(fl->addr,msg->addr,8);
-		strncpy(fl->fid,msg->fid,7);
 		fl->next=NULL;
 	}
+
+	strncpy(fl->fid,msg->fid,7);
 	fl->tl=t;
 	fl->chm|=(1<<chn);
 	fl->nbm+=1;
+
+	if(DecodeLabel(msg,&oooi)) {
+		if(oooi.da[0]) memcpy(fl->oooi.da,oooi.da,5);
+        	if(oooi.sa[0]) memcpy(fl->oooi.sa,oooi.sa,5);
+        	if(oooi.eta[0]) memcpy(fl->oooi.eta,oooi.eta,5);
+        	if(oooi.gout[0]) memcpy(fl->oooi.gout,oooi.gout,5);
+        	if(oooi.gin[0]) memcpy(fl->oooi.gin,oooi.gin,5);
+        	if(oooi.woff[0]) memcpy(fl->oooi.woff,oooi.woff,5);
+        	if(oooi.won[0]) memcpy(fl->oooi.won,oooi.won,5);
+	}
 
 	if(flp) {
 		flp->next=fl->next;
@@ -421,7 +434,7 @@ static void printmonitor(acarsmsg_t * msg, int chn, time_t t)
 	cls();
 
 	printf("             Acarsdec monitor\n");
-	printf(" Aircraft Flight  Nb Channels   Last     First\n");
+	printf(" Aircraft Flight  Nb Channels  First    ETA   DEP  ARR\n");
 
 	fl=flight_head;
 	while(fl) {
@@ -430,8 +443,10 @@ static void printmonitor(acarsmsg_t * msg, int chn, time_t t)
 		printf("%8s %7s %3d ", fl->addr, fl->fid,fl->nbm);
 		for(i=0;i<nbch;i++) printf("%c",(fl->chm&(1<<i))?'x':'.');
 		for(;i<MAXNBCHANNELS;i++) printf(" ");
-		printf(" ");printtime(fl->tl);
 		printf(" ");printtime(fl->ts);
+        	if(fl->oooi.eta[0]) printf("  %4s ",fl->oooi.eta); else printf("      ");
+        	if(fl->oooi.sa[0]) printf("  %4s ",fl->oooi.sa); else printf("      ");
+		if(fl->oooi.da[0]) printf("  %4s ",fl->oooi.da); else printf("      ");
 		printf("\n");
 
 		fl=fl->next;
