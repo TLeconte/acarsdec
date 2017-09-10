@@ -68,6 +68,29 @@ typedef struct {
 	char acars_shutdown;
 } channel_t;
 
+typedef struct {
+        char da[5];
+        char sa[5];
+        char eta[5];
+        char gout[5];
+        char gin[5];
+        char woff[5];
+        char won[5];
+} oooi_t;
+
+typedef struct {
+        unsigned char mode;
+        unsigned char addr[8];
+        unsigned char ack;
+        unsigned char label[3];
+        unsigned char bid;
+        unsigned char no[5];
+        unsigned char fid[7];
+        unsigned char bs, be;
+        unsigned char txt[250];
+        int err, lvl;
+} acarsmsg_t;
+
 extern channel_t channel[MAXNBCHANNELS];
 extern unsigned int  nbch;
 extern unsigned long wrktot;
@@ -114,6 +137,8 @@ extern void demodMSK(channel_t *ch,int len);
 extern int  initAcars(channel_t *);
 extern void decodeAcars(channel_t *);
 extern int  deinitAcars(channel_t *);
+
+extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 
 extern void outputmsg(const msgblk_t*);
 extern void cls(void);

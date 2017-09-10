@@ -10,19 +10,6 @@
 
 extern int inmode;
 
-typedef struct {
-	unsigned char mode;
-	unsigned char addr[8];
-	unsigned char ack;
-	unsigned char label[3];
-	unsigned char bid;
-	unsigned char no[5];
-	unsigned char fid[7];
-	unsigned char bs, be;
-	unsigned char txt[250];
-	int err, lvl;
-} acarsmsg_t;
-
 static int sockfd = -1;
 static FILE *fdout;
 
@@ -163,6 +150,8 @@ void outsv(acarsmsg_t * msg, int chn, time_t tm)
 
 static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 {
+	oooi_t oooi;
+
 #if defined (WITH_RTL) || defined (WITH_AIR)
 	if (inmode >= 3)
 		fprintf(fdout, "\n[#%1d (F:%3.3f L:%4d E:%1d) ", chn + 1,
@@ -170,11 +159,14 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 	else
 #endif
 		fprintf(fdout, "\n[#%1d ( L:%4d E:%1d) ", chn + 1, msg->lvl, msg->err);
+
 	if (inmode != 2)
 		printdate(t);
+
 	fprintf(fdout, " --------------------------------\n");
 	fprintf(fdout, "Mode : %1c ", msg->mode);
 	fprintf(fdout, "Label : %2s ", msg->label);
+
 	if(msg->bid) {
 		fprintf(fdout, "Id : %1c ", msg->bid);
 		if(msg->ack==0x15) fprintf(fdout, "Nak\n"); else fprintf(fdout, "Ack : %1c\n", msg->ack);
@@ -184,9 +176,21 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 			fprintf(fdout, "No: %4s", msg->no);
 		}
 	}
+
 	fprintf(fdout, "\n");
 	if(msg->txt[0]) fprintf(fdout, "%s\n", msg->txt);
 	if (msg->be == 0x17) fprintf(fdout, "ETB\n");
+
+	if(DecodeLabel(msg,&oooi)) {
+		fprintf(fdout, "##########################\n");
+		if(oooi.da[0]) fprintf(fdout,"Destination Airport : %s\n",oooi.da);
+        	if(oooi.sa[0]) fprintf(fdout,"Departure Airport : %s\n",oooi.sa);
+        	if(oooi.eta[0]) fprintf(fdout,"Estimation Time of Arrival : %s\n",oooi.eta);
+        	if(oooi.gout[0]) fprintf(fdout,"Gate out Time : %s\n",oooi.gout);
+        	if(oooi.gin[0]) fprintf(fdout,"Gate in Time : %s\n",oooi.gin);
+        	if(oooi.woff[0]) fprintf(fdout,"Wheels off Tme : %s\n",oooi.woff);
+        	if(oooi.won[0]) fprintf(fdout,"Wheels on Time : %s\n",oooi.won);
+	}
 
 	fflush(fdout);
 }
@@ -275,6 +279,8 @@ static void printbinarystringasjson(unsigned char* start,unsigned char* end)
 
 static void printjson(acarsmsg_t * msg, int chn, time_t t)
 {
+	oooi_t oooi;
+
 	fprintf(fdout,"{\"timestamp\":%lf,\"channel\":%d,\"level\":%d,\"error\":%d", (double)t, chn, msg->lvl, msg->err);
 	fprintf(fdout,",\"mode\":");
 	PRINTC(msg->mode);
@@ -302,6 +308,17 @@ static void printjson(acarsmsg_t * msg, int chn, time_t t)
 	PRINTS(msg->txt);
 	if (msg->be == 0x17)
 		fprintf(fdout, ",\"end\":true");
+
+	if(DecodeLabel(msg,&oooi)) {
+        	if(oooi.sa[0]) { fprintf(fdout,",\"depa\":");PRINTS(oooi.sa);}
+		if(oooi.da[0]) { fprintf(fdout,",\"dsta\":"); PRINTS(oooi.da); }
+        	if(oooi.eta[0]) { fprintf(fdout,",\"eta\":");PRINTS(oooi.eta);}
+        	if(oooi.gout[0]) { fprintf(fdout,",\"gtout\":");PRINTS(oooi.gout);}
+        	if(oooi.gin[0]) { fprintf(fdout,",\"gtin\":");PRINTS(oooi.gin);}
+        	if(oooi.woff[0]) { fprintf(fdout,",\"wloff\":");PRINTS(oooi.woff);}
+        	if(oooi.won[0]) { fprintf(fdout,",\"wlin\":");PRINTS(oooi.won);}
+	}
+
 	fprintf(fdout,"}\n");
 	fflush(fdout);
 }
@@ -420,9 +437,7 @@ static void printmonitor(acarsmsg_t * msg, int chn, time_t t)
 		fl=fl->next;
 	}
 
-	//printmsg(msg,chn,t);
 }
-
 
 void outputmsg(const msgblk_t * blk)
 {
