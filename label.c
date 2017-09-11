@@ -145,8 +145,18 @@ static int label_2z(char *txt,oooi_t *oooi)
 }
 static int label_26(char *txt,oooi_t *oooi)
 {
-    if(memcmp(txt,"ARR01",5)) return 0;
-    memcpy(oooi->da,txt,4);
+    char *p;
+    if(memcmp(txt,"VER/077",7)) return 0;
+    p=index(txt,'\n'); if(p==NULL) return 0;
+    p++;
+    if(memcmp(p,"SCH/",4)) return 0;
+    p=index(p+4,'/'); if(p==NULL) return 0;
+    memcpy(oooi->sa,p+1,4);
+    memcpy(oooi->da,p+6,4);
+    p=index(p,'\n'); if(p==NULL) return 0;
+    p++;
+    if(memcmp(p,"ETA/",4)) return 1;
+    memcpy(oooi->eta,p+4,4);
     return 1;
 }
 static int label_10(char *txt,oooi_t *oooi)
