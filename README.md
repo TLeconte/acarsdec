@@ -1,18 +1,18 @@
 # ACARSDEC
-Acarsdec is a multi-channels acars decoder with built-in rtl_sdr front end.
+Acarsdec is a multi-channels acars decoder with built-in rtl_sdr or airspy front end.
 Since 3.0, It comes with a database backend : acarsserv to store receved acars messages. (See acarsserv chapter below).
 
 ## Features :
 
  * up to 8 channels decoded simultaneously
  * error detection AND correction
- * input via alsa sound card, [rtl_sdr](http://sdr.osmocom.org/trac/wiki/rtl-sdr), or [airspy](http://airspy.com/) software defined radios (SDR)
+ * input via [rtl_sdr](http://sdr.osmocom.org/trac/wiki/rtl-sdr), or [airspy](http://airspy.com/) software defined radios (SDR)
  * logging data over UDP in planeplotter or acarsserv formats to store in an sqlite database.
 
 Multi-channel decoding is particularly useful with the RTL dongle. It allows the user to directly monitor 8 different frequencies simultaneously with very low cost hardware.
 
 ## Usage
-> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N ipaddr:port] [-i stationid] [-l logfile]  -a alsapcmdevice  |   -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
+> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N ipaddr:port] [-i stationid] [-l logfile] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
 
  -v :			verbose
  
@@ -30,8 +30,6 @@ Multi-channel decoding is particularly useful with the RTL dongle. It allows the
  
  -i station id:		id use in acarsdec network format.
 
- -a alsapcmdevice :	decode from soundcard input alsapcmdevice (ie: hw:0,0)
-
  -r rtldevice f1 [f2] ... [fN] :		decode from rtl dongle number or S/N "rtldevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -r 0 131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
  
  -g gain :		set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use maximum gain
@@ -43,18 +41,12 @@ Multi-channel decoding is particularly useful with the RTL dongle. It allows the
 
 ## Examples
 
-Decoding from sound card with short output :
-> acarsdec -o1 -a hw:0,0
-
 Decoding from rtl dongle number 0 on 3 frequencies , sending aircraft messages only to 192.168.1.1 on port 5555
 and no other loging :
 > acarsdec -A -N 192.168.1.1:5555 -o0 -r 0 131.525 131.725 131.825
 
 Decoding from airspy on 3 frequencies with verbose logging
 > acarsdec -s 131.525 131.725 131.825
-
-Decoding from sound file test.wav (included) :
-> acarsdec -f test.wav
 
 ### Output formats examples
 
@@ -103,18 +95,19 @@ acarsdec must compile directly on any modern Linux distrib.
 It has been tested on x86_64 with fedora 19-25, Ubuntu 16, and on RaspberryPI (only RTL source tested)
 
 It depends on some external libraries :
- * libasound for sound card input (rpm package alsa-lib-devel on fedora)
+ * libusb
  * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  * libairspy for airspy software radio input 
 
-If you don't have or don't need one of these libs, edit CFLAGS and LDFLAGS in Makefile.
-Ie for rtl decoding only :
-> CFLAGS= -Ofast -D WITH_RTL -pthread
-> LDLIBS= -lm -pthread -lrtlsdr
+For rtl_sdr :
+> make -f Makefile.rtl
+
+For airspy :
+> make -f Makefile.air
 
 Notes : 
- * change compiler options to suit your hardware, particularly on ARM platform -ffast-math -march -mfloat-abi -mtune -mfpu must be set correctly.
- * You could change the sample rate by changing RTLMULT in rtl.c. For rtl sdr default is 2.5Ms/s which is the best but could be over the limits of some hardware. Lowering sample rate will decrease CPU usage too. 
+ * change compiler options (CFLAGS) in Makefile to suit your hardware, particularly on ARM platform -march and  -mfpu must be set correctly.
+ * For rtl_sdr, you could change the sample rate by changing RTLMULT in rtl.c. For rtl sdr default is 2.5Ms/s which is the best but could be over the limits of some hardware. Lowering sample rate will decrease CPU usage too. 
 
 
 # Acarsserv
@@ -122,7 +115,7 @@ Notes :
 acarsserv is a companion program for acarsdec. It listens to acars messages on UDP coming from one or more acarsdec processes and stores them in a sqlite database.
 
 To compile it, just type : 
-> make acarsserv
+> make -f Makefile.xxx acarsserv
 
 acarsserv need sqlite3 dev libraries (on Fedora : sqlite-devel rpm, on Ubuntu : libsqlite3-dev ).
 

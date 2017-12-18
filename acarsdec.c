@@ -50,7 +50,7 @@ char *logfilename = NULL;
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv 3.4 Copyright (c) 2017 Thierry Leconte \n\n");
+		"Acarsdec/acarsserv 3.5 Copyright (c) 2017 Thierry Leconte \n\n");
 	fprintf(stderr,
 		"Usage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile]");
 #ifdef WITH_ALSA
@@ -63,7 +63,10 @@ static void usage(void)
 	fprintf(stderr,
 		" [-g gain] [-p ppm] -r rtldevicenumber  f1 [f2] ... [fN]");
 #endif
-	fprintf(stderr, " -R < /stdin@%d:1channel:float32native  |",INTRATE);
+#ifdef WITH_AIR
+	fprintf(stderr,
+		" -s f1 [f2] ... [fN]");
+#endif
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
 	fprintf(stderr,
@@ -95,20 +98,17 @@ static void usage(void)
 	fprintf(stderr,
 		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
-	fprintf(stderr,
-		" -R \t: decode from stdin at %d sampling rate, 1 channel, native float32\n",INTRATE);
 #ifdef WITH_AIR
 	fprintf(stderr,
-		" -s f1 [f2]...[f%d]\t: decode from airspy receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+		" -s f1 [f2]...[f%d]\t: decode from airspy receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 	fprintf(stderr,
-		"\nFor any input source, up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
+		"\nUp to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
 	exit(1);
 }
 
 static void sighandler(int signum)
 {
-	fprintf(stderr, "Signal caught, exiting!\n");
 	exit(1);
 }
 
