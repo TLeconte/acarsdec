@@ -281,7 +281,13 @@ static void printjson(acarsmsg_t * msg, int chn, time_t t)
 {
 	oooi_t oooi;
 
-	fprintf(fdout, "{\"timestamp\":%lf, \"channel\":%d, \"level\":%d, \"error\":%d", (double)t, chn, msg->lvl, msg->err);
+#if defined (WITH_RTL) || defined (WITH_AIR)
+	float freq = channel[chn].Fr / 1000000.0;
+#else
+	float freq = 0;
+#endif
+
+	fprintf(fdout, "{\"timestamp\":%lf, \"channel\":%d, \"freq\":%3.3f, \"level\":%d, \"error\":%d", (double)t, chn, freq, msg->lvl, msg->err);
 	fprintf(fdout, ", \"mode\":");
 	PRINTC(msg->mode);
 	fprintf(fdout, ", \"label\":");
