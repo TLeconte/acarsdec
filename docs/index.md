@@ -10,7 +10,7 @@ Since 3.0, It comes with a database backend : acarsserv to store receved acars m
 
  * up to 8 channels decoded simultaneously
  * error detection AND correction
- * input alsa sound card or software defined radio (SRD) via a [rtl dongle](http://sdr.osmocom.org/trac/wiki/rtl-sdr) or [airspy ](http://airspy.com/)
+ * input alsa sound card or software defined radio (SDR) via a [rtl dongle](http://sdr.osmocom.org/trac/wiki/rtl-sdr) or [airspy](http://airspy.com/)
  * could send packet over UDP in planeplotter format or in its own format to acarsserv to store in a sqlite database.
 
 The multi channels decoding is particularly useful with the rtl dongle. It allows to directly listen simultaneously to 8 different frequencies , with a very low cost hardware.
