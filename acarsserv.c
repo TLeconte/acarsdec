@@ -146,7 +146,7 @@ static void usage(void)
 		"Usage: acarsserv [-v][-N address:port ][-b database path][-s][-d][-a]\n\n");
 	fprintf(stderr, "	-v		: verbose\n");
 	fprintf(stderr,
-		"	-b filepath	: use filepath as sqlite3 database file (default : ./acaraserv.sqb)\n");
+		"	-b filepath	: use filepath as sqlite3 database file (default : ./acarsserv.sqb)\n");
 	fprintf(stderr,
 		"	-N address:port : listen on given address:port (default : *:5555)\n");
 	fprintf(stderr,
