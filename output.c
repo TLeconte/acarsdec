@@ -281,42 +281,42 @@ static void printjson(acarsmsg_t * msg, int chn, time_t t)
 {
 	oooi_t oooi;
 
-	fprintf(fdout,"{\"timestamp\":%lf,\"channel\":%d,\"level\":%d,\"error\":%d", (double)t, chn, msg->lvl, msg->err);
-	fprintf(fdout,",\"mode\":");
+	fprintf(fdout, "{\"timestamp\":%lf, \"channel\":%d, \"level\":%d, \"error\":%d", (double)t, chn, msg->lvl, msg->err);
+	fprintf(fdout, ", \"mode\":");
 	PRINTC(msg->mode);
-	fprintf(fdout,",\"label\":");
+	fprintf(fdout, ", \"label\":");
 	PRINTS(msg->label);
 	if(msg->bid) {
-		fprintf(fdout, ",\"block_id\":");
+		fprintf(fdout, ", \"block_id\":");
 		PRINTC(msg->bid);
-		fprintf(fdout, ",\"ack\":");
+		fprintf(fdout, ", \"ack\":");
 		if(msg->ack==0x15) {
 			fprintf(fdout, "false");
 		} else {
 			PRINTC(msg->ack);
 		}
-		fprintf(fdout, ",\"tail\":");
+		fprintf(fdout, ", \"tail\":");
 		PRINTS(msg->addr);
 		if(msg->mode <= 'Z') {
 			fprintf(fdout, ",\"flight\":");
 			PRINTS(msg->fid);
-			fprintf(fdout, ",\"msgno\":");
+			fprintf(fdout, " ,\"msgno\":");
 			PRINTS(msg->no);
 		}
 	}
-	fprintf(fdout, ",\"text\":");
+	fprintf(fdout, ", \"text\":");
 	PRINTS(msg->txt);
 	if (msg->be == 0x17)
-		fprintf(fdout, ",\"end\":true");
+		fprintf(fdout, ", \"end\":true");
 
 	if(DecodeLabel(msg,&oooi)) {
-        	if(oooi.sa[0]) { fprintf(fdout,",\"depa\":");PRINTS(oooi.sa);}
-		if(oooi.da[0]) { fprintf(fdout,",\"dsta\":"); PRINTS(oooi.da); }
-        	if(oooi.eta[0]) { fprintf(fdout,",\"eta\":");PRINTS(oooi.eta);}
-        	if(oooi.gout[0]) { fprintf(fdout,",\"gtout\":");PRINTS(oooi.gout);}
-        	if(oooi.gin[0]) { fprintf(fdout,",\"gtin\":");PRINTS(oooi.gin);}
-        	if(oooi.woff[0]) { fprintf(fdout,",\"wloff\":");PRINTS(oooi.woff);}
-        	if(oooi.won[0]) { fprintf(fdout,",\"wlin\":");PRINTS(oooi.won);}
+		if(oooi.sa[0]) { fprintf(fdout,", \"depa\":");PRINTS(oooi.sa);}
+		if(oooi.da[0]) { fprintf(fdout,", \"dsta\":"); PRINTS(oooi.da); }
+		if(oooi.eta[0]) { fprintf(fdout,", \"eta\":");PRINTS(oooi.eta);}
+		if(oooi.gout[0]) { fprintf(fdout,", \"gtout\":");PRINTS(oooi.gout);}
+		if(oooi.gin[0]) { fprintf(fdout,", \"gtin\":");PRINTS(oooi.gin);}
+		if(oooi.woff[0]) { fprintf(fdout,", \"wloff\":");PRINTS(oooi.woff);}
+		if(oooi.won[0]) { fprintf(fdout,", \"wlin\":");PRINTS(oooi.won);}
 	}
 
 	fprintf(fdout,"}\n");
