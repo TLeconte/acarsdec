@@ -211,7 +211,7 @@ static void printbinarystringasjson(unsigned char* start,unsigned char* end)
 			switch (ch)
 			{
 			case '\\':
-			case '/':
+			case '"':
 			case '\b':
 			case '\f':
 			case '\n':
@@ -248,8 +248,8 @@ static void printbinarystringasjson(unsigned char* start,unsigned char* end)
 			case '\\':
 				fprintf(fdout, "\\\\");
 				break;
-			case '/':
-				fprintf(fdout, "\\/");
+			case '"':
+				fprintf(fdout, "\\\"");
 				break;
 			case '\b':
 				fprintf(fdout, "\\b");
