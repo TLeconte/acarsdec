@@ -306,9 +306,9 @@ static void printjson(acarsmsg_t * msg, int chn, struct timeval tv)
 		fprintf(fdout, ", \"tail\":");
 		PRINTS(msg->addr);
 		if(msg->mode <= 'Z') {
-			fprintf(fdout, ",\"flight\":");
+			fprintf(fdout, ", \"flight\":");
 			PRINTS(msg->fid);
-			fprintf(fdout, " ,\"msgno\":");
+			fprintf(fdout, ", \"msgno\":");
 			PRINTS(msg->no);
 		}
 	}
