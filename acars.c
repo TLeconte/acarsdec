@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include "acarsdec.h"
 
 #define SYN 0x16
@@ -259,7 +260,7 @@ void decodeAcars(channel_t * ch)
 
 	case SOH1:
 		if (r == SOH) {
-			time(&(ch->blk->tm));
+			gettimeofday(&(ch->blk->tv), NULL);
 			ch->Acarsstate = TXT;
 			ch->blk->len = 0;
 			ch->blk->err = 0;

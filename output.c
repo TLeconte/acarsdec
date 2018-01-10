@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <time.h>
 #include <netdb.h>
@@ -89,28 +90,28 @@ int initOutput(char *logfilename, char *Rawaddr)
 	return 0;
 }
 
-static void printdate(time_t t)
+static void printdate(struct timeval tv)
 {
-	struct tm *tmp;
+	struct tm tmp;
 
-	if (t == 0)
+	if (tv.tv_sec + tv.tv_usec == 0)
 		return;
 
-	tmp = gmtime(&t);
+	gmtime_r(&(tv.tv_sec), &tmp);
 
 	fprintf(fdout, "%02d/%02d/%04d %02d:%02d:%02d",
-		tmp->tm_mday, tmp->tm_mon + 1, tmp->tm_year + 1900,
-		tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+		tmp.tm_mday, tmp.tm_mon + 1, tmp.tm_year + 1900,
+		tmp.tm_hour, tmp.tm_min, tmp.tm_sec);
 }
 
-static void printtime(time_t t)
+static void printtime(struct timeval tv)
 {
-	struct tm *tmp;
+	struct tm tmp;
 
-	tmp = gmtime(&t);
+	gmtime_r(&(tv.tv_sec), &tmp);
 
 	fprintf(fdout, "%02d:%02d:%02d",
-		tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+		tmp.tm_hour, tmp.tm_min, tmp.tm_sec);
 }
 
 void outpp(acarsmsg_t * msg)
@@ -131,24 +132,24 @@ void outpp(acarsmsg_t * msg)
 	write(sockfd, pkt, strlen(pkt));
 }
 
-void outsv(acarsmsg_t * msg, int chn, time_t tm)
+void outsv(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	char pkt[500];
-	struct tm *tmp;
+	struct tm tmp;
 
-	tmp = gmtime(&tm);
+	gmtime_r(&(tv.tv_sec), &tmp);
 
 	sprintf(pkt,
 		"%8s %1d %02d/%02d/%04d %02d:%02d:%02d %1d %03d %1c %7s %1c %2s %1c %4s %6s %s",
-		idstation, chn + 1, tmp->tm_mday, tmp->tm_mon + 1,
-		tmp->tm_year + 1900, tmp->tm_hour, tmp->tm_min, tmp->tm_sec,
+		idstation, chn + 1, tmp.tm_mday, tmp.tm_mon + 1,
+		tmp.tm_year + 1900, tmp.tm_hour, tmp.tm_min, tmp.tm_sec,
 		msg->err, msg->lvl, msg->mode, msg->addr, msg->ack, msg->label,
 		msg->bid, msg->no, msg->fid, msg->txt);
 
 	write(sockfd, pkt, strlen(pkt));
 }
 
-static void printmsg(acarsmsg_t * msg, int chn, time_t t)
+static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	oooi_t oooi;
 
@@ -161,7 +162,7 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 		fprintf(fdout, "\n[#%1d ( L:%4d E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (inmode != 2)
-		printdate(t);
+		printdate(tv);
 
 	fprintf(fdout, " --------------------------------\n");
 	fprintf(fdout, "Mode : %1c ", msg->mode);
@@ -210,7 +211,7 @@ static void printbinarystringasjson(unsigned char* start,unsigned char* end)
 			switch (ch)
 			{
 			case '\\':
-			case '/':
+			case '"':
 			case '\b':
 			case '\f':
 			case '\n':
@@ -247,8 +248,8 @@ static void printbinarystringasjson(unsigned char* start,unsigned char* end)
 			case '\\':
 				fprintf(fdout, "\\\\");
 				break;
-			case '/':
-				fprintf(fdout, "\\/");
+			case '"':
+				fprintf(fdout, "\\\"");
 				break;
 			case '\b':
 				fprintf(fdout, "\\b");
@@ -277,46 +278,53 @@ static void printbinarystringasjson(unsigned char* start,unsigned char* end)
 #define PRINTC(X) printbinarystringasjson(&(X),&(X)+1)
 #define PRINTS(X) printbinarystringasjson(&(X)[0],&(X)[0]+sizeof(X))
 
-static void printjson(acarsmsg_t * msg, int chn, time_t t)
+static void printjson(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	oooi_t oooi;
 
-	fprintf(fdout,"{\"timestamp\":%lf,\"channel\":%d,\"level\":%d,\"error\":%d", (double)t, chn, msg->lvl, msg->err);
-	fprintf(fdout,",\"mode\":");
+#if defined (WITH_RTL) || defined (WITH_AIR)
+	float freq = channel[chn].Fr / 1000000.0;
+#else
+	float freq = 0;
+#endif
+
+	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
+	fprintf(fdout, "{\"timestamp\":%lf, \"channel\":%d, \"freq\":%3.3f, \"level\":%d, \"error\":%d", (double)t, chn, freq, msg->lvl, msg->err);
+	fprintf(fdout, ", \"mode\":");
 	PRINTC(msg->mode);
-	fprintf(fdout,",\"label\":");
+	fprintf(fdout, ", \"label\":");
 	PRINTS(msg->label);
 	if(msg->bid) {
-		fprintf(fdout, ",\"block_id\":");
+		fprintf(fdout, ", \"block_id\":");
 		PRINTC(msg->bid);
-		fprintf(fdout, ",\"ack\":");
+		fprintf(fdout, ", \"ack\":");
 		if(msg->ack==0x15) {
 			fprintf(fdout, "false");
 		} else {
 			PRINTC(msg->ack);
 		}
-		fprintf(fdout, ",\"tail\":");
+		fprintf(fdout, ", \"tail\":");
 		PRINTS(msg->addr);
 		if(msg->mode <= 'Z') {
-			fprintf(fdout, ",\"flight\":");
+			fprintf(fdout, ", \"flight\":");
 			PRINTS(msg->fid);
-			fprintf(fdout, ",\"msgno\":");
+			fprintf(fdout, ", \"msgno\":");
 			PRINTS(msg->no);
 		}
 	}
-	fprintf(fdout, ",\"text\":");
+	fprintf(fdout, ", \"text\":");
 	PRINTS(msg->txt);
 	if (msg->be == 0x17)
-		fprintf(fdout, ",\"end\":true");
+		fprintf(fdout, ", \"end\":true");
 
 	if(DecodeLabel(msg,&oooi)) {
-        	if(oooi.sa[0]) { fprintf(fdout,",\"depa\":");PRINTS(oooi.sa);}
-		if(oooi.da[0]) { fprintf(fdout,",\"dsta\":"); PRINTS(oooi.da); }
-        	if(oooi.eta[0]) { fprintf(fdout,",\"eta\":");PRINTS(oooi.eta);}
-        	if(oooi.gout[0]) { fprintf(fdout,",\"gtout\":");PRINTS(oooi.gout);}
-        	if(oooi.gin[0]) { fprintf(fdout,",\"gtin\":");PRINTS(oooi.gin);}
-        	if(oooi.woff[0]) { fprintf(fdout,",\"wloff\":");PRINTS(oooi.woff);}
-        	if(oooi.won[0]) { fprintf(fdout,",\"wlin\":");PRINTS(oooi.won);}
+		if(oooi.sa[0]) { fprintf(fdout,", \"depa\":");PRINTS(oooi.sa);}
+		if(oooi.da[0]) { fprintf(fdout,", \"dsta\":"); PRINTS(oooi.da); }
+		if(oooi.eta[0]) { fprintf(fdout,", \"eta\":");PRINTS(oooi.eta);}
+		if(oooi.gout[0]) { fprintf(fdout,", \"gtout\":");PRINTS(oooi.gout);}
+		if(oooi.gin[0]) { fprintf(fdout,", \"gtin\":");PRINTS(oooi.gin);}
+		if(oooi.woff[0]) { fprintf(fdout,", \"wloff\":");PRINTS(oooi.woff);}
+		if(oooi.won[0]) { fprintf(fdout,", \"wlin\":");PRINTS(oooi.won);}
 	}
 
 	fprintf(fdout,"}\n");
@@ -326,7 +334,7 @@ static void printjson(acarsmsg_t * msg, int chn, time_t t)
 #undef PRINTC
 #undef PRINTS
 
-static void printoneline(acarsmsg_t * msg, int chn, time_t t)
+static void printoneline(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	char txt[30];
 	char *pstr;
@@ -340,7 +348,7 @@ static void printoneline(acarsmsg_t * msg, int chn, time_t t)
 	fprintf(fdout, "#%1d (L:%4d E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (inmode != 2)
-		printdate(t);
+		printdate(tv);
 	fprintf(fdout, " %7s %6s %1c %2s %4s ", msg->addr, msg->fid, msg->mode, msg->label, msg->no);
 	fprintf(fdout, "%s", txt);
 	fprintf(fdout, "\n");
@@ -352,17 +360,18 @@ struct flight_s {
 	flight_t *next;
 	char addr[8];
 	char fid[7];
-	time_t ts,tl;
+	struct timeval ts,tl;
 	int chm;
 	int nbm;
 	oooi_t oooi;
 };
 static flight_t  *flight_head=NULL;
 
-static void addFlight(acarsmsg_t * msg, int chn, time_t t)
+static void addFlight(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	flight_t *fl,*flp;
 	oooi_t oooi;
+	// double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 
 	fl=flight_head;
 	flp=NULL;
@@ -376,13 +385,13 @@ static void addFlight(acarsmsg_t * msg, int chn, time_t t)
 		fl=calloc(1,sizeof(flight_t));
 		strncpy(fl->addr,msg->addr,8);
 		fl->nbm=0;
-		fl->ts=t;
+		fl->ts=tv;
 		fl->chm=0;
 		fl->next=NULL;
 	}
 
 	strncpy(fl->fid,msg->fid,7);
-	fl->tl=t;
+	fl->tl=tv;
 	fl->chm|=(1<<chn);
 	fl->nbm+=1;
 
@@ -404,7 +413,7 @@ static void addFlight(acarsmsg_t * msg, int chn, time_t t)
 
 	flp=NULL;
 	while(fl) {
-		if(fl->tl<(t-mdly)) {
+		if(fl->tl.tv_sec<(tv.tv_sec-mdly)) {
 			if(flp) {
 				flp->next=fl->next;
 				free(fl);
@@ -427,9 +436,10 @@ void cls(void)
 	printf("\x1b[H\x1b[2J");
 }
 
-static void printmonitor(acarsmsg_t * msg, int chn, time_t t)
+static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	flight_t *fl;
+	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 
 	cls();
 
@@ -443,7 +453,7 @@ static void printmonitor(acarsmsg_t * msg, int chn, time_t t)
 		printf("%8s %7s %3d ", fl->addr, fl->fid,fl->nbm);
 		for(i=0;i<nbch;i++) printf("%c",(fl->chm&(1<<i))?'x':'.');
 		for(;i<MAXNBCHANNELS;i++) printf(" ");
-		printf(" ");printtime(fl->ts);
+		printf(" "); printtime(fl->ts);
         	if(fl->oooi.eta[0]) printf("  %4s ",fl->oooi.eta); else printf("      ");
         	if(fl->oooi.sa[0]) printf("  %4s ",fl->oooi.sa); else printf("      ");
 		if(fl->oooi.da[0]) printf("  %4s ",fl->oooi.da); else printf("      ");
@@ -512,7 +522,7 @@ void outputmsg(const msgblk_t * blk)
 			msg.fid[i] = '\0';
 
 			if(outtype==3)
-				addFlight(&msg,blk->chn,blk->tm);
+				addFlight(&msg,blk->chn,blk->tv);
 		}
 
 		/* Message txt */
@@ -528,23 +538,23 @@ void outputmsg(const msgblk_t * blk)
 		if (netout == 0)
 			outpp(&msg);
 		else
-			outsv(&msg, blk->chn, blk->tm);
+			outsv(&msg, blk->chn, blk->tv);
 	}
 
 	switch (outtype) {
 	case 0:
 		break;
 	case 1:
-		printoneline(&msg, blk->chn, blk->tm);
+		printoneline(&msg, blk->chn, blk->tv);
 		break;
 	case 2:
-		printmsg(&msg, blk->chn, blk->tm);
+		printmsg(&msg, blk->chn, blk->tv);
 		break;
 	case 3:
-		printmonitor(&msg, blk->chn, blk->tm);
+		printmonitor(&msg, blk->chn, blk->tv);
 		break;
 	case 4:
-		printjson(&msg, blk->chn, blk->tm);
+		printjson(&msg, blk->chn, blk->tv);
 		break;
 	}
 }

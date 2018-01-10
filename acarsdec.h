@@ -16,6 +16,7 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
+#include <sys/time.h>
 #include <time.h>
 #include <pthread.h>
 #include <complex.h>
@@ -28,7 +29,7 @@ typedef float sample_t;
 typedef struct mskblk_s {
 	struct mskblk_s *prev;
 	int chn;
-	time_t tm;
+	struct timeval tv;
 	int len;
 	int lvl,err;
 	unsigned char txt[250];
