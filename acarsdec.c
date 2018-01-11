@@ -118,6 +118,7 @@ int main(int argc, char **argv)
 	int res, n;
 	struct sigaction sigact;
 
+	res = 0;
 	while ((c = getopt(argc, argv, "vafrsRo:t:g:Ap:n:N:l:c:i:f:")) != EOF) {
 
 		switch (c) {

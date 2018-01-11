@@ -74,7 +74,6 @@ void demodMSK(channel_t *ch,int len)
 	double s;
 	float complex v;
 	int j,o;
-	float out[4];
 
 	/* VCO */
 	s = 1800.0/INTRATE*2.0*M_PI + ch->MskDf;
@@ -90,7 +89,6 @@ void demodMSK(channel_t *ch,int len)
 	/* bit clock */
 	ch->MskClk+=s;
 	if (ch->MskClk >=3*M_PI/2.0) {
-		int sI,sQ;
 		double dphi;
 		float vo,lvl;
 

@@ -32,7 +32,7 @@ typedef struct mskblk_s {
 	struct timeval tv;
 	int len;
 	int lvl,err;
-	unsigned char txt[250];
+	char txt[250];
 	unsigned char crc[2];
 } msgblk_t;
 
@@ -80,15 +80,15 @@ typedef struct {
 } oooi_t;
 
 typedef struct {
-        unsigned char mode;
-        unsigned char addr[8];
-        unsigned char ack;
-        unsigned char label[3];
-        unsigned char bid;
-        unsigned char no[5];
-        unsigned char fid[7];
-        unsigned char bs, be;
-        unsigned char txt[250];
+        char mode;
+        char addr[8];
+        char ack;
+        char label[3];
+        char bid;
+        char no[5];
+        char fid[7];
+        char bs, be;
+        char txt[250];
         int err, lvl;
 } acarsmsg_t;
 

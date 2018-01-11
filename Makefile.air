@@ -1,4 +1,4 @@
-CFLAGS= -Ofast -pthread -D WITH_AIR -I.  `pkg-config --cflags libairspy`
+CFLAGS= -Wall -Ofast -pthread -D WITH_AIR -I.  `pkg-config --cflags libairspy`
 LDLIBS= -lm -pthread  `pkg-config --libs libairspy` -lusb-1.0
 
 acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o raw.o label.o

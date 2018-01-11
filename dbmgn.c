@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS Messages (MessageID integer primary key, FlightID int
 
 		res = sqlite3_prepare_v2(acarsdb, sql[i], -1, &(stm[i]), NULL);
 		if (res != SQLITE_OK) {
-			fprintf(stderr, "Failed to preprare %s : %s\n", sql[i]);
+			fprintf(stderr, "Failed to preprare %s\n", sql[i]);
 			return 1;
 		}
 	}
@@ -263,7 +263,6 @@ static sqlite3_int64 updatedb_fl(char *reg, char *fnum, time_t tm,
 static int updatedb_ms(acarsmsg_t * msg, sqlite3_int64 fid, sqlite3_int64 sid,
 		       int lm)
 {
-	sqlite3_int64 mid;
 	int res = SQLITE_OK;
 
 	if ((lm & 4) == 0 && fid != 0) {
@@ -291,7 +290,6 @@ static int updatedb_ms(acarsmsg_t * msg, sqlite3_int64 fid, sqlite3_int64 sid,
 	}
 
 	if ((lm & 4) || fid == 0 || res == SQLITE_DONE) {
-
 		res = sqlite3_reset(stm[TINSMSG]);
 		if (res != SQLITE_OK) {
 			fprintf(stderr, "Failed to reset %d\n", res);
@@ -376,7 +374,7 @@ static int updatedb_ms(acarsmsg_t * msg, sqlite3_int64 fid, sqlite3_int64 sid,
 			fprintf(stderr, "step %d \n", res);
 			return 0;
 		}
-		mid = sqlite3_last_insert_rowid(acarsdb);
+		sqlite3_last_insert_rowid(acarsdb);
 	} else {
 		return 0;
 	}

@@ -1,4 +1,4 @@
-CFLAGS= -Ofast -pthread -D WITH_RTL -I.  `pkg-config --cflags librtlsdr`
+CFLAGS= -Wall -Ofast -pthread -D WITH_RTL -I.  `pkg-config --cflags librtlsdr`
 LDLIBS= -lm -pthread   -lrtlsdr `pkg-config --libs librtlsdr`
 
 acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o raw.o label.o

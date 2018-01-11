@@ -1,17 +1,17 @@
 typedef struct {
 	time_t tm;
-        unsigned int chn;
-        unsigned char idst[9];
-        unsigned int err;
-        unsigned int lvl;
-        unsigned char mode;
-        unsigned char reg[8];
-        unsigned char ack;
-        unsigned char label[3];
-        unsigned char bid;
-        unsigned char no[5];
-        unsigned char fid[7];
-        unsigned char txt[250];
+        int chn;
+        char idst[9];
+        int err;
+        int lvl;
+        char mode;
+        char reg[8];
+        char ack;
+        char label[3];
+        char bid;
+        char no[5];
+        char fid[7];
+        char txt[250];
 } acarsmsg_t;
 
 extern int initdb(char *);

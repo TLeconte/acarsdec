@@ -196,9 +196,9 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 	fflush(fdout);
 }
 
-static void printbinarystringasjson(unsigned char* start,unsigned char* end)
+static void printbinarystringasjson(char* start,char* end)
 {
-	unsigned char* pos;
+	char* pos;
 	char special=0;
 	for (pos=start;pos<end;pos++)
 	{
@@ -371,7 +371,6 @@ static void addFlight(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	flight_t *fl,*flp;
 	oooi_t oooi;
-	// double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 
 	fl=flight_head;
 	flp=NULL;
@@ -439,7 +438,6 @@ void cls(void)
 static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	flight_t *fl;
-	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 
 	cls();
 

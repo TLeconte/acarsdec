@@ -30,9 +30,9 @@
 // set the sameple rate by changing RTMULT
 // 2.5Ms/s is the best but could be over limit for some hardware
 // 2.0Ms/s is safer
-//#define RTLMULT 160	// 2.0000 Ms/s
+#define RTLMULT 160	// 2.0000 Ms/s
 //#define RTLMULT 192	// 2.4000 Ms/s
-#define RTLMULT 200   // 2.5000 Ms/s
+//#define RTLMULT 200   // 2.5000 Ms/s
 #define RTLINRATE (INTRATE*RTLMULT)
 
 static rtlsdr_dev_t *dev = NULL;
@@ -285,7 +285,7 @@ int initRtl(char **argv, int optind)
 
 static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
-	int r, n;
+	int n;
 
 	if (nread != RTLINBUFSZ) {
 		fprintf(stderr, "warning: partial read\n");
@@ -326,7 +326,7 @@ int runRtlSample(void)
 	int r;
 
 	status = 1;
-	r = rtlsdr_read_async(dev, in_callback, NULL, 8, RTLINBUFSZ);
+	r = rtlsdr_read_async(dev, in_callback, NULL, 4, RTLINBUFSZ);
 	if (r) {
 		fprintf(stderr, "Read async %d\n", r);
 	}

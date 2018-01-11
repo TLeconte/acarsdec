@@ -49,10 +49,10 @@ int station = 0;
 int allmess = 0;
 int dupmess = 0;
 
-void fixreg(unsigned char *reg, unsigned char *add)
+void fixreg(char *reg, char *add)
 {
-	unsigned char *p, *t;
-	int i, f;
+	char *p, *t;
+	int i;
 	for (p = add; *p == '.'; p++) ;
 
 	if (strlen(p) >= 4) {
@@ -230,11 +230,10 @@ int bindsock(char *argaddr)
 #define MAXACARSLEN 500
 int main(int argc, char **argv)
 {
-	unsigned char pkt[MAXACARSLEN];
+	char pkt[MAXACARSLEN];
 	char *basename = "acarsserv.sqb";
 	char *bindaddr = "[::]";
 	int c;
-	int res;
 
 	while ((c = getopt(argc, argv, "vb:N:asd")) != EOF) {
 

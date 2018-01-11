@@ -121,7 +121,7 @@ static void *blk_thread(void *arg)
 		/* parity check */
 		pn = 0;
 		for (i = 0; i < blk->len; i++) {
-			if ((numbits[blk->txt[i]] & 1) == 0) {
+			if ((numbits[(int)(blk->txt[i])] & 1) == 0) {
 				if (pn < MAXPERR) {
 					pr[pn] = i;
 				}
@@ -180,7 +180,7 @@ static void *blk_thread(void *arg)
 		/* redo parity checking and removing */
 		pn = 0;
 		for (i = 0; i < blk->len; i++) {
-			if ((numbits[blk->txt[i]] & 1) == 0) {
+			if ((numbits[(int)(blk->txt[i])] & 1) == 0) {
 				pn++;
 			}
 			blk->txt[i] &= 0x7f;
@@ -276,7 +276,7 @@ void decodeAcars(channel_t * ch)
 	case TXT:
 		ch->blk->txt[ch->blk->len] = r;
 		ch->blk->len++;
-		if ((numbits[r] & 1) == 0) {
+		if ((numbits[(int)r] & 1) == 0) {
 			ch->blk->err++;
 
 			if (ch->blk->err > MAXPERR + 1) {

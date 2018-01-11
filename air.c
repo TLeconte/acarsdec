@@ -39,7 +39,7 @@ extern void *compute_thread(void *arg);
 
 int initAirspy(char **argv, int optind)
 {
-	int r, n;
+	int n;
 	char *argF;
 	unsigned int F0,Fc,minFc=140000000,maxFc=0;
 	unsigned int Fd[MAXNBCHANNELS];
@@ -88,7 +88,6 @@ int initAirspy(char **argv, int optind)
 		channel_t *ch = &(channel[n]);
 		int ind;
 		double AMFreq;
-	        pthread_t th;
 
 		ch->wf = malloc(AIRMULT * sizeof(float complex));
 		ch->dm_buffer = malloc(1000 * sizeof(float));
@@ -176,7 +175,7 @@ static int rx_callback(airspy_transfer_t* transfer)
 {
 
 	float* pt_rx_buffer;	
-	int n,i;
+	int n,i=0;
         int bo,be,ben,nbk;
 
 	pt_rx_buffer = (float *)(transfer->samples);
@@ -188,7 +187,7 @@ static int rx_callback(airspy_transfer_t* transfer)
 
 	for(n=0;n<nbch;n++) {
         	channel_t *ch = &(channel[n]);
-                float S,in;
+                float S;
                 int k,bn,m;
         	float complex D;
 
