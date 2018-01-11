@@ -441,8 +441,8 @@ static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 
 	cls();
 
-	printf("             Acarsdec monitor\n");
-	printf(" Aircraft Flight  Nb Channels  First    ETA   DEP  ARR\n");
+	printf("             Acarsdec monitor "); printtime(tv);
+	printf("\n Aircraft Flight  Nb Channels  First    ETA   DEP  ARR\n");
 
 	fl=flight_head;
 	while(fl) {
