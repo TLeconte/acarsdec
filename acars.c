@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <time.h>
 #include "acarsdec.h"
 
 #define SYN 0x16

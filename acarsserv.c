@@ -285,7 +285,7 @@ int main(int argc, char **argv)
 		msg = calloc(sizeof(acarsmsg_t), 1);
 
 		addrlen = sizeof(src_addr);
-		bzero(&src_addr, addrlen);
+		memset(&src_addr, 0, addrlen);
 		len =
 		    recvfrom(sockfd, pkt, MAXACARSLEN, 0,
 			     (struct sockaddr *)&src_addr, &addrlen);

@@ -2,10 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <time.h>
-#include <netdb.h>
 #include "acarsdec.h"
 
 
@@ -147,13 +143,13 @@ static int label_26(char *txt,oooi_t *oooi)
 {
     char *p;
     if(memcmp(txt,"VER/077",7)) return 0;
-    p=index(txt,'\n'); if(p==NULL) return 0;
+    p=strchr(txt,'\n'); if(p==NULL) return 0;
     p++;
     if(memcmp(p,"SCH/",4)) return 0;
-    p=index(p+4,'/'); if(p==NULL) return 0;
+    p=strchr(p+4,'/'); if(p==NULL) return 0;
     memcpy(oooi->sa,p+1,4);
     memcpy(oooi->da,p+6,4);
-    p=index(p,'\n'); if(p==NULL) return 0;
+    p=strchr(p,'\n'); if(p==NULL) return 0;
     p++;
     if(memcmp(p,"ETA/",4)) return 1;
     memcpy(oooi->eta,p+4,4);
