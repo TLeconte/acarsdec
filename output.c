@@ -8,8 +8,11 @@
 #include <time.h>
 #include <netdb.h>
 #include "acarsdec.h"
+#include "cJSON.h"
 
 extern int inmode;
+extern char *idstation;
+extern char *jsonbuf;
 
 static int sockfd = -1;
 static FILE *fdout;
@@ -149,6 +152,14 @@ void outsv(acarsmsg_t * msg, int chn, struct timeval tv)
 	write(sockfd, pkt, strlen(pkt));
 }
 
+void outjson()
+{
+	char pkt[500];
+
+	snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
+	write(sockfd, pkt, strlen(pkt));
+}
+
 static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	oooi_t oooi;
@@ -196,143 +207,79 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 	fflush(fdout);
 }
 
-static void printbinarystringasjson(char* start,char* end)
-{
-	char* pos;
-	char special=0;
-	for (pos=start;pos<end;pos++)
-	{
-		unsigned char ch=*pos;
-		if (ch==0) {
-			end=pos;
-			break;
-		}
-		else {
-			switch (ch)
-			{
-			case '\\':
-			case '"':
-			case '\b':
-			case '\f':
-			case '\n':
-			case '\r':
-			case '\t':
-				break;
-			default:
-				if ((ch<32)||(ch>=127))
-				{
-					special=1;
-				}
-				break;
-			}
-		}
-	}
-	if (special)
-	{
-		fprintf(fdout, "[");
-		for (pos=start;pos<end;pos++)
-		{
-			if (pos!=start) fprintf(fdout, ",");
-			fprintf(fdout, "%d",*pos);
-		}
-		fprintf(fdout, "]");
-	}
-	else
-	{
-		fprintf(fdout, "\"");
-		for (pos=start;pos<end;pos++)
-		{
-			unsigned char ch=*pos;
-			switch (ch)
-			{
-			case '\\':
-				fprintf(fdout, "\\\\");
-				break;
-			case '"':
-				fprintf(fdout, "\\\"");
-				break;
-			case '\b':
-				fprintf(fdout, "\\b");
-				break;
-			case '\f':
-				fprintf(fdout, "\\f");
-				break;
-			case '\n':
-				fprintf(fdout, "\\n");
-				break;
-			case '\r':
-				fprintf(fdout, "\\r");
-				break;
-			case '\t':
-				fprintf(fdout, "\\t");
-				break;
-			default:
-				fprintf(fdout, "%c", ch);
-				break;
-			}
-		}
-		fprintf(fdout, "\"");
-	}
-}
 
-#define PRINTC(X) printbinarystringasjson(&(X),&(X)+1)
-#define PRINTS(X) printbinarystringasjson(&(X)[0],&(X)[0]+sizeof(X))
-
-static void printjson(acarsmsg_t * msg, int chn, struct timeval tv)
+static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 {
+
 	oooi_t oooi;
-
 #if defined (WITH_RTL) || defined (WITH_AIR)
 	float freq = channel[chn].Fr / 1000000.0;
 #else
 	float freq = 0;
 #endif
+	cJSON *json_obj;
+	int ok = 0;
+	char convert_tmp[8];
+
+	json_obj = cJSON_CreateObject();
+	if (json_obj == NULL)
+		return ok;
 
 	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
-	fprintf(fdout, "{\"timestamp\":%lf, \"channel\":%d, \"freq\":%3.3f, \"level\":%d, \"error\":%d", (double)t, chn, freq, msg->lvl, msg->err);
-	fprintf(fdout, ", \"mode\":");
-	PRINTC(msg->mode);
-	fprintf(fdout, ", \"label\":");
-	PRINTS(msg->label);
+	cJSON_AddNumberToObject(json_obj, "timestamp", t);
+	cJSON_AddNumberToObject(json_obj, "channel", chn);
+	snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
+	cJSON_AddStringToObject(json_obj, "freq", convert_tmp);
+	cJSON_AddNumberToObject(json_obj, "level", msg->lvl);
+	cJSON_AddNumberToObject(json_obj, "error", msg->err);
+	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
+	cJSON_AddStringToObject(json_obj, "mode", convert_tmp);
+	cJSON_AddStringToObject(json_obj, "label", msg->label);
+
 	if(msg->bid) {
-		fprintf(fdout, ", \"block_id\":");
-		PRINTC(msg->bid);
-		fprintf(fdout, ", \"ack\":");
-		if(msg->ack==0x15) {
-			fprintf(fdout, "false");
+		snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->bid);
+		cJSON_AddStringToObject(json_obj, "block_id", convert_tmp);
+
+		if(msg->ack == 0x15) {
+			cJSON_AddFalseToObject(json_obj, "ack");
 		} else {
-			PRINTC(msg->ack);
+			snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->ack);
+			cJSON_AddStringToObject(json_obj, "ack", convert_tmp);
 		}
-		fprintf(fdout, ", \"tail\":");
-		PRINTS(msg->addr);
+
+		cJSON_AddStringToObject(json_obj, "tail", msg->addr);
 		if(msg->mode <= 'Z') {
-			fprintf(fdout, ", \"flight\":");
-			PRINTS(msg->fid);
-			fprintf(fdout, ", \"msgno\":");
-			PRINTS(msg->no);
+			cJSON_AddStringToObject(json_obj, "flight", msg->fid);
+			cJSON_AddStringToObject(json_obj, "msgno", msg->no);
 		}
 	}
-	fprintf(fdout, ", \"text\":");
-	PRINTS(msg->txt);
+	cJSON_AddStringToObject(json_obj, "text", msg->txt);
+
 	if (msg->be == 0x17)
-		fprintf(fdout, ", \"end\":true");
+		cJSON_AddTrueToObject(json_obj, "end");
 
-	if(DecodeLabel(msg,&oooi)) {
-		if(oooi.sa[0]) { fprintf(fdout,", \"depa\":");PRINTS(oooi.sa);}
-		if(oooi.da[0]) { fprintf(fdout,", \"dsta\":"); PRINTS(oooi.da); }
-		if(oooi.eta[0]) { fprintf(fdout,", \"eta\":");PRINTS(oooi.eta);}
-		if(oooi.gout[0]) { fprintf(fdout,", \"gtout\":");PRINTS(oooi.gout);}
-		if(oooi.gin[0]) { fprintf(fdout,", \"gtin\":");PRINTS(oooi.gin);}
-		if(oooi.woff[0]) { fprintf(fdout,", \"wloff\":");PRINTS(oooi.woff);}
-		if(oooi.won[0]) { fprintf(fdout,", \"wlin\":");PRINTS(oooi.won);}
+	if(DecodeLabel(msg, &oooi)) {
+		if(oooi.sa[0])
+			cJSON_AddStringToObject(json_obj, "depa", oooi.sa);
+		if(oooi.da[0])
+			cJSON_AddStringToObject(json_obj, "dsta", oooi.da);
+		if(oooi.eta[0])
+			cJSON_AddStringToObject(json_obj, "eta", oooi.eta);
+		if(oooi.gout[0])
+			cJSON_AddStringToObject(json_obj, "gtout", oooi.gout);
+		if(oooi.gin[0])
+			cJSON_AddStringToObject(json_obj, "gtin", oooi.gin);
+		if(oooi.woff[0])
+			cJSON_AddStringToObject(json_obj, "wloff", oooi.woff);
+		if(oooi.won[0])
+			cJSON_AddStringToObject(json_obj, "wlin", oooi.won);
 	}
-
-	fprintf(fdout,"}\n");
-	fflush(fdout);
+	cJSON_AddStringToObject(json_obj, "station_id", idstation);
+	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
+	cJSON_Delete(json_obj);
+	return ok;
 }
 
-#undef PRINTC
-#undef PRINTS
 
 static void printoneline(acarsmsg_t * msg, int chn, struct timeval tv)
 {
@@ -532,11 +479,21 @@ void outputmsg(const msgblk_t * blk)
 	/* txt end */
 	msg.be = blk->txt[blk->len - 1];
 
+	// unconditionally build the JSON buffer
+	buildjson(&msg, blk->chn, blk->tv);
+
 	if (sockfd > 0) {
-		if (netout == 0)
+		switch (netout) {
+		case NETLOG_PLANEPLOTTER:
 			outpp(&msg);
-		else
+			break;
+		case NETLOG_NATIVE:
 			outsv(&msg, blk->chn, blk->tv);
+			break;
+		case NETLOG_JSON:
+			outjson();
+			break;
+		}
 	}
 
 	switch (outtype) {
@@ -552,7 +509,7 @@ void outputmsg(const msgblk_t * blk)
 		printmonitor(&msg, blk->chn, blk->tv);
 		break;
 	case 4:
-		printjson(&msg, blk->chn, blk->tv);
+		fprintf(fdout, "%s\n", jsonbuf);
 		break;
 	}
 }

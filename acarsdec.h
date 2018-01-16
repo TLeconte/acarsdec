@@ -23,6 +23,11 @@
 
 #define MAXNBCHANNELS 8
 #define INTRATE 12500
+#define JSONBUFLEN 512
+#define NETLOG_NONE 0
+#define NETLOG_PLANEPLOTTER 1
+#define NETLOG_NATIVE 2
+#define NETLOG_JSON 3
 
 typedef float sample_t;
 
@@ -100,7 +105,6 @@ extern pthread_mutex_t datamtx;
 extern pthread_cond_t datawcd;
 
 
-extern char *idstation;
 extern int inpmode;
 extern int verbose;
 extern int outtype;

@@ -1,8 +1,8 @@
 CFLAGS= -Wall -Ofast -pthread -D WITH_AIR -I.  `pkg-config --cflags libairspy`
 LDLIBS= -lm -pthread  `pkg-config --libs libairspy` -lusb-1.0
 
-acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o raw.o label.o
-	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o raw.o label.o -o $@ $(LDLIBS)
+acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o raw.o label.o cJSON.o
+	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o raw.o label.o cJSON.o -o $@ $(LDLIBS)
 
 acarsserv:	acarsserv.o dbmgn.o
 	$(CC) -Ofast acarsserv.o dbmgn.o -o $@ -lsqlite3
@@ -10,7 +10,8 @@ acarsserv:	acarsserv.o dbmgn.o
 acarsdec.o:	acarsdec.c acarsdec.h
 acars.o:	acars.c acarsdec.h syndrom.h
 msk.o:		msk.c acarsdec.h
-output.o:	output.c acarsdec.h
+output.o:	output.c acarsdec.h cJSON.h
+cJSON.o:	cJSON.c cJSON.h
 air.o:		air.c acarsdec.h
 
 acarsserv.o:	acarsserv.c acarsserv.h
