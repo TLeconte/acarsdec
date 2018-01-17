@@ -4,8 +4,8 @@ LDLIBS= -lm -pthread   -lrtlsdr `pkg-config --libs librtlsdr`
 acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o raw.o label.o cJSON.o
 	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o raw.o label.o cJSON.o -o $@ $(LDLIBS)
 
-acarsserv:	acarsserv.o dbmgn.o
-	$(CC) -Ofast acarsserv.o dbmgn.o -o $@ -lsqlite3
+acarsserv:	acarsserv.o dbmgn.o cJSON.o
+	$(CC) -Ofast acarsserv.o dbmgn.o cJSON.o -o $@ -lsqlite3
 
 acarsdec.o:	acarsdec.c acarsdec.h
 acars.o:	acars.c acarsdec.h syndrom.h
