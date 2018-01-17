@@ -229,7 +229,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 	cJSON_AddNumberToObject(json_obj, "timestamp", t);
 	cJSON_AddNumberToObject(json_obj, "channel", chn);
 	snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
-	cJSON_AddStringToObject(json_obj, "freq", convert_tmp);
+	cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
 	cJSON_AddNumberToObject(json_obj, "level", msg->lvl);
 	cJSON_AddNumberToObject(json_obj, "error", msg->err);
 	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
