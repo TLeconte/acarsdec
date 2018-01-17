@@ -7,18 +7,18 @@ Since 3.0, It comes with a database backend : acarsserv to store receved acars m
  * up to 8 channels decoded simultaneously
  * error detection AND correction
  * input via [rtl_sdr](http://sdr.osmocom.org/trac/wiki/rtl-sdr), or [airspy](http://airspy.com/) software defined radios (SDR)
- * logging data over UDP in planeplotter or acarsserv formats to store in an sqlite database.
+ * logging data over UDP in planeplotter or acarsserv formats to store in an sqlite database, or JSON for custom processing.
 
 Multi-channel decoding is particularly useful with the RTL dongle. It allows the user to directly monitor 8 different frequencies simultaneously with very low cost hardware.
 
 ## Usage
-> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N ipaddr:port] [-i stationid] [-l logfile] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
+> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N|j ipaddr:port] [-i stationid] [-l logfile] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
 
  -v :			verbose
  
  -A :			don't display uplink messages (ie : only aircraft messages)
  
- -o lv :		output format : 0: no log, 1 one line by msg., 2 full (default), 3 monitor mode
+ -o lv :		output format : 0: no log, 1 one line by msg., 2 full (default), 3 monitor mode, 4 JSON
  
  -t time :		set forget time (TTL) in seconds in monitor mode(default=600s)
  
@@ -27,6 +27,8 @@ Multi-channel decoding is particularly useful with the RTL dongle. It allows the
  -n ipaddr:port :	send acars messages to addr:port via UDP in planeplotter compatible format
  
  -N ipaddr:port :	send acars messages to addr:port via UDP in acarsdec format
+
+ -j ipaddr:port :	send acars messages to addr:port via UDP in JSON format
  
  -i station id:		id use in acarsdec network format.
 
@@ -88,6 +90,16 @@ Decoding from airspy on 3 frequencies with verbose logging
      .D-ABUF  DE0252   1 .x.      16:25:20 16:25:20
      .EC-MGS  V72422   1 .x.      16:25:07 16:25:07
      .G-EUUU  BA733C   2 .x.      16:24:38 16:24:33
+
+
+#### JSON mode (-o 4)
+
+    {"timestamp":1516206744.1849549,"channel":2,"freq":130.025,"level":-22,"error":0,"mode":"2","label":"H1","block_id":"6","ack":false,"tail":".N842UA","flight":"UA1412","msgno":"D04G","text":"#DFB9102,0043,188/9S101,0039,181/S0101,0043,188/0S100,0039,182/T1100,0043,188/1T099,0039,182/T2099,0043,189/2T098,0039,182/T3098,0043,189/3T097,0039,182/T4098,0043,189/4T097,0039,183/T5098,0043,189/5T097,0039,1","end":true,"station_id":"sigint"}
+    {"timestamp":1516206745.249615,"channel":2,"freq":130.025,"level":-24,"error":2,"mode":"2","label":"RA","block_id":"R","ack":false,"tail":".N842UA","flight":"","msgno":"","text":"QUHDQWDUA?1HOWGOZIT\r\n ** PART 01 OF 01 **\r\nHOWGOZIT 1412-17 SJC\r\nCI: 17        RLS: 01 \r\nSJC 1615/1625     171A\r\nBMRNG    1630 37  159-\r\nTIPRE    1638 37  145\r\nINSLO    1701 37  125\r\nGAROT    1726 37  106\r\nEKR      1800 ","end":true,"station_id":"sigint"}
+    {"timestamp":1516206747.0520389,"channel":2,"freq":130.025,"level":-24,"error":0,"mode":"2","label":"H1","block_id":"6","ack":"R","tail":".N842UA","flight":"UA1412","msgno":"D04G","text":"#DFB9102,0043,188/9S101,0039,181/S0101,0043,188/0S100,0039,182/T1100,0043,188/1T099,0039,182/T2099,0043,189/2T098,0039,182/T3098,0043,189/3T097,0039,182/T4098,0043,189/4T097,0039,183/T5098,0043,189/5T097,0039,1","end":true,"station_id":"sigint"}
+    {"timestamp":1516206752.622808,"channel":2,"freq":130.025,"level":-23,"error":0,"mode":"2","label":"RA","block_id":"S","ack":"6","tail":".N842UA","flight":"","msgno":"","text":"37   80\r\nDEN 1829/1837      67\r\n--SCHEDULED ARRIVAL--\r\n    1842/1850 (00.13E)\r\n** END OF PART 01 **\r\n","station_id":"sigint"}
+    {"timestamp":1516206753.7696371,"channel":2,"freq":130.025,"level":-20,"error":0,"mode":"2","label":"H1","block_id":"7","ack":"S","tail":".N842UA","flight":"UA1412","msgno":"D04H","text":"#DFB83/T6098,0043,189/6T096,0039,183/T7097,0043,189/7T096,0039,183/T8097,0043,190/8T096,0039,184/T9097,0043,190/9T096,0039,184/T0097,0043,190/0T095,0039,184/V10,0,0/V20,0,0/V30,0,0/V40,0,0/V50,0,0/V60,0,0/V70,0","end":true,"station_id":"sigint"}
+    {"timestamp":1516206759.3401041,"channel":2,"freq":130.025,"level":-25,"error":0,"mode":"2","label":"_d","block_id":"T","ack":"7","tail":".N842UA","flight":"","msgno":"","text":"","station_id":"sigint"}
 
 
 ## Compilation
