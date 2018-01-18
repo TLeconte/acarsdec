@@ -220,6 +220,14 @@ int initAcars(channel_t * ch)
 	return 0;
 }
 
+void resetAcars(channel_t * ch)
+{
+	ch->Acarsstate = WSYN;
+	ch->MskDf = 0;
+	ch->Mska = 0;
+	ch->nbits = 1;
+}
+
 void decodeAcars(channel_t * ch)
 {
 	unsigned char r = ch->outbits;
@@ -238,7 +246,7 @@ void decodeAcars(channel_t * ch)
 			ch->nbits = 8;
 			return;
 		}
-		ch->nbits = 1;
+		resetAcars(ch);
 		return;
 
 	case SYN2:
@@ -252,9 +260,7 @@ void decodeAcars(channel_t * ch)
 			ch->nbits = 8;
 			return;
 		}
-		ch->Acarsstate = WSYN;
-		ch->MskDf = 0;
-		ch->nbits = 1;
+		resetAcars(ch);
 		return;
 
 	case SOH1:
@@ -267,9 +273,7 @@ void decodeAcars(channel_t * ch)
 			ch->Msklvl = 0;
 			return;
 		}
-		ch->Acarsstate = WSYN;
-		ch->MskDf = 0;
-		ch->nbits = 1;
+		resetAcars(ch);
 		return;
 
 	case TXT:
@@ -283,9 +287,7 @@ void decodeAcars(channel_t * ch)
 					fprintf(stderr,
 						"#%d too many parity errors\n",
 						ch->chn + 1);
-				ch->Acarsstate = WSYN;
-				ch->MskDf = 0;
-				ch->nbits = 1;
+				resetAcars(ch);
 				return;
 			}
 		}
@@ -307,9 +309,7 @@ void decodeAcars(channel_t * ch)
 		if (ch->blk->len > 240) {
 			if (verbose)
 				fprintf(stderr, "#%d too long\n", ch->chn + 1);
-			ch->Acarsstate = WSYN;
-			ch->MskDf = 0;
-			ch->nbits = 1;
+			resetAcars(ch);
 			return;
 		}
 		ch->nbits = 8;
@@ -342,9 +342,7 @@ void decodeAcars(channel_t * ch)
 		ch->nbits = 8;
 		return;
 	case END:
-		ch->Acarsstate = WSYN;
-		ch->MskDf = 0;
-		ch->nbits = 8;
+		resetAcars(ch);
 		return;
 	}
 }
