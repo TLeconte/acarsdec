@@ -519,6 +519,7 @@ void outputmsg(const msgblk_t * blk)
 		break;
 	case OUTTYPE_JSON:
 		fprintf(fdout, "%s\n", jsonbuf);
+		fflush(fdout);
 		break;
 	}
 }
