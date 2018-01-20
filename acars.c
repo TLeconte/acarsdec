@@ -199,6 +199,7 @@ static void *blk_thread(void *arg)
 	return NULL;
 }
 
+
 int initAcars(channel_t * ch)
 {
 	ch->outbits = 0;
@@ -218,6 +219,14 @@ int initAcars(channel_t * ch)
 	pthread_create(&ch->th, NULL, blk_thread, ch);
 
 	return 0;
+}
+
+static void resetAcars(channel_t * ch)
+{
+	ch->Acarsstate = WSYN;
+	ch->MskDf = 0;
+	ch->Mska = 0;
+	ch->nbits = 1;
 }
 
 void decodeAcars(channel_t * ch)
@@ -252,9 +261,7 @@ void decodeAcars(channel_t * ch)
 			ch->nbits = 8;
 			return;
 		}
-		ch->Acarsstate = WSYN;
-		ch->MskDf = 0;
-		ch->nbits = 1;
+		resetAcars(ch);
 		return;
 
 	case SOH1:
@@ -267,9 +274,7 @@ void decodeAcars(channel_t * ch)
 			ch->Msklvl = 0;
 			return;
 		}
-		ch->Acarsstate = WSYN;
-		ch->MskDf = 0;
-		ch->nbits = 1;
+		resetAcars(ch);
 		return;
 
 	case TXT:
@@ -283,9 +288,7 @@ void decodeAcars(channel_t * ch)
 					fprintf(stderr,
 						"#%d too many parity errors\n",
 						ch->chn + 1);
-				ch->Acarsstate = WSYN;
-				ch->MskDf = 0;
-				ch->nbits = 1;
+				resetAcars(ch);
 				return;
 			}
 		}
@@ -307,9 +310,7 @@ void decodeAcars(channel_t * ch)
 		if (ch->blk->len > 240) {
 			if (verbose)
 				fprintf(stderr, "#%d too long\n", ch->chn + 1);
-			ch->Acarsstate = WSYN;
-			ch->MskDf = 0;
-			ch->nbits = 1;
+			resetAcars(ch);
 			return;
 		}
 		ch->nbits = 8;
@@ -342,8 +343,7 @@ void decodeAcars(channel_t * ch)
 		ch->nbits = 8;
 		return;
 	case END:
-		ch->Acarsstate = WSYN;
-		ch->MskDf = 0;
+		resetAcars(ch);
 		ch->nbits = 8;
 		return;
 	}
