@@ -23,16 +23,18 @@
 #include <signal.h>
 #include <getopt.h>
 #include <sched.h>
+#include <unistd.h>
 #include "acarsdec.h"
 
 channel_t channel[MAXNBCHANNELS];
 unsigned int nbch;
+char *jsonbuf;
 
-char *idstation;
+char *idstation = NULL;
 int inmode = 0;
 int verbose = 0;
 int outtype = 2;
-int netout;
+int netout = NETLOG_NONE;
 int airflt = 0;
 int mdly=600;
 
@@ -80,7 +82,9 @@ static void usage(void)
 	fprintf(stderr,
 		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n");
 	fprintf(stderr,
-		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdev native format\n");
+		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec native format\n");
+	fprintf(stderr,
+		" -j ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec json format\n");
 	fprintf(stderr,
 		" -i stationid\t\t: station id used in acarsdec network format.\n\n");
 #ifdef WITH_ALSA
@@ -117,9 +121,12 @@ int main(int argc, char **argv)
 	int c;
 	int res, n;
 	struct sigaction sigact;
+	char sys_hostname[8];
+	gethostname(sys_hostname, sizeof(sys_hostname));
+	idstation = strndup(sys_hostname, 8);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "vafrsRo:t:g:Ap:n:N:l:c:i:f:")) != EOF) {
+	while ((c = getopt(argc, argv, "vafrsRo:t:g:Ap:n:N:j:l:c:i:f:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -167,11 +174,15 @@ int main(int argc, char **argv)
 			break;
 		case 'n':
 			Rawaddr = optarg;
-			netout = 0;
+			netout = NETLOG_PLANEPLOTTER;
 			break;
 		case 'N':
 			Rawaddr = optarg;
-			netout = 1;
+			netout = NETLOG_NATIVE;
+			break;
+		case 'j':
+			Rawaddr = optarg;
+			netout = NETLOG_JSON;
 			break;
 		case 'A':
 			airflt = 1;
@@ -180,7 +191,7 @@ int main(int argc, char **argv)
 			logfilename = optarg;
 			break;
 		case 'i':
-			idstation = strndup(optarg,8);
+			idstation = strndup(optarg, 8);
 			break;
 
 		default:
@@ -198,6 +209,7 @@ int main(int argc, char **argv)
 		exit(res);
 	}
 
+	jsonbuf = malloc(JSONBUFLEN+1);
 	sigact.sa_handler = sighandler;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;

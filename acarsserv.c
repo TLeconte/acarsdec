@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <time.h>
 #include "acarsserv.h"
+#include "cJSON.h"
 
 #define DFLTPORT "5555"
 
@@ -47,6 +48,7 @@ const char *regpre3[] = { "A9C", "A4O", "9XR", "" };
 int verbose = 0;
 int station = 0;
 int allmess = 0;
+int jsonlog = 0;
 int dupmess = 0;
 
 void fixreg(char *reg, char *add)
@@ -143,7 +145,7 @@ static void usage(void)
         fprintf(stderr,
                 "Acarsdec/acarsserv 3.1 Copyright (c) 2015 Thierry Leconte \n\n");
 	fprintf(stderr,
-		"Usage: acarsserv [-v][-N address:port ][-b database path][-s][-d][-a]\n\n");
+		"Usage: acarsserv [-v][-N address:port ][-b database path][-s][-d][-a][-j]\n\n");
 	fprintf(stderr, "	-v		: verbose\n");
 	fprintf(stderr,
 		"	-b filepath	: use filepath as sqlite3 database file (default : ./acarsserv.sqb)\n");
@@ -155,6 +157,8 @@ static void usage(void)
 		"	-d		: store duplicate acars messages (default : don't store )\n");
 	fprintf(stderr,
 		"	-a		: store Q0 and _d (just pings and acks without data) acars messages (default : don't store )\n");
+	fprintf(stderr,
+		"	-j		: expect JSON input rather than classic acarsserv format\n");
 	fprintf(stderr, "\n");
 
 }
@@ -234,8 +238,9 @@ int main(int argc, char **argv)
 	char *basename = "acarsserv.sqb";
 	char *bindaddr = "[::]";
 	int c;
+	cJSON *json_obj;
 
-	while ((c = getopt(argc, argv, "vb:N:asd")) != EOF) {
+	while ((c = getopt(argc, argv, "vb:N:ajsd")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -249,6 +254,9 @@ int main(int argc, char **argv)
 			break;
 		case 'a':
 			allmess = 1;
+			break;
+		case 'j':
+			jsonlog = 1;
 			break;
 		case 's':
 			station = 1;
@@ -286,144 +294,209 @@ int main(int argc, char **argv)
 
 		addrlen = sizeof(src_addr);
 		memset(&src_addr, 0, addrlen);
-		len =
-		    recvfrom(sockfd, pkt, MAXACARSLEN, 0,
+		memset(pkt, 0, MAXACARSLEN);
+		len = recvfrom(sockfd, pkt, MAXACARSLEN, 0,
 			     (struct sockaddr *)&src_addr, &addrlen);
-		if (len <= 0) {
-			fprintf(stderr, "read %d\n", len);
-			continue;
+
+		get_ip_str((struct sockaddr *)&src_addr, ipaddr, INET6_ADDRSTRLEN);
+
+		if (verbose)
+			printf("%s\n", pkt);
+
+		if (!jsonlog) {
+			if (len <= 0) {
+				fprintf(stderr, "read %d\n", len);
+				continue;
+			}
+
+			if (len < 31) {
+				continue;
+			}
+			pkt[len] = 0;
+
+			mpt = pkt;
+			bpt = mpt + 8;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			strcpy(msg->idst, mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 1;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			msg->chn = atoi(mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 2;
+			if (*bpt != '/')
+				continue;
+			*bpt = '\0';
+			tmp.tm_mday = atoi(mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 2;
+			if (*bpt != '/')
+				continue;
+			*bpt = '\0';
+			tmp.tm_mon = atoi(mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 4;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			tmp.tm_year = atoi(mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 2;
+			if (*bpt != ':')
+				continue;
+			*bpt = '\0';
+			tmp.tm_hour = atoi(mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 2;
+			if (*bpt != ':')
+				continue;
+			*bpt = '\0';
+			tmp.tm_min = atoi(mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 2;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			tmp.tm_sec = atoi(mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 1;
+			if (*bpt != ' ')
+				continue;
+			msg->err = atoi(mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 3;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			msg->lvl = atoi(mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 1;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			msg->mode = *mpt;
+			mpt = bpt + 1;
+			bpt = mpt + 7;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			strcpy(reg, mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 1;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			msg->ack = *mpt;
+			mpt = bpt + 1;
+			bpt = mpt + 2;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			strcpy(msg->label, mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 1;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			msg->bid = *mpt;
+			mpt = bpt + 1;
+			bpt = mpt + 4;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			strcpy(msg->no, mpt);
+			mpt = bpt + 1;
+			bpt = mpt + 6;
+			if (*bpt != ' ')
+				continue;
+			*bpt = '\0';
+			strcpy(msg->fid, mpt);
+			mpt = bpt + 1;
+			strncpy(msg->txt, mpt, 220);
+			msg->txt[220] = '\0';
+
+
+			fixreg(msg->reg, reg);
+
+			tmp.tm_isdst = 0;
+			tmp.tm_mon -= 1;
+			tmp.tm_year -= 1900;
+			msg->tm = timegm(&tmp);
+
+		} else {
+			json_obj = cJSON_Parse(pkt);
+			if (json_obj == NULL)
+				goto out;
+
+			cJSON *j_timestamp = cJSON_GetObjectItem(json_obj, "timestamp");
+			msg->tm = j_timestamp->valuedouble;
+
+			// ignore the channel number in favor of the frequency
+			cJSON *j_freq = cJSON_GetObjectItem(json_obj, "freq");
+			msg->chn = (int)(j_freq->valuedouble * 1e6);
+
+			cJSON *j_lvl = cJSON_GetObjectItem(json_obj, "level");
+			msg->lvl = j_lvl->valueint;
+
+			cJSON *j_error = cJSON_GetObjectItem(json_obj, "error");
+			msg->err = j_error->valueint;
+
+			cJSON *j_mode = cJSON_GetObjectItem(json_obj, "mode");
+			msg->mode = j_mode->valuestring[0];
+
+			cJSON *j_label = cJSON_GetObjectItem(json_obj, "label");
+			strcpy(msg->label, j_label->valuestring);
+
+			cJSON *j_text = cJSON_GetObjectItem(json_obj, "text");
+			strncpy(msg->txt, j_text->valuestring, 220);
+			msg->txt[220] = '\0';
+
+			if (cJSON_HasObjectItem(json_obj, "block_id")) {
+				cJSON *j_blkid = cJSON_GetObjectItem(json_obj, "block_id");
+				msg->bid = j_blkid->valuestring[0];
+			}
+
+			if (cJSON_HasObjectItem(json_obj, "ack")) {
+				cJSON *j_ack = cJSON_GetObjectItem(json_obj, "ack");
+				if (cJSON_IsFalse(j_ack))
+					msg->ack = 0x15;
+				else
+					msg->ack = j_ack->valuestring[0];
+			}
+
+			if (cJSON_HasObjectItem(json_obj, "tail")) {
+				cJSON *j_tail = cJSON_GetObjectItem(json_obj, "tail");
+				strcpy(msg->reg, j_tail->valuestring);
+			}
+
+			if (cJSON_HasObjectItem(json_obj, "flight")) {
+				cJSON *j_flight = cJSON_GetObjectItem(json_obj, "flight");
+				strcpy(msg->fid, j_flight->valuestring);
+			}
+
+			if (cJSON_HasObjectItem(json_obj, "msgno")) {
+				cJSON *j_msgno = cJSON_GetObjectItem(json_obj, "msgno");
+				strcpy(msg->no, j_msgno->valuestring);
+			}
+
+			if (cJSON_HasObjectItem(json_obj, "station_id")) {
+				cJSON *j_stationid = cJSON_GetObjectItem(json_obj, "station_id");
+				strncpy(msg->idst, j_stationid->valuestring, 8);
+			}
+
+			cJSON_Delete(json_obj);
 		}
-
-		if (len < 31) {
-			continue;
-		}
-		pkt[len] = 0;
-
-		mpt = pkt;
-		bpt = mpt + 8;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		strcpy(msg->idst, mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 1;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		msg->chn = atoi(mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 2;
-		if (*bpt != '/')
-			continue;
-		*bpt = '\0';
-		tmp.tm_mday = atoi(mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 2;
-		if (*bpt != '/')
-			continue;
-		*bpt = '\0';
-		tmp.tm_mon = atoi(mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 4;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		tmp.tm_year = atoi(mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 2;
-		if (*bpt != ':')
-			continue;
-		*bpt = '\0';
-		tmp.tm_hour = atoi(mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 2;
-		if (*bpt != ':')
-			continue;
-		*bpt = '\0';
-		tmp.tm_min = atoi(mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 2;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		tmp.tm_sec = atoi(mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 1;
-		if (*bpt != ' ')
-			continue;
-		msg->err = atoi(mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 3;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		msg->lvl = atoi(mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 1;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		msg->mode = *mpt;
-		mpt = bpt + 1;
-		bpt = mpt + 7;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		strcpy(reg, mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 1;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		msg->ack = *mpt;
-		mpt = bpt + 1;
-		bpt = mpt + 2;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		strcpy(msg->label, mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 1;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		msg->bid = *mpt;
-		mpt = bpt + 1;
-		bpt = mpt + 4;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		strcpy(msg->no, mpt);
-		mpt = bpt + 1;
-		bpt = mpt + 6;
-		if (*bpt != ' ')
-			continue;
-		*bpt = '\0';
-		strcpy(msg->fid, mpt);
-		mpt = bpt + 1;
-		strncpy(msg->txt, mpt, 220);
-		msg->txt[220] = '\0';
-
-
-		fixreg(msg->reg, reg);
-
-		tmp.tm_isdst = 0;
-		tmp.tm_mon -= 1;
-		tmp.tm_year -= 1900;
-		msg->tm = timegm(&tmp);
-
-		get_ip_str((struct sockaddr *)&src_addr, ipaddr,
-			   INET6_ADDRSTRLEN);
+		processpkt(msg, ipaddr);
 
 		if (verbose)
 			fprintf(stdout,
-				"MSG %s %1d %1c %7s %1c %2s %1c %4s %6s %s\n",
-				ipaddr, msg->chn, msg->mode, msg->reg, msg->ack,
-				msg->label, msg->bid, msg->no, msg->fid,
-				msg->txt);
-
-		processpkt(msg, ipaddr);
-
+				"MSG ip='%s' chan='%d' mode='%1c' reg='%7s' ack='%1c' lbl='%2s' blk='%1c' msgno='%4s' flt='%6s' txt='%s'\n",
+				ipaddr, msg->chn, msg->mode, msg->reg, msg->ack, msg->label, msg->bid, msg->no, msg->fid, msg->txt);
+out:
 		free(msg);
 	} while (1);
 }
