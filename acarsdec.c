@@ -75,7 +75,7 @@ static void usage(void)
 	fprintf(stderr,
 		"\n -o lv\t\t\t: output format : 0: no log, 1 one line by msg., 2 full (default) , 3 monitor mode, 4 newline separated JSON\n");
 	fprintf(stderr,
-		"\n -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
+		"\n -t time\t\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
 	fprintf(stderr,
 		" -l logfile\t\t: Append log messages to logfile (Default : stdout).\n");
 	fprintf(stderr,
@@ -167,10 +167,6 @@ int main(int argc, char **argv)
 			inmode = 4;
 			break;
 #endif
-		case 'R':
-			res = initRaw(argv, optind);
-			inmode = 5;
-			break;
 		case 'n':
 			Rawaddr = optarg;
 			netout = NETLOG_PLANEPLOTTER;
@@ -263,9 +259,6 @@ int main(int argc, char **argv)
 		res = runAirspySample();
 		break;
 #endif
-	case 5:
-		res = runRawSample();
-		break;
 	default:
 		res = -1;
 	}
