@@ -32,7 +32,7 @@ int initMsk(channel_t * ch)
 	ch->MskPhi = ch->MskClk = 0;
 	ch->MskS = 0;
 
-	ch->MskDf = ch->Mska = 0;
+	ch->MskDf = 0;
 
 	ch->idx = 0;
 	ch->inb = calloc(FLEN, sizeof(float complex));
@@ -59,9 +59,7 @@ static inline void putbit(float v, channel_t * ch)
 		decodeAcars(ch);
 }
 
-const float PLLC1=4e-8;
-const float PLLC2=3.5e-3;
-
+const double PLLC=3.8e-3;
 void demodMSK(channel_t *ch,int len)
 {
    /* MSK demod */
@@ -130,8 +128,7 @@ void demodMSK(channel_t *ch,int len)
 		ch->MskS++;
 
 		/* PLL filter */
-		ch->MskDf=PLLC2*dphi+ch->Mska;
-		ch->Mska+=PLLC1*dphi;
+		ch->MskDf=PLLC*dphi;
 
 	}
     }

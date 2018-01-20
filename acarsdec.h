@@ -59,7 +59,7 @@ typedef struct {
 #endif
 	float *dm_buffer;
 	double MskPhi;
-	double MskDf,Mska;
+	double MskDf;
 	float Mskpv;
 	float Msklvl;
 	float MskClk;

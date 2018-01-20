@@ -225,7 +225,6 @@ static void resetAcars(channel_t * ch)
 {
 	ch->Acarsstate = WSYN;
 	ch->MskDf = 0;
-	ch->Mska = 0;
 	ch->nbits = 1;
 }
 
