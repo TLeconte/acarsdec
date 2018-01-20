@@ -98,8 +98,6 @@ Decoding from airspy on 3 frequencies with verbose logging
     {"timestamp":1516206745.249615,"channel":2,"freq":130.025,"level":-24,"error":2,"mode":"2","label":"RA","block_id":"R","ack":false,"tail":".N842UA","flight":"","msgno":"","text":"QUHDQWDUA?1HOWGOZIT\r\n ** PART 01 OF 01 **\r\nHOWGOZIT 1412-17 SJC\r\nCI: 17        RLS: 01 \r\nSJC 1615/1625     171A\r\nBMRNG    1630 37  159-\r\nTIPRE    1638 37  145\r\nINSLO    1701 37  125\r\nGAROT    1726 37  106\r\nEKR      1800 ","end":true,"station_id":"sigint"}
     {"timestamp":1516206747.0520389,"channel":2,"freq":130.025,"level":-24,"error":0,"mode":"2","label":"H1","block_id":"6","ack":"R","tail":".N842UA","flight":"UA1412","msgno":"D04G","text":"#DFB9102,0043,188/9S101,0039,181/S0101,0043,188/0S100,0039,182/T1100,0043,188/1T099,0039,182/T2099,0043,189/2T098,0039,182/T3098,0043,189/3T097,0039,182/T4098,0043,189/4T097,0039,183/T5098,0043,189/5T097,0039,1","end":true,"station_id":"sigint"}
     {"timestamp":1516206752.622808,"channel":2,"freq":130.025,"level":-23,"error":0,"mode":"2","label":"RA","block_id":"S","ack":"6","tail":".N842UA","flight":"","msgno":"","text":"37   80\r\nDEN 1829/1837      67\r\n--SCHEDULED ARRIVAL--\r\n    1842/1850 (00.13E)\r\n** END OF PART 01 **\r\n","station_id":"sigint"}
-    {"timestamp":1516206753.7696371,"channel":2,"freq":130.025,"level":-20,"error":0,"mode":"2","label":"H1","block_id":"7","ack":"S","tail":".N842UA","flight":"UA1412","msgno":"D04H","text":"#DFB83/T6098,0043,189/6T096,0039,183/T7097,0043,189/7T096,0039,183/T8097,0043,190/8T096,0039,184/T9097,0043,190/9T096,0039,184/T0097,0043,190/0T095,0039,184/V10,0,0/V20,0,0/V30,0,0/V40,0,0/V50,0,0/V60,0,0/V70,0","end":true,"station_id":"sigint"}
-    {"timestamp":1516206759.3401041,"channel":2,"freq":130.025,"level":-25,"error":0,"mode":"2","label":"_d","block_id":"T","ack":"7","tail":".N842UA","flight":"","msgno":"","text":"","station_id":"sigint"}
 
 
 ## Compilation
@@ -147,3 +145,11 @@ You could read its content with sqlite3 command (or more sophisticated graphical
 acarsserv has some messages filtering and network options (UTSL).
 
 
+## Copyrights 
+acarsdec and acarsserv are Copyright Thierry Leconte 2015-2018
+
+These code are free software; you can redistribute it and/or modify
+it under the terms of the GNU Library General Public License version 2
+published by the Free Software Foundation.
+
+They include [cJSON](https://github.com/DaveGamble/cJSON) Copyright (c) 2009-2017 Dave Gamble and cJSON contributors
