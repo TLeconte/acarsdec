@@ -12,10 +12,12 @@
 
 extern int inmode;
 extern char *idstation;
-extern char *jsonbuf;
 
 static int sockfd = -1;
 static FILE *fdout;
+
+static char *jsonbuf=NULL;
+#define JSONBUFLEN 512
 
 int initOutput(char *logfilename, char *Rawaddr)
 {
@@ -33,63 +35,70 @@ int initOutput(char *logfilename, char *Rawaddr)
 	} else
 		fdout = stdout;
 
-	if (Rawaddr == NULL)
-		return 0;
+	if (Rawaddr) {
 
-	memset(&hints, 0, sizeof hints);
-	if (Rawaddr[0] == '[') {
-		hints.ai_family = AF_INET6;
-		addr = Rawaddr + 1;
-		port = strstr(addr, "]");
-		if (port == NULL) {
-			fprintf(stderr, "Invalid IPV6 address\n");
-			return -1;
-		}
-		*port = 0;
-		port++;
-		if (*port != ':')
-			port = "5555";
-		else
-			port++;
-	} else {
-		hints.ai_family = AF_UNSPEC;
-		addr = Rawaddr;
-		port = strstr(addr, ":");
-		if (port == NULL)
-			port = "5555";
-		else {
+		memset(&hints, 0, sizeof hints);
+		if (Rawaddr[0] == '[') {
+			hints.ai_family = AF_INET6;
+			addr = Rawaddr + 1;
+			port = strstr(addr, "]");
+			if (port == NULL) {
+				fprintf(stderr, "Invalid IPV6 address\n");
+				return -1;
+			}
 			*port = 0;
 			port++;
+			if (*port != ':')
+				port = "5555";
+			else
+				port++;
+		} else {
+			hints.ai_family = AF_UNSPEC;
+			addr = Rawaddr;
+			port = strstr(addr, ":");
+			if (port == NULL)
+				port = "5555";
+			else {
+				*port = 0;
+				port++;
+			}
 		}
-	}
 
-	hints.ai_socktype = SOCK_DGRAM;
+		hints.ai_socktype = SOCK_DGRAM;
 
-	if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
-		fprintf(stderr, "Invalid/unknown address %s\n", addr);
-		return -1;
-	}
+		if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
+			fprintf(stderr, "Invalid/unknown address %s\n", addr);
+			return -1;
+		}
 
-	for (p = servinfo; p != NULL; p = p->ai_next) {
-		if ((sockfd =
-		     socket(p->ai_family, p->ai_socktype,
-			    p->ai_protocol)) == -1) {
+		for (p = servinfo; p != NULL; p = p->ai_next) {
+			if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
 			continue;
+			}
+
+			if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+				close(sockfd);
+				continue;
+			}
+			break;
+		}
+		if (p == NULL) {
+			fprintf(stderr, "failed to connect\n");
+			return -1;
 		}
 
-		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-			close(sockfd);
-			continue;
-		}
-		break;
-	}
-	if (p == NULL) {
-		fprintf(stderr, "failed to connect\n");
-		return -1;
+		freeaddrinfo(servinfo);
 	}
 
-	freeaddrinfo(servinfo);
+	if (outtype == OUTTYPE_MONITOR ) {
+		verbose=0;
+		cls();
+	}
 
+	if (outtype == OUTTYPE_JSON || (sockfd && netout==NETLOG_JSON)) {
+		jsonbuf = malloc(JSONBUFLEN+1);
+	}
+	
 	return 0;
 }
 
@@ -166,11 +175,11 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 
 #if defined (WITH_RTL) || defined (WITH_AIR)
 	if (inmode >= 3)
-		fprintf(fdout, "\n[#%1d (F:%3.3f L:%4d E:%1d) ", chn + 1,
+		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+3d E:%1d) ", chn + 1,
 			channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
-		fprintf(fdout, "\n[#%1d ( L:%4d E:%1d) ", chn + 1, msg->lvl, msg->err);
+		fprintf(fdout, "\n[#%1d (L:%+3d E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (inmode != 2)
 		printdate(tv);
@@ -292,7 +301,7 @@ static void printoneline(acarsmsg_t * msg, int chn, struct timeval tv)
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
 
-	fprintf(fdout, "#%1d (L:%4d E:%1d) ", chn + 1, msg->lvl, msg->err);
+	fprintf(fdout, "#%1d (L:%+3d E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (inmode != 2)
 		printdate(tv);
@@ -466,7 +475,7 @@ void outputmsg(const msgblk_t * blk)
 			}
 			msg.fid[i] = '\0';
 
-			if(outtype==3)
+			if(outtype == OUTTYPE_MONITOR)
 				addFlight(&msg,blk->chn,blk->tv);
 		}
 
@@ -479,8 +488,8 @@ void outputmsg(const msgblk_t * blk)
 	/* txt end */
 	msg.be = blk->txt[blk->len - 1];
 
-	// unconditionally build the JSON buffer
-	buildjson(&msg, blk->chn, blk->tv);
+	// build the JSON buffer if needed
+	if(jsonbuf) buildjson(&msg, blk->chn, blk->tv);
 
 	if (sockfd > 0) {
 		switch (netout) {
@@ -497,18 +506,18 @@ void outputmsg(const msgblk_t * blk)
 	}
 
 	switch (outtype) {
-	case 0:
+	case OUTTYPE_NONE:
 		break;
-	case 1:
+	case OUTTYPE_ONELINE:
 		printoneline(&msg, blk->chn, blk->tv);
 		break;
-	case 2:
+	case OUTTYPE_STD:
 		printmsg(&msg, blk->chn, blk->tv);
 		break;
-	case 3:
+	case OUTTYPE_MONITOR:
 		printmonitor(&msg, blk->chn, blk->tv);
 		break;
-	case 4:
+	case OUTTYPE_JSON:
 		fprintf(fdout, "%s\n", jsonbuf);
 		break;
 	}

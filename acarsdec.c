@@ -28,12 +28,11 @@
 
 channel_t channel[MAXNBCHANNELS];
 unsigned int nbch;
-char *jsonbuf;
 
 char *idstation = NULL;
 int inmode = 0;
 int verbose = 0;
-int outtype = 2;
+int outtype = OUTTYPE_STD;
 int netout = NETLOG_NONE;
 int airflt = 0;
 int mdly=600;
@@ -76,7 +75,7 @@ static void usage(void)
 	fprintf(stderr,
 		"\n -o lv\t\t\t: output format : 0: no log, 1 one line by msg., 2 full (default) , 3 monitor mode, 4 newline separated JSON\n");
 	fprintf(stderr,
-		"\n -t time\t\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
+		"\n -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
 	fprintf(stderr,
 		" -l logfile\t\t: Append log messages to logfile (Default : stdout).\n");
 	fprintf(stderr,
@@ -209,7 +208,12 @@ int main(int argc, char **argv)
 		exit(res);
 	}
 
-	jsonbuf = malloc(JSONBUFLEN+1);
+	res = initOutput(logfilename, Rawaddr);
+	if (res) {
+		fprintf(stderr, "Unable to init output\n");
+		exit(res);
+	}
+
 	sigact.sa_handler = sighandler;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;
@@ -233,17 +237,6 @@ int main(int argc, char **argv)
 		exit(res);
 	}
 
-	res = initOutput(logfilename, Rawaddr);
-	if (res) {
-		fprintf(stderr, "Unable to init output\n");
-		exit(res);
-	}
-
-
-	if(outtype==3) {
-		verbose=0;
-		cls();
-	}
 
 	if (verbose)
 		fprintf(stderr, "Decoding %d channels\n", nbch);

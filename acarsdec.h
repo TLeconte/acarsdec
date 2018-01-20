@@ -23,11 +23,17 @@
 
 #define MAXNBCHANNELS 8
 #define INTRATE 12500
-#define JSONBUFLEN 512
+
 #define NETLOG_NONE 0
 #define NETLOG_PLANEPLOTTER 1
 #define NETLOG_NATIVE 2
 #define NETLOG_JSON 3
+
+#define OUTTYPE_NONE 0
+#define OUTTYPE_ONELINE 1
+#define OUTTYPE_STD 2
+#define OUTTYPE_MONITOR 3
+#define OUTTYPE_JSON 4
 
 typedef float sample_t;
 
