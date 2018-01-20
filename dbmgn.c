@@ -39,7 +39,7 @@ int initdb(char *dbname)
 	sql[TET] = "end transaction";
 	sql[TRL] = "rollback transaction";
 	sql[TSELFLG] =
-	    "select FlightID from Flights where Registration = ?1 and FlightNumber = ?2 and datetime(LastTime,'30 minutes') > datetime(?3,'unixepoch');";
+	    "select FlightID from Flights where Registration = ?1 and datetime(LastTime,'30 minutes') > datetime(?3,'unixepoch') and (FlightNumber = ?2 or ?2 = '      ') order by LastTime desc limit 1;";
 	sql[TINSFLG] =
 	    "insert into Flights (Registration,FlightNumber,StartTime,LastTime) values (?1,?2,datetime(?3,'unixepoch'),datetime(?3,'unixepoch')) ;";
 	sql[TUPFLG] =
