@@ -102,6 +102,16 @@ int initOutput(char *logfilename, char *Rawaddr)
 	return 0;
 }
 
+static void printtime(struct timeval tv)
+{
+	struct tm tmp;
+
+	gmtime_r(&(tv.tv_sec), &tmp);
+
+	fprintf(fdout, "%02d:%02d:%02d.%03d",
+		tmp.tm_hour, tmp.tm_min, tmp.tm_sec, tv.tv_usec/1000);
+}
+
 static void printdate(struct timeval tv)
 {
 	struct tm tmp;
@@ -111,19 +121,9 @@ static void printdate(struct timeval tv)
 
 	gmtime_r(&(tv.tv_sec), &tmp);
 
-	fprintf(fdout, "%02d/%02d/%04d %02d:%02d:%02d",
-		tmp.tm_mday, tmp.tm_mon + 1, tmp.tm_year + 1900,
-		tmp.tm_hour, tmp.tm_min, tmp.tm_sec);
-}
-
-static void printtime(struct timeval tv)
-{
-	struct tm tmp;
-
-	gmtime_r(&(tv.tv_sec), &tmp);
-
-	fprintf(fdout, "%02d:%02d:%02d",
-		tmp.tm_hour, tmp.tm_min, tmp.tm_sec);
+	fprintf(fdout, "%02d/%02d/%04d ",
+		tmp.tm_mday, tmp.tm_mon + 1, tmp.tm_year + 1900);
+	printtime(tv);
 }
 
 void outpp(acarsmsg_t * msg)
