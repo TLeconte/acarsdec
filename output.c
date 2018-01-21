@@ -93,6 +93,7 @@ int initOutput(char *logfilename, char *Rawaddr)
 	if (outtype == OUTTYPE_MONITOR ) {
 		verbose=0;
 		cls();
+		fflush(stdout);
 	}
 
 	if (outtype == OUTTYPE_JSON || (sockfd && netout==NETLOG_JSON)) {
@@ -398,7 +399,7 @@ static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 	cls();
 
 	printf("             Acarsdec monitor "); printtime(tv);
-	printf("\n Aircraft Flight  Nb Channels  First    ETA   DEP  ARR\n");
+	printf("\n Aircraft Flight  Nb Channels  First        ETA   DEP  ARR\n");
 
 	fl=flight_head;
 	while(fl) {
@@ -416,6 +417,7 @@ static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 		fl=fl->next;
 	}
 
+	fflush(stdout);
 }
 
 void outputmsg(const msgblk_t * blk)
@@ -519,6 +521,7 @@ void outputmsg(const msgblk_t * blk)
 		break;
 	case OUTTYPE_JSON:
 		fprintf(fdout, "%s\n", jsonbuf);
+		fflush(fdout);
 		break;
 	}
 }
