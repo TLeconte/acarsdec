@@ -7,16 +7,16 @@ acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o label.o cJSON.o
 acarsserv:	acarsserv.o dbmgn.o cJSON.o
 	$(CC) -Ofast acarsserv.o dbmgn.o cJSON.o -o $@ -lsqlite3
 
-acarsdec.o:	acarsdec.c acarsdec.h
-acars.o:	acars.c acarsdec.h syndrom.h
-msk.o:		msk.c acarsdec.h
-output.o:	output.c acarsdec.h cJSON.h
-cJSON.o:	cJSON.c cJSON.h
+acarsdec.o:     acarsdec.c acarsdec.h
+acars.o:        acars.c acarsdec.h syndrom.h
+msk.o:          msk.c acarsdec.h
+output.o:       output.c acarsdec.h cJSON.h
+cJSON.o:        cJSON.c cJSON.h
+label.o:        label.c acarsdec.h
 air.o:		air.c acarsdec.h
 
-acarsserv.o:	acarsserv.c acarsserv.h
-dbmgm.o:	dbmgm.c acarsserv.h
-label.o:	label.c acarsserv.h
+acarsserv.o:    acarsserv.c acarsserv.h
+dbmgm.o:        dbmgm.c acarsserv.h
 
 clean:
 	@\rm -f *.o acarsdec acarsserv

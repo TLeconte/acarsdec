@@ -13,10 +13,10 @@ msk.o:		msk.c acarsdec.h
 output.o:	output.c acarsdec.h cJSON.h
 cJSON.o:	cJSON.c cJSON.h
 rtl.o:		rtl.c acarsdec.h
+label.o:	label.c acarsdec.h
 
 acarsserv.o:	acarsserv.c acarsserv.h
 dbmgm.o:	dbmgm.c acarsserv.h
-label.o:	label.c acarsserv.h
 
 clean:
 	@\rm -f *.o acarsdec acarsserv
