@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 8);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "vafrsRo:t:g:Ap:n:N:j:l:c:i:f:")) != EOF) {
+	while ((c = getopt(argc, argv, "varfsRo:t:g:Ap:n:N:j:l:c:i:")) != EOF) {
 
 		switch (c) {
 		case 'v':
