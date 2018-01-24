@@ -263,7 +263,8 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 			cJSON_AddStringToObject(json_obj, "msgno", msg->no);
 		}
 	}
-	cJSON_AddStringToObject(json_obj, "text", msg->txt);
+	if(msg->txt[0])
+		cJSON_AddStringToObject(json_obj, "text", msg->txt);
 
 	if (msg->be == 0x17)
 		cJSON_AddTrueToObject(json_obj, "end");
