@@ -432,28 +432,48 @@ int main(int argc, char **argv)
 			if (json_obj == NULL)
 				goto out;
 
-			cJSON *j_timestamp = cJSON_GetObjectItem(json_obj, "timestamp");
-			msg->tm = j_timestamp->valuedouble;
+			if (cJSON_HasObjectItem(json_obj, "timestamp")) {
+				cJSON *j_timestamp = cJSON_GetObjectItem(json_obj, "timestamp");
+				msg->tm = j_timestamp->valuedouble;
+			} else 
+				continue;
 
-			// ignore the channel number in favor of the frequency
-			cJSON *j_freq = cJSON_GetObjectItem(json_obj, "freq");
-			msg->chn = (int)(j_freq->valuedouble * 1e6);
+			// prefer frequency
+			if (cJSON_HasObjectItem(json_obj, "freq")) {
+				cJSON *j_freq = cJSON_GetObjectItem(json_obj, "freq");
+				msg->chn = (int)(j_freq->valuedouble * 1e6);
+			} else {
+				if (cJSON_HasObjectItem(json_obj, "channel")) {
+					cJSON *j_chn = cJSON_GetObjectItem(json_obj, "channel");
+					msg->chn = j_chn->valueint;
+				}
+			}
 
-			cJSON *j_lvl = cJSON_GetObjectItem(json_obj, "level");
-			msg->lvl = j_lvl->valueint;
+			if (cJSON_HasObjectItem(json_obj, "level")) {
+				cJSON *j_lvl = cJSON_GetObjectItem(json_obj, "level");
+				msg->lvl = j_lvl->valueint;
+			}
 
-			cJSON *j_error = cJSON_GetObjectItem(json_obj, "error");
-			msg->err = j_error->valueint;
+			if (cJSON_HasObjectItem(json_obj, "error")) {
+				cJSON *j_error = cJSON_GetObjectItem(json_obj, "error");
+				msg->err = j_error->valueint;
+			}
 
-			cJSON *j_mode = cJSON_GetObjectItem(json_obj, "mode");
-			msg->mode = j_mode->valuestring[0];
+			if (cJSON_HasObjectItem(json_obj, "mode")) {
+				cJSON *j_mode = cJSON_GetObjectItem(json_obj, "mode");
+				msg->mode = j_mode->valuestring[0];
+			}
 
-			cJSON *j_label = cJSON_GetObjectItem(json_obj, "label");
-			strcpy(msg->label, j_label->valuestring);
+			if (cJSON_HasObjectItem(json_obj, "label")) {
+				cJSON *j_label = cJSON_GetObjectItem(json_obj, "label");
+				strcpy(msg->label, j_label->valuestring);
+			}
 
-			cJSON *j_text = cJSON_GetObjectItem(json_obj, "text");
-			strncpy(msg->txt, j_text->valuestring, 220);
-			msg->txt[220] = '\0';
+			if (cJSON_HasObjectItem(json_obj, "text")) {
+				cJSON *j_text = cJSON_GetObjectItem(json_obj, "text");
+				strncpy(msg->txt, j_text->valuestring, 220);
+				msg->txt[220] = '\0';
+			} 
 
 			if (cJSON_HasObjectItem(json_obj, "block_id")) {
 				cJSON *j_blkid = cJSON_GetObjectItem(json_obj, "block_id");
