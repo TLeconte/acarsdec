@@ -4,9 +4,6 @@ LDLIBS= -lm -pthread  `pkg-config --libs libairspy` -lusb-1.0
 acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o label.o cJSON.o
 	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o label.o cJSON.o -o $@ $(LDLIBS)
 
-acarsserv:	acarsserv.o dbmgn.o cJSON.o
-	$(CC) -Ofast acarsserv.o dbmgn.o cJSON.o -o $@ -lsqlite3
-
 acarsdec.o:     acarsdec.c acarsdec.h
 acars.o:        acars.c acarsdec.h syndrom.h
 msk.o:          msk.c acarsdec.h
@@ -15,8 +12,5 @@ cJSON.o:        cJSON.c cJSON.h
 label.o:        label.c acarsdec.h
 air.o:		air.c acarsdec.h
 
-acarsserv.o:    acarsserv.c acarsserv.h
-dbmgm.o:        dbmgm.c acarsserv.h
-
 clean:
-	@\rm -f *.o acarsdec acarsserv
+	@\rm -f *.o acarsdec
