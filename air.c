@@ -140,19 +140,9 @@ int initAirspy(char **argv, int optind)
 		return -1;
 	}
 
-	result = airspy_set_vga_gain(device, gain);
+	result = airspy_set_linearity_gain(device, gain);
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_set_vga_gain() failed: %s (%d)\n", airspy_error_name(result), result);
-	}
-
-	result = airspy_set_mixer_agc(device, 1);
-	if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_set_mixer_agc() failed: %s (%d)\n", airspy_error_name(result), result);
-	}
-
-	result = airspy_set_lna_agc(device, 1);
-	if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_set_lna_agc() failed: %s (%d)\n", airspy_error_name(result), result);
 	}
 
 	if (verbose)

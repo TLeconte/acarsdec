@@ -42,7 +42,7 @@ int gain = 1000;
 int ppm = 0;
 #endif
 #ifdef WITH_AIR
-int gain = 10;
+int gain = 20;
 #endif
 
 char *Rawaddr = NULL;
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 		case 'p':
 			ppm = atoi(optarg);
 			break;
-    case 'g':
+    		case 'g':
 			gain = atoi(optarg);
 			break;
 #endif
@@ -165,6 +165,9 @@ int main(int argc, char **argv)
 		case 's':
 			res = initAirspy(argv, optind);
 			inmode = 4;
+			break;
+    		case 'g':
+			gain = atoi(optarg);
 			break;
 #endif
 		case 'n':
