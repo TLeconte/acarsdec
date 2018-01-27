@@ -124,7 +124,7 @@ Notes :
 
 acarsserv is a companion program for acarsdec. It listens to acars messages on UDP coming from one or more acarsdec processes and stores them in a sqlite database.
 
-See : [acarsserv](https://https://github.com/TLeconte/acarsserv)
+See : [acarsserv](https://github.com/TLeconte/acarsserv)
 
 ## Copyrights 
 acarsdec and acarsserv are Copyright Thierry Leconte 2015-2018
