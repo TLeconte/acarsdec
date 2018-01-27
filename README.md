@@ -124,26 +124,7 @@ Notes :
 
 acarsserv is a companion program for acarsdec. It listens to acars messages on UDP coming from one or more acarsdec processes and stores them in a sqlite database.
 
-To compile it, just type : 
-> make -f Makefile.xxx acarsserv
-
-acarsserv need sqlite3 dev libraries (on Fedora : sqlite-devel rpm, on Ubuntu : libsqlite3-dev ).
-
-By default, it listens to any addresses on port 5555.
-So running : 
-> acarserv &
-
-must be sufficient for most configs.
-
-Then run (possibly on an other computer) :
-> acarsdec -A -N 192.168.1.1:5555 -o0 -r 0 131.525 131.725 131.825
-> (where 192.168.1.1 is the ip address of your computer running acarsserv).
-
-acarsserv will create by default an acarsserv.sqb database file where it will store received messages.
-You could read its content with sqlite3 command (or more sophisticated graphical interfaces).
-
-acarsserv has some messages filtering and network options (UTSL).
-
+See : [acarsserv](https://https://github.com/TLeconte/acarsserv)
 
 ## Copyrights 
 acarsdec and acarsserv are Copyright Thierry Leconte 2015-2018
