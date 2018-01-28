@@ -117,7 +117,7 @@ For airspy :
 
 Notes : 
  * change compiler options (CFLAGS) in Makefile to suit your hardware, particularly on ARM platform -march and  -mfpu must be set correctly.
- * For rtl_sdr, you could change the sample rate by changing RTLMULT in rtl.c. For rtl sdr default is 2.5Ms/s which is the best but could be over the limits of some hardware. Lowering sample rate will decrease CPU usage too. 
+ * For rtl_sdr, you could change input the sample rate by changing RTLMULT in rtl.c. Default is 2.0Ms/s which is a safe value. You could increase it for the better, but could be over the limits of some hardware and will decrease CPU usage too. 
 
 
 # Acarsserv
