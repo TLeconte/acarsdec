@@ -122,6 +122,7 @@ static int label_qr(char *txt,oooi_t *oooi)
 }
 static int label_qs(char *txt,oooi_t *oooi)
 {
+    memcpy(oooi->sa,txt,4);
     memcpy(oooi->da,&(txt[4]),4);
     memcpy(oooi->gin,&(txt[8]),4);
     return 1;
@@ -167,6 +168,7 @@ static int label_15(char *txt,oooi_t *oooi)
     if(memcmp(txt,"FST01",5)) return 0;
     memcpy(oooi->sa,&(txt[5]),4);
     memcpy(oooi->da,&(txt[9]),4);
+//+pos
     return 1;
 }
 static int label_8e(char *txt,oooi_t *oooi)
