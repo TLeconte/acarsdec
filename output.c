@@ -400,7 +400,7 @@ static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 	cls();
 
 	printf("             Acarsdec monitor "); printtime(tv);
-	printf("\n Aircraft Flight  Nb Channels  First        DEP  ARR  ETA\n");
+	printf("\n Aircraft Flight  Nb Channels  First       DEP   ARR   ETA\n");
 
 	fl=flight_head;
 	while(fl) {
@@ -410,9 +410,9 @@ static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 		for(i=0;i<nbch;i++) printf("%c",(fl->chm&(1<<i))?'x':'.');
 		for(;i<MAXNBCHANNELS;i++) printf(" ");
 		printf(" "); printtime(fl->ts);
-        	if(fl->oooi.sa[0]) printf("  %4s ",fl->oooi.sa); else printf("      ");
-		if(fl->oooi.da[0]) printf("  %4s ",fl->oooi.da); else printf("      ");
-        	if(fl->oooi.eta[0]) printf("  %4s ",fl->oooi.eta); else printf("      ");
+        	if(fl->oooi.sa[0]) printf(" %4s ",fl->oooi.sa); else printf("      ");
+		if(fl->oooi.da[0]) printf(" %4s ",fl->oooi.da); else printf("      ");
+        	if(fl->oooi.eta[0]) printf(" %4s ",fl->oooi.eta); else printf("      ");
 		printf("\n");
 
 		fl=fl->next;
@@ -425,6 +425,7 @@ void outputmsg(const msgblk_t * blk)
 {
 	acarsmsg_t msg;
 	int i, k;
+	int outflg=0;
 
 	/* fill msg struct */
 	msg.lvl = blk->lvl;
@@ -478,8 +479,7 @@ void outputmsg(const msgblk_t * blk)
 			}
 			msg.fid[i] = '\0';
 
-			if(outtype == OUTTYPE_MONITOR)
-				addFlight(&msg,blk->chn,blk->tv);
+			outflg=1;
 		}
 
 		/* Message txt */
@@ -491,8 +491,12 @@ void outputmsg(const msgblk_t * blk)
 	/* txt end */
 	msg.be = blk->txt[blk->len - 1];
 
+	if(outtype == OUTTYPE_MONITOR && outflg)
+		addFlight(&msg,blk->chn,blk->tv);
+	
 	// build the JSON buffer if needed
-	if(jsonbuf) buildjson(&msg, blk->chn, blk->tv);
+	if(jsonbuf)
+		buildjson(&msg, blk->chn, blk->tv);
 
 	if (sockfd > 0) {
 		switch (netout) {
