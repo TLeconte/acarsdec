@@ -400,7 +400,7 @@ static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 	cls();
 
 	printf("             Acarsdec monitor "); printtime(tv);
-	printf("\n Aircraft Flight  Nb Channels  First        ETA   DEP  ARR\n");
+	printf("\n Aircraft Flight  Nb Channels  First        DEP  ARR  ETA\n");
 
 	fl=flight_head;
 	while(fl) {
@@ -410,9 +410,9 @@ static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 		for(i=0;i<nbch;i++) printf("%c",(fl->chm&(1<<i))?'x':'.');
 		for(;i<MAXNBCHANNELS;i++) printf(" ");
 		printf(" "); printtime(fl->ts);
-        	if(fl->oooi.eta[0]) printf("  %4s ",fl->oooi.eta); else printf("      ");
         	if(fl->oooi.sa[0]) printf("  %4s ",fl->oooi.sa); else printf("      ");
 		if(fl->oooi.da[0]) printf("  %4s ",fl->oooi.da); else printf("      ");
+        	if(fl->oooi.eta[0]) printf("  %4s ",fl->oooi.eta); else printf("      ");
 		printf("\n");
 
 		fl=fl->next;
