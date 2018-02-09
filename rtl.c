@@ -309,8 +309,8 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 				float r, g;
 				float complex v;
 
-				r = (float)rtlinbuff[i] - (float)127.64; i++;
-				g = (float)rtlinbuff[i] - (float)127.64; i++;
+				r = (float)rtlinbuff[i] - (float)127.37; i++;
+				g = (float)rtlinbuff[i] - (float)127.37; i++;
 
 				v=r+g*I;
 				D+=v*wf[ind];
