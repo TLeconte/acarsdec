@@ -109,7 +109,7 @@ static void printtime(struct timeval tv)
 
 	gmtime_r(&(tv.tv_sec), &tmp);
 
-	fprintf(fdout, "%02d:%02d:%02d.%03d",
+	fprintf(fdout, "%02d:%02d:%02d.%03ld",
 		tmp.tm_hour, tmp.tm_min, tmp.tm_sec, tv.tv_usec/1000);
 }
 
@@ -400,7 +400,7 @@ static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 	cls();
 
 	printf("             Acarsdec monitor "); printtime(tv);
-	printf("\n Aircraft Flight  Nb Channels  First       DEP   ARR   ETA\n");
+	printf("\n Aircraft Flight  Nb Channels     First    DEP   ARR   ETA\n");
 
 	fl=flight_head;
 	while(fl) {
