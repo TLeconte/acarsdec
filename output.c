@@ -424,7 +424,7 @@ static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 void outputmsg(const msgblk_t * blk)
 {
 	acarsmsg_t msg;
-	int i, k;
+	int i, j, k;
 	int outflg=0;
 
 	/* fill msg struct */
@@ -435,10 +435,13 @@ void outputmsg(const msgblk_t * blk)
 	msg.mode = blk->txt[k];
 	k++;
 
-	for (i = 0; i < 7; i++, k++) {
-		msg.addr[i] = blk->txt[k];
-	}
-	msg.addr[7] = '\0';
+        for (i = 0, j = 0; i < 7; i++, k++) {
+                if (txt[k] != '.') {
+                        msg.addr[j] = txt[k];
+                        j++;
+                }
+        }
+        msg.addr[j] = '\0';
 
 	/* ACK/NAK */
 	msg.ack = blk->txt[k];
