@@ -436,8 +436,8 @@ void outputmsg(const msgblk_t * blk)
 	k++;
 
         for (i = 0, j = 0; i < 7; i++, k++) {
-                if (txt[k] != '.') {
-                        msg.addr[j] = txt[k];
+                if (blk->txt[k] != '.') {
+                        msg.addr[j] = blk->txt[k];
                         j++;
                 }
         }
