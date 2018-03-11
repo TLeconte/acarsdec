@@ -17,7 +17,7 @@ static int sockfd = -1;
 static FILE *fdout;
 
 static char *jsonbuf=NULL;
-#define JSONBUFLEN 512
+#define JSONBUFLEN 30000
 
 int initOutput(char *logfilename, char *Rawaddr)
 {
@@ -426,6 +426,7 @@ void outputmsg(const msgblk_t * blk)
 	acarsmsg_t msg;
 	int i, j, k;
 	int outflg=0;
+	int jok=0;
 
 	/* fill msg struct */
 	msg.lvl = blk->lvl;
@@ -499,7 +500,7 @@ void outputmsg(const msgblk_t * blk)
 	
 	// build the JSON buffer if needed
 	if(jsonbuf)
-		buildjson(&msg, blk->chn, blk->tv);
+		jok=buildjson(&msg, blk->chn, blk->tv);
 
 	if (sockfd > 0) {
 		switch (netout) {
@@ -510,7 +511,7 @@ void outputmsg(const msgblk_t * blk)
 			outsv(&msg, blk->chn, blk->tv);
 			break;
 		case NETLOG_JSON:
-			outjson();
+			if(jok) outjson();
 			break;
 		}
 	}
@@ -528,8 +529,10 @@ void outputmsg(const msgblk_t * blk)
 		printmonitor(&msg, blk->chn, blk->tv);
 		break;
 	case OUTTYPE_JSON:
-		fprintf(fdout, "%s\n", jsonbuf);
-		fflush(fdout);
+		if(jok) {
+			fprintf(fdout, "%s\n", jsonbuf);
+			fflush(fdout);
+		}
 		break;
 	}
 }
