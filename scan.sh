@@ -13,4 +13,4 @@ while [ "$f0" -lt 125 ] ; do
  done
  let fm=fm+1;
 done
-grep -e "(F:" scanlog | cut -c 8-14 | sort | uniq
+grep -e "(F:" scanlog | cut -c 8-14 | sort | uniq -c
