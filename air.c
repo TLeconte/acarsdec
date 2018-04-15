@@ -28,14 +28,36 @@
 #include <libairspy/airspy.h>
 #include "acarsdec.h"
 
-//#define AIRMULT 1600
 #define AIRMULT 400
 #define AIRINRATE (INTRATE*AIRMULT)
 
 static struct airspy_device* device = NULL;
-
-
 extern void *compute_thread(void *arg);
+
+static const unsigned int r820t_hf[]={1953050,1980748,2001344,2032592,2060291,2087988};
+static const unsigned int r820t_lf[]={525548,656935,795424,898403,1186034,1502073,1715133,1853622};
+
+static unsigned int chooseFc(unsigned int minF,unsigned int maxF)
+{
+	unsigned int bw=maxF-minF+2*INTRATE;
+	unsigned int off;
+	int i,j;
+
+	for(i=7;i>=0;i--)
+		if((r820t_hf[5]-r820t_lf[i])>=bw) break;
+	if(i<0) return 0;
+
+	for(j=5;j>=0;j--)
+		if((r820t_hf[j]-r820t_lf[i])<=bw) break;
+	j++;
+
+	off=(r820t_hf[j]+r820t_lf[i])/2-AIRINRATE/4;
+
+        airspy_r820t_write(device, 10, 0xB0 | (15-j));
+        airspy_r820t_write(device, 11, 0xE0 | (15-i));
+
+	return((maxF+minF)/2+off);
+}
 
 int initAirspy(char **argv, int optind)
 {
@@ -48,6 +70,7 @@ int initAirspy(char **argv, int optind)
 	uint32_t * supported_samplerates;
 
 
+	/* parse args */
 	nbch = 0;
 	while ((argF = argv[optind]) && nbch < MAXNBCHANNELS) {
 		Fd[nbch] =
@@ -75,35 +98,7 @@ int initAirspy(char **argv, int optind)
 		return 1;
 	}
 
-	Fc=(minFc+maxFc)/2;
-	F0=Fc+AIRINRATE/4;
-
-	if (maxFc-minFc>AIRINRATE/2-20*INTRATE) {
-		fprintf(stderr, "max Freq to far from min Freq\n");
-		return 1;
-	}
-
-
-	for (n = 0; n < nbch; n++) {
-		channel_t *ch = &(channel[n]);
-		int ind;
-		double AMFreq;
-
-		ch->wf = malloc(AIRMULT * sizeof(float complex));
-		ch->dm_buffer = malloc(1000 * sizeof(float));
-		ch->D=0;
-
-		AMFreq = 2.0*M_PI*(double)(F0-ch->Fr)/(double)(AIRINRATE);
-		for (ind = 0; ind < AIRMULT; ind++) {
-			ch->wf[ind]=cexpf(AMFreq*ind*-I)/AIRMULT;
-		}
-	}
-
-	result = airspy_init();
-	if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_init() failed: %s (%d)\n", airspy_error_name(result), result);
-		return -1;
-	}
+	/* init airspy */
 
 	result = airspy_open(&device);
 	if( result != AIRSPY_SUCCESS ) {
@@ -150,8 +145,11 @@ int initAirspy(char **argv, int optind)
 		fprintf(stderr,"airspy_set_vga_gain() failed: %s (%d)\n", airspy_error_name(result), result);
 	}
 
-	if (verbose)
-		fprintf(stderr, "Set freq. to %d hz\n", Fc);
+	Fc=chooseFc(minFc,maxFc);
+	if(Fc==0) {
+		fprintf(stderr, "Frequencies too far apart\n");
+		return 1;
+	}
 
 	result = airspy_set_freq(device, Fc);
 	if( result != AIRSPY_SUCCESS ) {
@@ -160,7 +158,25 @@ int initAirspy(char **argv, int optind)
 		airspy_exit();
 		return -1;
 	}
+	if (verbose)
+		fprintf(stderr, "Set freq. to %d hz\n", Fc);
 
+	/* computes mixers osc. */
+	F0=Fc+AIRINRATE/4;
+	for (n = 0; n < nbch; n++) {
+		channel_t *ch = &(channel[n]);
+		int ind;
+		double AMFreq;
+
+		ch->wf = malloc(AIRMULT * sizeof(float complex));
+		ch->dm_buffer = malloc(1000 * sizeof(float));
+		ch->D=0;
+
+		AMFreq = 2.0*M_PI*(double)(F0-ch->Fr)/(double)(AIRINRATE);
+		for (ind = 0; ind < AIRMULT; ind++) {
+			ch->wf[ind]=cexpf(AMFreq*ind*-I)/AIRMULT;
+		}
+	}
 
 	return 0;
 }
