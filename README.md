@@ -117,8 +117,8 @@ For airspy :
 
 Notes : 
  * change compiler options (CFLAGS) in Makefile to suit your hardware, particularly on ARM platform -march and  -mfpu must be set correctly.
- * For rtl_sdr, you could change the iinput sample rate by changing RTLMULT in rtl.c. Default is 2.0Ms/s which is a safe value. You could increase it for the better, but it could be over the limits of some hardware and will increase CPU usage too. 
-
+ * For rtl_sdr, you could change the input sample rate by changing RTLMULT in rtl.c. Default is 2.0Ms/s which is a safe value. You could increase it for the better, but it could be over the limits of some hardware and will increase CPU usage too. 
+ * Airspy version will set the R820T tuner bandwidth to suit given frequencies. See : (https://tleconte.github.io/R820T/r820IF.html)
 
 # Acarsserv
 
