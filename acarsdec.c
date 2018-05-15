@@ -112,6 +112,7 @@ static void usage(void)
 
 static void sighandler(int signum)
 {
+	fprintf(stderr, "receive signal %d exiting\n", signum);
 	exit(1);
 }
 
@@ -269,6 +270,7 @@ int main(int argc, char **argv)
 	for (n = 0; n < nbch; n++)
 		deinitAcars(&(channel[n]));
 
+	fprintf(stderr, "exiting ...\n");
 	exit(res);
 
 }
