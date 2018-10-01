@@ -57,6 +57,13 @@ typedef struct {
 #if defined(WITH_AIR)
 	float complex D;
 #endif
+#if defined(WITH_SDRPLAY)
+	float	Fr;
+        float	complex *oscillator;
+        float	complex D;
+	int	counter;
+#endif
+
 	float *dm_buffer;
 	double MskPhi;
 	double MskDf;
@@ -120,7 +127,8 @@ extern int mdly;
 
 extern int gain;
 extern int ppm;
-
+extern	int	lnaState;
+extern	int	GRdB;
 extern int initOutput(char*,char *);
 
 #ifdef WITH_ALSA
