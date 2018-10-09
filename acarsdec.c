@@ -44,7 +44,11 @@ int ppm = 0;
 #ifdef WITH_AIR
 int gain = 21;
 #endif
-
+#ifdef	WITH_SDRPLAY
+int	lnaState	= 2;
+int	GRdB		= 20;
+int	ppm		= 0;
+#endif
 char *Rawaddr = NULL;
 char *logfilename = NULL;
 
@@ -67,6 +71,9 @@ static void usage(void)
 #ifdef WITH_AIR
 	fprintf(stderr,
 		" -s f1 [f2] ... [fN]");
+#endif
+#ifdef	WITH_SDRPLAY
+	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
 #endif
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
@@ -105,6 +112,13 @@ static void usage(void)
 	fprintf(stderr,
 		" -s f1 [f2]...[f%d]\t: decode from airspy receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
+#ifdef	WITH_SDRPLAY
+	fprintf (stderr,
+	          "-L lnaState: set the lnaState (depends on the device)\n"\
+	          "-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"\
+	          " -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+#endif
+
 	fprintf(stderr,
 		"\nUp to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
 	exit(1);
@@ -126,7 +140,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 8);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "varfsRo:t:g:Ap:n:N:j:l:c:i:")) != EOF) {
+	while ((c = getopt(argc, argv, "varfsRo:t:g:Ap:n:N:j:l:c:i:L:G:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -160,6 +174,21 @@ int main(int argc, char **argv)
 			break;
     		case 'g':
 			gain = atoi(optarg);
+			break;
+#endif
+#ifdef	WITH_SDRPLAY
+		case 's':
+			res = initSdrplay (argv, optind);
+			inmode = 5;
+			break;
+		case 'p':
+			ppm = atoi(optarg);
+			break;
+    		case 'L':
+			lnaState = atoi(optarg);
+			break;
+    		case 'G':
+			GRdB = atoi(optarg);
 			break;
 #endif
 #ifdef WITH_AIR
@@ -262,6 +291,11 @@ int main(int argc, char **argv)
 	case 4:
 		res = runAirspySample();
 		break;
+#endif
+#ifdef WITH_SDRPLAY
+	case 5:
+              res = runSdrplaySample ();
+              break;
 #endif
 	default:
 		res = -1;

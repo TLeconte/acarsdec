@@ -1,15 +1,18 @@
 # ACARSDEC
-Acarsdec is a multi-channels acars decoder with built-in rtl_sdr or airspy front end.
+Acarsdec is a multi-channels acars decoder with built-in rtl_sdr, airspy front end or sdrplay device.
 Since 3.0, It comes with a database backend : acarsserv to store received acars messages. (See acarsserv chapter below).
 
 ## Features :
 
  * up to 8 channels decoded simultaneously
  * error detection AND correction
- * input via [rtl_sdr](http://sdr.osmocom.org/trac/wiki/rtl-sdr), or [airspy](http://airspy.com/) software defined radios (SDR)
+ * input via [rtl_sdr](http://sdr.osmocom.org/trac/wiki/rtl-sdr),
+   or [airspy](http://airspy.com/) or [sdrplay](www.sdrplay.com) software defined radios (SDR)
  * logging data over UDP in planeplotter or acarsserv formats to store in an sqlite database, or JSON for custom processing.
 
-Multi-channel decoding is particularly useful with the RTL dongle. It allows the user to directly monitor 8 different frequencies simultaneously with very low cost hardware.
+Multi-channel decoding is particularly useful with broadband devices such
+as the RTLSDR dongle, the AIRspy and the SDRplay device.
+It allows the user to directly monitor to up to 8 different frequencies simultaneously with very low cost hardware.
 
 ## Usage
 > acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N|j ipaddr:port] [-i stationid] [-l logfile] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
@@ -32,14 +35,22 @@ Multi-channel decoding is particularly useful with the RTL dongle. It allows the
  
  -i station id:		id use in acarsdec network format.
 
+for the RTLSDR device
  -r rtldevice f1 [f2] ... [fN] :		decode from rtl dongle number or S/N "rtldevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -r 0 131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
  
  -g gain :		set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use maximum gain
  
  -p ppm :		set rtl ppm frequency correction
 
+for the AIRspy device
  -s f1 [f2] ... [fN] :		decode from airspy receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
 
+for the SDRplay device
+ -s f1 [f2] ... [fN] :		decode from SDRplay receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
+
+ -L lnaState:	set the lnaState (depends on the selected SDRPlay hardware)
+
+ -G GRdB:	set the Gain Reduction in dB's. -100 is used for agc.
 
 ## Examples
 
