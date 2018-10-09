@@ -1,8 +1,8 @@
-CFLAGS= -Wall -Ofast -pthread -D WITH_SDRPLAY -I.  `pkg-config --cflags libairspy`
-LDLIBS= -lm -pthread -lmirsdrapi-rsp  `pkg-config --libs libsdrplay` -lusb-1.0
+CFLAGS= -Wall -Ofast -pthread -D WITH_SDRPLAY -I. 
+LDLIBS= -lm -pthread -lmirsdrapi-rsp  -lusb-1.0
 
 acarsdec:	acarsdec.o acars.o msk.o sdrplay.o rtl.o air.o output.o label.o cJSON.o
-	$(CC) acarsdec.o acars.o msk.o sdrplay.o rtl.o air.o output.o label.o cJSON.o -o $@ $(LDLIBS)
+	$(CC) acarsdec.o acars.o msk.o sdrplay.o rtl.o air.o output.o label.o cJSON.o -o acarsdec.sdrplay $(LDLIBS)
 
 acarsdec.o:     acarsdec.c acarsdec.h
 acars.o:        acars.c acarsdec.h syndrom.h
@@ -13,4 +13,4 @@ label.o:        label.c acarsdec.h
 sdrplay.o:	sdrplay.c acarsdec.h
 
 clean:
-	@\rm -f *.o acarsdec
+	@\rm -f *.o 

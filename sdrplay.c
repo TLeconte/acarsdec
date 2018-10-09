@@ -32,7 +32,7 @@
 #include "acarsdec.h"
 #include <mirsdrapi-rsp.h>
 
-#define SDRPLAY_MULT 200
+#define SDRPLAY_MULT 160
 #define SDRPLAY_INRATE (INTRATE * SDRPLAY_MULT)
 
 extern void *compute_thread (void *arg);
@@ -158,7 +158,8 @@ mir_sdr_ErrT err;
            ch -> dm_buffer = (float *)malloc (512 * sizeof (float));
 
            correctionPhase = (ch -> Fr - (float)Fc) / (float)(SDRPLAY_INRATE) * 2.0 * M_PI;
-//	   fprintf (stderr, "Fc = %d, phase = %f\n", Fc, correctionPhase);
+	   fprintf (stderr, "Fc = %d, phase = %f (%f)\n",
+	                     Fc, correctionPhase, ch -> Fr - (float)Fc);
 	   for (ind = 0; ind < SDRPLAY_MULT; ind++) 
 	      ch -> oscillator [ind] = cexpf (correctionPhase * ind * -I) / SDRPLAY_MULT;
 	}
@@ -216,15 +217,15 @@ int	local_ind;
 	   channel_t *ch = &(channel [n]);
 	   float complex D	= ch -> D;
 	   for (i = 0; i < numSamples; i ++) {
-	      float r = ((float)xi [i]) / 2048.0 * 128;
-	      float g = ((float)xq [i]) / 2048.0 * 128;
+	      float r = ((float)(xi [i]));
+	      float g = ((float)(xq [i]));
 	      float complex v = r + g * I;
 	      D  += v * ch -> oscillator [local_ind ++];
 	      if (local_ind >= SDRPLAY_MULT) {
-	         ch -> dm_buffer [ch -> counter ++] = cabsf (D);
+	         ch -> dm_buffer [ch -> counter ++] = cabsf (D) / 4;
 	         local_ind = 0;
 	         D = 0;
-	         if (ch -> counter > 512) {
+	         if (ch -> counter >= 512) {
 	            demodMSK (ch, 512);
 	            ch -> counter = 0;
 	         }
