@@ -135,10 +135,8 @@ int initAirspy(char **argv, int optind)
 		return -1;
 	}
 
-	result = airspy_set_packing(device, 1);
-	if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_set_packing true failed: %s (%d)\n", airspy_error_name(result), result);
-	}
+       /* had problem with packing , disable it*/
+        airspy_set_packing(device, 0);
 
 	result = airspy_set_linearity_gain(device, gain);
 	if( result != AIRSPY_SUCCESS ) {
