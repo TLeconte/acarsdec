@@ -6,8 +6,8 @@ Since 3.0, It comes with a database backend : acarsserv to store received acars 
 
  * up to 8 channels decoded simultaneously
  * error detection AND correction
- * input via [rtl_sdr](http://sdr.osmocom.org/trac/wiki/rtl-sdr),
-   or [airspy](http://airspy.com/) or [sdrplay](www.sdrplay.com) software defined radios (SDR)
+ * input via [rtl_sdr](https://sdr.osmocom.org/trac/wiki/rtl-sdr),
+   or [airspy](https://airspy.com/) or [sdrplay](https://www.sdrplay.com) software defined radios (SDR)
  * logging data over UDP in planeplotter or acarsserv formats to store in an sqlite database, or JSON for custom processing.
 
 Multi-channel decoding is particularly useful with broadband devices such
