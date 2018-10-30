@@ -1,7 +1,7 @@
 CFLAGS= -Wall -Ofast -pthread -D WITH_RTL -I.  `pkg-config --cflags librtlsdr`
 LDLIBS= -lm -pthread   -lrtlsdr `pkg-config --libs librtlsdr` 
 
-acarsdec.rtl:	acarsdec.o acars.o msk.o rtl.o air.o output.o label.o cJSON.o 
+acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o label.o cJSON.o 
 	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o label.o cJSON.o  -o acarsdec.rtl $(LDLIBS)
 
 acarsdec.o:	acarsdec.c acarsdec.h
