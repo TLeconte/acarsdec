@@ -51,7 +51,7 @@ typedef struct {
 	int chn;
 
 #if defined(WITH_RTL) || defined(WITH_AIR)
-	float Fr;
+	int Fr;
 	float complex *wf;
 #endif
 #if defined(WITH_AIR)

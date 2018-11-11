@@ -56,15 +56,15 @@ static unsigned int chooseFc(unsigned int minF,unsigned int maxF)
         airspy_r820t_write(device, 10, 0xB0 | (15-j));
         airspy_r820t_write(device, 11, 0xE0 | (15-i));
 
-	return((maxF+minF)/2+off);
+	return(((maxF+minF)/2+off+INTRATE/2)/INTRATE*INTRATE);
 }
 
 int initAirspy(char **argv, int optind)
 {
 	int n;
 	char *argF;
-	unsigned int F0,Fc,minFc=140000000,maxFc=0;
-	unsigned int Fd[MAXNBCHANNELS];
+	int Fc,minFc=140000000,maxFc=0;
+	int Fd[MAXNBCHANNELS];
 	int result;
 	uint32_t i,count;
 	uint32_t * supported_samplerates;
@@ -83,7 +83,7 @@ int initAirspy(char **argv, int optind)
 			continue;
 		}
 		channel[nbch].chn = nbch;
-		channel[nbch].Fr = (float)Fd[nbch];
+		channel[nbch].Fr = Fd[nbch];
 		if(Fd[nbch]<minFc) minFc= Fd[nbch];
 		if(Fd[nbch]>maxFc) maxFc= Fd[nbch];
 		nbch++;
@@ -160,19 +160,21 @@ int initAirspy(char **argv, int optind)
 		fprintf(stderr, "Set freq. to %d hz\n", Fc);
 
 	/* computes mixers osc. */
-	F0=Fc+AIRINRATE/4;
 	for (n = 0; n < nbch; n++) {
 		channel_t *ch = &(channel[n]);
-		int ind;
-		double AMFreq;
+		int i;
+		double AMFreq,Ph;
 
 		ch->wf = malloc(AIRMULT * sizeof(float complex));
-		ch->dm_buffer = malloc(1000 * sizeof(float));
+		ch->dm_buffer = malloc(512 * sizeof(double));
 		ch->D=0;
 
-		AMFreq = 2.0*M_PI*(double)(F0-ch->Fr)/(double)(AIRINRATE);
-		for (ind = 0; ind < AIRMULT; ind++) {
-			ch->wf[ind]=cexpf(AMFreq*ind*-I)/AIRMULT;
+		AMFreq = 2.0*M_PI*(double)(Fc-ch->Fr+AIRINRATE/4)/(double)(AIRINRATE);
+		for (i = 0, Ph=0; i < AIRMULT; i++) {
+			ch->wf[i]=cexpf(Ph*-I)/AIRMULT;
+			Ph+=AMFreq;	
+			if(Ph>2.0*M_PI) Ph-=2.0*M_PI;
+			if(Ph<-2.0*M_PI) Ph+=2.0*M_PI;
 		}
 	}
 
@@ -184,7 +186,7 @@ static int rx_callback(airspy_transfer_t* transfer)
 {
 
 	float* pt_rx_buffer;	
-	int n,i=0;
+	int n,i;
         int bo,be,ben,nbk;
 
 	pt_rx_buffer = (float *)(transfer->samples);
@@ -224,12 +226,11 @@ static int rx_callback(airspy_transfer_t* transfer)
                         S = pt_rx_buffer[k];
                         D += ch->wf[i] * S;
                  }
-
         	 ch->D=D;
 
                  demodMSK(ch,m);
 	}
-        ind=i;
+        ind=ben;
 
 	return 0;
 }
