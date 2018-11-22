@@ -1,6 +1,8 @@
 CFLAGS= -Wall -Ofast -pthread -D WITH_SDRPLAY -I. 
 LDLIBS= -lm -pthread -lmirsdrapi-rsp  -lusb-1.0
 
+include Makefile.libacars
+
 acarsdec:	acarsdec.o acars.o msk.o sdrplay.o rtl.o air.o output.o label.o cJSON.o
 	$(CC) acarsdec.o acars.o msk.o sdrplay.o rtl.o air.o output.o label.o cJSON.o -o acarsdec $(LDLIBS)
 
