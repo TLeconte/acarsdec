@@ -19,6 +19,11 @@ static FILE *fdout;
 static char *jsonbuf=NULL;
 #define JSONBUFLEN 30000
 
+static inline void cls(void)
+{
+	printf("\x1b[H\x1b[2J");
+}
+
 int initOutput(char *logfilename, char *Rawaddr)
 {
 	char *addr;
@@ -96,7 +101,7 @@ int initOutput(char *logfilename, char *Rawaddr)
 		fflush(stdout);
 	}
 
-	if (outtype == OUTTYPE_JSON || (sockfd && netout==NETLOG_JSON)) {
+	if (outtype == OUTTYPE_JSON || outtype == OUTTYPE_ROUTEJSON || (sockfd && netout==NETLOG_JSON)) {
 		jsonbuf = malloc(JSONBUFLEN+1);
 	}
 	
@@ -321,13 +326,14 @@ struct flight_s {
 	struct timeval ts,tl;
 	int chm;
 	int nbm;
+	int rt;
 	oooi_t oooi;
 };
 static flight_t  *flight_head=NULL;
 
-static void addFlight(acarsmsg_t * msg, int chn, struct timeval tv)
+static  flight_t *addFlight(acarsmsg_t * msg, int chn, struct timeval tv)
 {
-	flight_t *fl,*flp;
+	flight_t *fl,*fld,*flp;
 	oooi_t oooi;
 
 	fl=flight_head;
@@ -344,6 +350,7 @@ static void addFlight(acarsmsg_t * msg, int chn, struct timeval tv)
 		fl->nbm=0;
 		fl->ts=tv;
 		fl->chm=0;
+		fl->rt=0;
 		fl->next=NULL;
 	}
 
@@ -368,29 +375,54 @@ static void addFlight(acarsmsg_t * msg, int chn, struct timeval tv)
 	}
 	flight_head=fl;
 
-	flp=NULL;
-	while(fl) {
-		if(fl->tl.tv_sec<(tv.tv_sec-mdly)) {
+	flp=NULL;fld=fl;
+	while(fld) {
+		if(fld->tl.tv_sec<(tv.tv_sec-mdly)) {
 			if(flp) {
-				flp->next=fl->next;
-				free(fl);
-				fl=flp->next;
+				flp->next=fld->next;
+				free(fld);
+				fld=flp->next;
 			} else {
-				flight_head=fl->next;
-				free(fl);
-				fl=flight_head;
+				flight_head=fld->next;
+				free(fld);
+				fld=flight_head;
 			}
 		} else {
-			flp=fl;
-			fl=fl->next;
+			flp=fld;
+			fld=fld->next;
 		}
 	}
+
+	return(fl);
 }
 
-
-void cls(void)
+static int routejson(flight_t *fl,struct timeval tv)
 {
-	printf("\x1b[H\x1b[2J");
+  if(fl==NULL)
+	return 0;
+
+  if(fl->rt==0 && fl->fid[0] && fl->oooi.sa[0] && fl->oooi.da[0]) {
+
+	cJSON *json_obj;
+	int ok;
+
+	json_obj = cJSON_CreateObject();
+	if (json_obj == NULL)
+		return 0;
+
+	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
+	cJSON_AddNumberToObject(json_obj, "timestamp", t);
+	cJSON_AddStringToObject(json_obj, "flight", fl->fid);
+	cJSON_AddStringToObject(json_obj, "depa", fl->oooi.sa);
+	cJSON_AddStringToObject(json_obj, "dsta", fl->oooi.da);
+
+	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
+	cJSON_Delete(json_obj);
+	
+	fl->rt=ok;
+	return ok;
+ } else
+	return 0;
 }
 
 static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
@@ -425,8 +457,9 @@ void outputmsg(const msgblk_t * blk)
 {
 	acarsmsg_t msg;
 	int i, j, k;
-	int outflg=0;
 	int jok=0;
+	int outflg=0;
+	flight_t *fl=NULL;
 
 	/* fill msg struct */
 	msg.lvl = blk->lvl;
@@ -495,25 +528,14 @@ void outputmsg(const msgblk_t * blk)
 	/* txt end */
 	msg.be = blk->txt[blk->len - 1];
 
-	if(outtype == OUTTYPE_MONITOR && outflg)
-		addFlight(&msg,blk->chn,blk->tv);
-	
-	// build the JSON buffer if needed
-	if(jsonbuf)
-		jok=buildjson(&msg, blk->chn, blk->tv);
+	if(outflg)
+		fl=addFlight(&msg,blk->chn,blk->tv);
 
-	if (sockfd > 0) {
-		switch (netout) {
-		case NETLOG_PLANEPLOTTER:
-			outpp(&msg);
-			break;
-		case NETLOG_NATIVE:
-			outsv(&msg, blk->chn, blk->tv);
-			break;
-		case NETLOG_JSON:
-			if(jok) outjson();
-			break;
-		}
+	if(jsonbuf) {
+		if(outtype == OUTTYPE_ROUTEJSON )
+			jok=routejson(fl,blk->tv);
+		else
+			jok=buildjson(&msg, blk->chn, blk->tv);
 	}
 
 	switch (outtype) {
@@ -528,11 +550,26 @@ void outputmsg(const msgblk_t * blk)
 	case OUTTYPE_MONITOR:
 		printmonitor(&msg, blk->chn, blk->tv);
 		break;
+	case OUTTYPE_ROUTEJSON:
 	case OUTTYPE_JSON:
 		if(jok) {
 			fprintf(fdout, "%s\n", jsonbuf);
 			fflush(fdout);
 		}
 		break;
+	}
+
+	if (sockfd > 0) {
+		switch (netout) {
+		case NETLOG_PLANEPLOTTER:
+			outpp(&msg);
+			break;
+		case NETLOG_NATIVE:
+			outsv(&msg, blk->chn, blk->tv);
+			break;
+		case NETLOG_JSON:
+			if(jok) outjson();
+			break;
+		}
 	}
 }

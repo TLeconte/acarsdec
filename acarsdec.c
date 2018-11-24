@@ -80,7 +80,7 @@ static void usage(void)
 	fprintf(stderr,
 		" -A\t\t\t: don't display uplink messages (ie : only aircraft messages)\n");
 	fprintf(stderr,
-		"\n -o lv\t\t\t: output format : 0: no log, 1 one line by msg., 2 full (default) , 3 monitor mode, 4 newline separated JSON\n");
+		"\n -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor , 4 : msg JSON, 5 : route JSON\n");
 	fprintf(stderr,
 		"\n -t time\t\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
 	fprintf(stderr,
