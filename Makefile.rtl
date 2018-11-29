@@ -1,6 +1,8 @@
 CFLAGS= -Wall -Ofast -pthread -D WITH_RTL -I.  `pkg-config --cflags librtlsdr`
 LDLIBS= -lm -pthread   -lrtlsdr `pkg-config --libs librtlsdr` 
 
+include Makefile.libacars
+
 acarsdec:	acarsdec.o acars.o msk.o rtl.o air.o output.o label.o cJSON.o 
 	$(CC) acarsdec.o acars.o msk.o rtl.o air.o output.o label.o cJSON.o  -o acarsdec $(LDLIBS)
 

@@ -9,6 +9,7 @@ Since 3.0, It comes with a database backend : acarsserv to store received acars 
  * input via [rtl_sdr](https://sdr.osmocom.org/trac/wiki/rtl-sdr),
    or [airspy](https://airspy.com/) or [sdrplay](https://www.sdrplay.com) software defined radios (SDR)
  * logging data over UDP in planeplotter or acarsserv formats to store in an sqlite database, or JSON for custom processing.
+ * decoding of ARINC-622 ATS applications (ADS-C, CPDLC) via libacars library
 
 Multi-channel decoding is particularly useful with broadband devices such
 as the RTLSDR dongle, the AIRspy and the SDRplay device.
@@ -119,6 +120,7 @@ It depends on some external libraries :
  * libusb
  * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  * libairspy for airspy software radio input 
+ * libacars for decoding ATS applications (https://github.com/szpajder/libacars)
 
 For rtl_sdr :
 > make -f Makefile.rtl
@@ -130,6 +132,7 @@ Notes :
  * change compiler options (CFLAGS) in Makefile to suit your hardware, particularly on ARM platform -march and  -mfpu must be set correctly.
  * For rtl_sdr, you could change the input sample rate by changing RTLMULT in rtl.c. Default is 2.0Ms/s which is a safe value. You could increase it for the better, but it could be over the limits of some hardware and will increase CPU usage too. 
  * Airspy version will set the R820T tuner bandwidth to suit given frequencies. See : (https://tleconte.github.io/R820T/r820IF.html)
+ * libacars support is optional. If the library is installed and can be located with pkg-config, it will be enabled.
 
 # Acarsserv
 

@@ -1,0 +1,13 @@
+LIBACARS_FOUND = 1
+LIBACARSCFLAGS:=$(shell pkg-config --cflags libacars)
+LIBACARSLDLIBS:=$(shell pkg-config --libs libacars)
+ifeq ($(strip $(LIBACARSCFLAGS)),)
+  LIBACARS_FOUND = 0
+else ifeq ($(strip $(LIBACARSLDLIBS)),)
+  LIBACARS_FOUND = 0
+endif
+
+ifeq ($(LIBACARS_FOUND), 1)
+	CFLAGS += $(LIBACARSCFLAGS) -DHAVE_LIBACARS
+	LDLIBS += $(LIBACARSLDLIBS)
+endif

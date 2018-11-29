@@ -24,6 +24,9 @@
 #include <getopt.h>
 #include <sched.h>
 #include <unistd.h>
+#ifdef HAVE_LIBACARS
+#include <libacars/version.h>
+#endif
 #include "acarsdec.h"
 
 channel_t channel[MAXNBCHANNELS];
@@ -55,7 +58,13 @@ char *logfilename = NULL;
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv 3.5 Copyright (c) 2017 Thierry Leconte \n\n");
+		"Acarsdec/acarsserv 3.5 %sCopyright (c) 2017 Thierry Leconte \n\n",
+#ifdef HAVE_LIBACARS
+		"(libacars " LA_VERSION ") "
+#else
+		""
+#endif
+		);
 	fprintf(stderr,
 		"Usage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile]");
 #ifdef WITH_ALSA

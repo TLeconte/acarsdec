@@ -7,6 +7,11 @@
 #include <sys/socket.h>
 #include <time.h>
 #include <netdb.h>
+#ifdef HAVE_LIBACARS
+#include <libacars/libacars.h>
+#include <libacars/acars.h>
+#include <libacars/vstring.h>
+#endif
 #include "acarsdec.h"
 #include "cJSON.h"
 
@@ -175,6 +180,27 @@ void outjson()
 	write(sockfd, pkt, strlen(pkt));
 }
 
+#ifdef HAVE_LIBACARS
+void decode_and_print_acars_apps(acarsmsg_t * msg) {
+	if(msg->txt[0] == '\0')
+		return;
+
+	la_msg_dir direction;
+	if(msg->bid >= '0' && msg->bid <= '9')
+		direction = LA_MSG_DIR_AIR2GND;
+	else
+		direction = LA_MSG_DIR_GND2AIR;
+
+	la_proto_node *node = la_acars_decode_apps(msg->label, msg->txt, direction);
+	if(node != NULL) {
+		la_vstring *vstr = la_proto_tree_format_text(NULL, node);
+		fprintf(fdout, "%s\n", vstr->str);
+		la_vstring_destroy(vstr, true);
+	}
+	la_proto_tree_destroy(node);
+}
+#endif
+
 static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	oooi_t oooi;
@@ -218,6 +244,9 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
         	if(oooi.woff[0]) fprintf(fdout,"Wheels off Tme : %s\n",oooi.woff);
         	if(oooi.won[0]) fprintf(fdout,"Wheels on Time : %s\n",oooi.won);
 	}
+#ifdef HAVE_LIBACARS
+	decode_and_print_acars_apps(msg);
+#endif
 
 	fflush(fdout);
 }
