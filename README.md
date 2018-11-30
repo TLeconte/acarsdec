@@ -112,37 +112,37 @@ Decoding from airspy on 3 frequencies with verbose logging
 
 #### with libacars and ARINC 622 decoding 
 
-[#2 (F:131.725 L:-33 E:0) 30/11/2018 19:45:46.645 --------------------------------
-Mode : 2 Label : H1 Id : 3 Nak
-Aircraft reg: G-OOBE Flight id: BY01WH
-No: F57A
-#M1B/B6 LPAFAYA.ADS.G-OOBE0720BD17DFD188CAEAE01F0C50F3715C88200D2344EFF62F08CA8883238E3FF7748768C00E0C88D9FFFC0F08A9847FFCFC16
-ADS-C message:
- Basic report:
-  Lat: 46.0385513
-  Lon: -5.6569290
-  Alt: 36012 ft
-  Time: 2744.000 sec past hour (:45:44.000)
-  Position accuracy: <0.05 nm
-  NAV unit redundancy: OK
-  TCAS: OK
- Flight ID data:
-  Flight ID: TOM1WH
- Predicted route:
-  Next waypoint:
-   Lat: 49.5972633
-   Lon: -1.7255402
-   Alt: 36008 ft
-   ETA: 2179 sec
-  Next+1 waypoint:
-   Lat: 49.9999809
-   Lon: -1.5020370
-   Alt: 30348 ft
- Earth reference data:
-  True track: 35.2 deg
-  Ground speed: 435.5 kt
-  Vertical speed: -16 ft/min
- Air reference data:
+    [#2 (F:131.725 L:-33 E:0) 30/11/2018 19:45:46.645 --------------------------------
+    Mode : 2 Label : H1 Id : 3 Nak
+    Aircraft reg: G-OOBE Flight id: BY01WH
+    No: F57A
+    #M1B/B6 LPAFAYA.ADS.G-OOBE0720BD17DFD188CAEAE01F0C50F3715C88200D2344EFF62F08CA8883238E3FF7748768C00E0C88D9FFFC0F08A9847FFCFC16
+    ADS-C message:
+     Basic report:
+      Lat: 46.0385513
+      Lon: -5.6569290
+      Alt: 36012 ft
+      Time: 2744.000 sec past hour (:45:44.000)
+      Position accuracy: <0.05 nm
+      NAV unit redundancy: OK
+      TCAS: OK
+     Flight ID data:
+      Flight ID: TOM1WH
+     Predicted route:
+      Next waypoint:
+       Lat: 49.5972633
+       Lon: -1.7255402
+       Alt: 36008 ft
+       ETA: 2179 sec
+      Next+1 waypoint:
+       Lat: 49.9999809
+       Lon: -1.5020370
+       Alt: 30348 ft
+     Earth reference data:
+      True track: 35.2 deg
+      Ground speed: 435.5 kt
+      Vertical speed: -16 ft/min
+     Air reference data:
   True heading: 24.3 deg
   Mach speed: 0.7765
   Vertical speed: -16 ft/min
