@@ -9,7 +9,7 @@ Since 3.0, It comes with a database backend : acarsserv to store received acars 
  * input via [rtl_sdr](https://sdr.osmocom.org/trac/wiki/rtl-sdr),
    or [airspy](https://airspy.com/) or [sdrplay](https://www.sdrplay.com) software defined radios (SDR)
  * logging data over UDP in planeplotter or acarsserv formats to store in an sqlite database, or JSON for custom processing.
- * decoding of ARINC-622 ATS applications (ADS-C, CPDLC) via libacars library
+ * decoding of ARINC-622 ATS applications (ADS-C, CPDLC) via [libacars](https://github.com/szpajder/libacars) library
 
 Multi-channel decoding is particularly useful with broadband devices such
 as the RTLSDR dongle, the AIRspy and the SDRplay device.
@@ -37,6 +37,7 @@ It allows the user to directly monitor to up to 8 different frequencies simultan
  -i station id:		id use in acarsdec network format.
 
 for the RTLSDR device
+
  -r rtldevice f1 [f2] ... [fN] :		decode from rtl dongle number or S/N "rtldevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -r 0 131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
  
  -g gain :		set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use maximum gain
@@ -44,9 +45,11 @@ for the RTLSDR device
  -p ppm :		set rtl ppm frequency correction
 
 for the AIRspy device
+
  -s f1 [f2] ... [fN] :		decode from airspy receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
 
 for the SDRplay device
+
  -s f1 [f2] ... [fN] :		decode from SDRplay receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
 
  -L lnaState:	set the lnaState (depends on the selected SDRPlay hardware)
@@ -100,16 +103,49 @@ Decoding from airspy on 3 frequencies with verbose logging
      .F-HBMI  ZI0321   1 .x.      16:25:52 16:25:52
      .F-GSPZ  AF0940   6 ..x      16:25:21 16:22:30
      .D-ABUF  DE0252   1 .x.      16:25:20 16:25:20
-     .EC-MGS  V72422   1 .x.      16:25:07 16:25:07
-     .G-EUUU  BA733C   2 .x.      16:24:38 16:24:33
 
 
 #### JSON mode (-o 4)
 
     {"timestamp":1516206744.1849549,"channel":2,"freq":130.025,"level":-22,"error":0,"mode":"2","label":"H1","block_id":"6","ack":false,"tail":".N842UA","flight":"UA1412","msgno":"D04G","text":"#DFB9102,0043,188/9S101,0039,181/S0101,0043,188/0S100,0039,182/T1100,0043,188/1T099,0039,182/T2099,0043,189/2T098,0039,182/T3098,0043,189/3T097,0039,182/T4098,0043,189/4T097,0039,183/T5098,0043,189/5T097,0039,1","end":true,"station_id":"sigint"}
     {"timestamp":1516206745.249615,"channel":2,"freq":130.025,"level":-24,"error":2,"mode":"2","label":"RA","block_id":"R","ack":false,"tail":".N842UA","flight":"","msgno":"","text":"QUHDQWDUA?1HOWGOZIT\r\n ** PART 01 OF 01 **\r\nHOWGOZIT 1412-17 SJC\r\nCI: 17        RLS: 01 \r\nSJC 1615/1625     171A\r\nBMRNG    1630 37  159-\r\nTIPRE    1638 37  145\r\nINSLO    1701 37  125\r\nGAROT    1726 37  106\r\nEKR      1800 ","end":true,"station_id":"sigint"}
-    {"timestamp":1516206747.0520389,"channel":2,"freq":130.025,"level":-24,"error":0,"mode":"2","label":"H1","block_id":"6","ack":"R","tail":".N842UA","flight":"UA1412","msgno":"D04G","text":"#DFB9102,0043,188/9S101,0039,181/S0101,0043,188/0S100,0039,182/T1100,0043,188/1T099,0039,182/T2099,0043,189/2T098,0039,182/T3098,0043,189/3T097,0039,182/T4098,0043,189/4T097,0039,183/T5098,0043,189/5T097,0039,1","end":true,"station_id":"sigint"}
-    {"timestamp":1516206752.622808,"channel":2,"freq":130.025,"level":-23,"error":0,"mode":"2","label":"RA","block_id":"S","ack":"6","tail":".N842UA","flight":"","msgno":"","text":"37   80\r\nDEN 1829/1837      67\r\n--SCHEDULED ARRIVAL--\r\n    1842/1850 (00.13E)\r\n** END OF PART 01 **\r\n","station_id":"sigint"}
+
+#### with libacars and ARINC 622 decoding 
+
+[#2 (F:131.725 L:-33 E:0) 30/11/2018 19:45:46.645 --------------------------------
+Mode : 2 Label : H1 Id : 3 Nak
+Aircraft reg: G-OOBE Flight id: BY01WH
+No: F57A
+#M1B/B6 LPAFAYA.ADS.G-OOBE0720BD17DFD188CAEAE01F0C50F3715C88200D2344EFF62F08CA8883238E3FF7748768C00E0C88D9FFFC0F08A9847FFCFC16
+ADS-C message:
+ Basic report:
+  Lat: 46.0385513
+  Lon: -5.6569290
+  Alt: 36012 ft
+  Time: 2744.000 sec past hour (:45:44.000)
+  Position accuracy: <0.05 nm
+  NAV unit redundancy: OK
+  TCAS: OK
+ Flight ID data:
+  Flight ID: TOM1WH
+ Predicted route:
+  Next waypoint:
+   Lat: 49.5972633
+   Lon: -1.7255402
+   Alt: 36008 ft
+   ETA: 2179 sec
+  Next+1 waypoint:
+   Lat: 49.9999809
+   Lon: -1.5020370
+   Alt: 30348 ft
+ Earth reference data:
+  True track: 35.2 deg
+  Ground speed: 435.5 kt
+  Vertical speed: -16 ft/min
+ Air reference data:
+  True heading: 24.3 deg
+  Mach speed: 0.7765
+  Vertical speed: -16 ft/min
 
 
 ## Compilation
