@@ -34,6 +34,7 @@
 #define OUTTYPE_STD 2
 #define OUTTYPE_MONITOR 3
 #define OUTTYPE_JSON 4
+#define OUTTYPE_ROUTEJSON 5
 
 typedef float sample_t;
 
@@ -160,4 +161,3 @@ extern int  deinitAcars(channel_t *);
 extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 
 extern void outputmsg(const msgblk_t*);
-extern void cls(void);
