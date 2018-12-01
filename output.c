@@ -271,6 +271,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 
 	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 	cJSON_AddNumberToObject(json_obj, "timestamp", t);
+	cJSON_AddStringToObject(json_obj, "station_id", idstation);
 	cJSON_AddNumberToObject(json_obj, "channel", chn);
 	snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
 	cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
@@ -319,7 +320,6 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 		if(oooi.won[0])
 			cJSON_AddStringToObject(json_obj, "wlin", oooi.won);
 	}
-	cJSON_AddStringToObject(json_obj, "station_id", idstation);
 	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
 	cJSON_Delete(json_obj);
 	return ok;
@@ -441,6 +441,7 @@ static int routejson(flight_t *fl,struct timeval tv)
 
 	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 	cJSON_AddNumberToObject(json_obj, "timestamp", t);
+	cJSON_AddStringToObject(json_obj, "station_id", idstation);
 	cJSON_AddStringToObject(json_obj, "flight", fl->fid);
 	cJSON_AddStringToObject(json_obj, "depa", fl->oooi.sa);
 	cJSON_AddStringToObject(json_obj, "dsta", fl->oooi.da);
