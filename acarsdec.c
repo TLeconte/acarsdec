@@ -91,7 +91,7 @@ static void usage(void)
 	fprintf(stderr,
 		"\n -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor , 4 : msg JSON, 5 : route JSON\n");
 	fprintf(stderr,
-		"\n -t time\t\t: set forget time in seconds for monitor and route mode (default=600s)\n");
+		"\n -t time\t\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
 	fprintf(stderr,
 		" -l logfile\t\t: Append log messages to logfile (Default : stdout).\n");
 	fprintf(stderr,
