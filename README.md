@@ -148,15 +148,17 @@ Decoding from airspy on 3 frequencies with verbose logging
       Ground speed: 435.5 kt
       Vertical speed: -16 ft/min
      Air reference data:
-  True heading: 24.3 deg
-  Mach speed: 0.7765
-  Vertical speed: -16 ft/min
+     True heading: 24.3 deg
+     Mach speed: 0.7765
+     Vertical speed: -16 ft/min
 
 
 ## Compilation
 acarsdec must compile directly on any modern Linux distrib.
-It has been tested on x86_64 with fedora 19-25, Ubuntu 16, and on RaspberryPI (only RTL source tested)
-It needs cmake and a C compiler
+
+It has been tested on x86_64 with fedora 19-25, Ubuntu 16, and on RaspberryPI (only RTL source tested).
+
+It needs cmake and a C compiler.
 
 It depends on some external libraries :
  * libusb
@@ -167,23 +169,35 @@ It depends on some external libraries :
 
 For rtl_sdr :
 > mkdir build
+
 > cd build
+
 > cmake .. -Drtl=ON
+
 > make
+
 > sudo make install
 
 For airspy :
 > mkdir build
+
 > cd build
+
 > cmake .. -Dairspy=ON
+
 > make
+
 > sudo make install
 
 For sdrplay :
 > mkdir build
+
 > cd build
+
 > cmake .. -Dsdrplay=ON
+
 > make
+
 > sudo make install
 
 Notes : 
