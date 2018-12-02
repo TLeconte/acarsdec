@@ -156,24 +156,41 @@ Decoding from airspy on 3 frequencies with verbose logging
 ## Compilation
 acarsdec must compile directly on any modern Linux distrib.
 It has been tested on x86_64 with fedora 19-25, Ubuntu 16, and on RaspberryPI (only RTL source tested)
+It needs cmake and a C compiler
 
 It depends on some external libraries :
  * libusb
  * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  * libairspy for airspy software radio input 
- * libacars for decoding ATS applications (https://github.com/szpajder/libacars)
+ * libmirsdrapi-rsp for sdrplay software radio input 
+ * optionaly libacars for decoding ATS applications (https://github.com/szpajder/libacars)
 
 For rtl_sdr :
-> make -f Makefile.rtl
+> mkdir build
+> cd build
+> cmake .. -Drtl=ON
+> make
+> sudo make install
 
 For airspy :
-> make -f Makefile.air
+> mkdir build
+> cd build
+> cmake .. -Dairspy=ON
+> make
+> sudo make install
+
+For sdrplay :
+> mkdir build
+> cd build
+> cmake .. -Dsdrplay=ON
+> make
+> sudo make install
 
 Notes : 
- * change compiler options (CFLAGS) in Makefile to suit your hardware, particularly on ARM platform -march and  -mfpu must be set correctly.
  * For rtl_sdr, you could change the input sample rate by changing RTLMULT in rtl.c. Default is 2.0Ms/s which is a safe value. You could increase it for the better, but it could be over the limits of some hardware and will increase CPU usage too. 
  * Airspy version will set the R820T tuner bandwidth to suit given frequencies. See : (https://tleconte.github.io/R820T/r820IF.html)
  * libacars support is optional. If the library is installed and can be located with pkg-config, it will be enabled.
+ * If you have call cmake .. -Dxxx one time, the option will be sticky . Remove build dir and redo to change sdr option.
 
 # Acarsserv
 
