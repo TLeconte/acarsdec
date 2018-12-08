@@ -36,6 +36,8 @@ It allows the user to directly monitor to up to 8 different frequencies simultan
  
  -i station id:		id use in acarsdec network format.
 
+ -b filter:		filter output by label (ex: -b "H1:Q0" : only output messages  with label H1 or Q0"
+
 for the RTLSDR device
 
  -r rtldevice f1 [f2] ... [fN] :		decode from rtl dongle number or S/N "rtldevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -r 0 131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.

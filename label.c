@@ -4,7 +4,38 @@
 #include <string.h>
 #include "acarsdec.h"
 
+static char *lblfilter[1024];
 
+void build_label_filter(char *arg)
+{
+   int i=0;
+   char *aptr;
+
+   lblfilter[0]=NULL;
+   if(arg==NULL) return;
+
+   aptr=strtok(strdup(arg),":");
+   while(aptr) {
+	lblfilter[i]=aptr; i++;
+	aptr=strtok(NULL,":");
+	}
+   lblfilter[i]=NULL;
+}
+
+int label_filter(char *lbl)
+{
+   int i;
+
+    if(lblfilter[0]==NULL) return 1;
+
+   i=0;
+   while(lblfilter[i]) {
+	if(strcmp(lbl,lblfilter[i])==0) return 1;
+	i++;
+   }
+
+   return 0;
+}
 
 static int label_q1(char *txt,oooi_t *oooi)
 {

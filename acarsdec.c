@@ -28,6 +28,7 @@
 #include <libacars/version.h>
 #endif
 #include "acarsdec.h"
+extern void build_label_filter(char *arg);
 
 channel_t channel[MAXNBCHANNELS];
 unsigned int nbch;
@@ -147,11 +148,13 @@ int main(int argc, char **argv)
 	int res, n;
 	struct sigaction sigact;
 	char sys_hostname[8];
+	char *lblf=NULL;
+
 	gethostname(sys_hostname, sizeof(sys_hostname));
 	idstation = strndup(sys_hostname, 8);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "varfsRo:t:g:Ap:n:N:j:l:c:i:L:G:")) != EOF) {
+	while ((c = getopt(argc, argv, "varfsRo:t:g:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -162,6 +165,9 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			mdly = atoi(optarg);
+			break;
+		case 'b':
+			lblf=optarg;
 			break;
 #ifdef WITH_ALSA
 		case 'a':
@@ -247,6 +253,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Unable to init input\n");
 		exit(res);
 	}
+
+	build_label_filter(lblf);
 
 	res = initOutput(logfilename, Rawaddr);
 	if (res) {

@@ -14,6 +14,7 @@
 #endif
 #include "acarsdec.h"
 #include "cJSON.h"
+extern int label_filter(char *lbl);
 
 extern int inmode;
 extern char *idstation;
@@ -557,6 +558,9 @@ void outputmsg(const msgblk_t * blk)
 
 	/* txt end */
 	msg.be = blk->txt[blk->len - 1];
+
+
+	if(label_filter(msg.label)==0) return;
 
 	if(outflg)
 		fl=addFlight(&msg,blk->chn,blk->tv);
