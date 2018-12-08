@@ -92,7 +92,7 @@ static void usage(void)
 	fprintf(stderr,
 		"\n -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor , 4 : msg JSON, 5 : route JSON\n");
 	fprintf(stderr,
-		"\n -t time\t\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
+		"\n -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
 	fprintf(stderr,
 		" -l logfile\t\t: Append log messages to logfile (Default : stdout).\n");
 	fprintf(stderr,
@@ -102,7 +102,10 @@ static void usage(void)
 	fprintf(stderr,
 		" -j ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec json format\n");
 	fprintf(stderr,
-		" -i stationid\t\t: station id used in acarsdec network format.\n\n");
+		" -i stationid\t\t: station id used in acarsdec network format.\n");
+	fprintf(stderr,
+		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n\n");
+
 #ifdef WITH_ALSA
 	fprintf(stderr,
 		" -a alsapcmdevice\t: decode from soundcard input alsapcmdevice (ie: hw:0,0)\n");
