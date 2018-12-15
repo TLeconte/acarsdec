@@ -158,8 +158,6 @@ Decoding from airspy on 3 frequencies with verbose logging
 ## Compilation
 acarsdec must compile directly on any modern Linux distrib.
 
-It has been tested on x86_64 with fedora 19-25, Ubuntu 16, and on RaspberryPI (only RTL source tested).
-
 It needs cmake and a C compiler.
 
 It depends on some external libraries :
@@ -207,6 +205,7 @@ Notes :
  * Airspy version will set the R820T tuner bandwidth to suit given frequencies. See : (https://tleconte.github.io/R820T/r820IF.html)
  * libacars support is optional. If the library is installed and can be located with pkg-config, it will be enabled.
  * If you have call cmake .. -Dxxx one time, the option will be sticky . Remove build dir and redo to change sdr option.
+ * For raspberry Pi and others ARM machines, the gcc compile option -march=native could not be working, so modify the add_compile_options in CMakeLists.txt to set the correct options for your platform.
 
 # Acarsserv
 
