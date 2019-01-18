@@ -59,15 +59,12 @@ char *logfilename = NULL;
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv 3.5 %sCopyright (c) 2017 Thierry Leconte \n\n",
+		"Acarsdec/acarsserv 3.5 Copyright (c) 2017 Thierry Leconte\n");
 #ifdef HAVE_LIBACARS
-		"(libacars " LA_VERSION ") "
-#else
-		""
+	fprintf(stderr,	"(libacars %s)\n", LA_VERSION);
 #endif
-		);
 	fprintf(stderr,
-		"Usage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile]");
+		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile]");
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice  |");
 #endif
