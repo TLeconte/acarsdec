@@ -225,7 +225,7 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 		fprintf(fdout, "Id : %1c ", msg->bid);
 		if(msg->ack==0x15) fprintf(fdout, "Nak\n"); else fprintf(fdout, "Ack : %1c\n", msg->ack);
 		fprintf(fdout, "Aircraft reg: %s ", msg->addr);
-		if(msg->mode <= 'Z') {
+		if(msg->bid >= '0' && msg->bid <= '9') {
 			fprintf(fdout, "Flight id: %s\n", msg->fid);
 			fprintf(fdout, "No: %4s", msg->no);
 		}
@@ -294,7 +294,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 		}
 
 		cJSON_AddStringToObject(json_obj, "tail", msg->addr);
-		if(msg->mode <= 'Z') {
+		if(msg->bid >= '0' && msg->bid <= '9') {
 			cJSON_AddStringToObject(json_obj, "flight", msg->fid);
 			cJSON_AddStringToObject(json_obj, "msgno", msg->no);
 		}
@@ -530,11 +530,11 @@ void outputmsg(const msgblk_t * blk)
 	msg.fid[0] = '\0';
 	msg.txt[0] = '\0';
 
-	if ((msg.bs == 0x03 || msg.mode > 'Z') && airflt)
+	if (airflt && !(msg.bid >= '0' && msg.bid <= '9'))
 		return;
 
 	if (msg.bs != 0x03) {
-		if (msg.mode <= 'Z' && msg.bid <= '9') {
+		if (msg.bid >= '0' && msg.bid <= '9') {
 			/* message no */
 			for (i = 0; i < 4 && k < blk->len - 1; i++, k++) {
 				msg.no[i] = blk->txt[k];
