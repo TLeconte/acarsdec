@@ -66,7 +66,7 @@ static void usage(void)
 	fprintf(stderr,	"(libacars %s)\n", LA_VERSION);
 #endif
 	fprintf(stderr,
-		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile]");
+		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile [-H|-D]]");
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice  |");
 #endif
@@ -93,7 +93,11 @@ static void usage(void)
 	fprintf(stderr,
 		"\n -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
 	fprintf(stderr,
-		" -l logfile\t\t: Append log messages to logfile (Default : stdout).\n");
+		" -l logfile\t\t: append log messages to logfile (Default : stdout).\n");
+	fprintf(stderr,
+		" -H\t\t\t: rotate log file once every hour\n");
+	fprintf(stderr,
+		" -D\t\t\t: rotate log file once every day\n");
 	fprintf(stderr,
 		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n");
 	fprintf(stderr,
