@@ -80,7 +80,7 @@ int initOutput(char *logfilename, char *Rawaddr)
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
 
-	if (logfilename) {
+	if (outtype != OUTTYPE_NONE && logfilename) {
 		filename_prefix = logfilename;
 		prefix_len = strlen(filename_prefix);
 		if(hourly || daily) {
@@ -645,7 +645,7 @@ void outputmsg(const msgblk_t * blk)
 			jok=buildjson(&msg, blk->chn, blk->tv);
 	}
 
-	if((hourly || daily) && rotate_outfile() < 0) {
+	if((hourly || daily) && outtype != OUTTYPE_NONE && rotate_outfile() < 0) {
 		_exit(1);
 	}
 	switch (outtype) {
