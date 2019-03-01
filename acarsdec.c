@@ -40,6 +40,8 @@ int outtype = OUTTYPE_STD;
 int netout = NETLOG_NONE;
 int airflt = 0;
 int mdly=600;
+int hourly = 0;
+int daily = 0;
 
 #ifdef WITH_RTL
 int gain = 1000;
@@ -154,7 +156,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 8);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "varfsRo:t:g:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -235,6 +237,12 @@ int main(int argc, char **argv)
 		case 'l':
 			logfilename = optarg;
 			break;
+		case 'H':
+			hourly = 1;
+			break;
+		case 'D':
+			daily = 1;
+			break;
 		case 'i':
 			idstation = strndup(optarg, 8);
 			break;
@@ -252,6 +260,11 @@ int main(int argc, char **argv)
 	if (res) {
 		fprintf(stderr, "Unable to init input\n");
 		exit(res);
+	}
+
+	if(hourly && daily) {
+		fprintf(stderr, "Options: -H and -D are exclusive\n");
+		exit(1);
 	}
 
 	build_label_filter(lblf);
