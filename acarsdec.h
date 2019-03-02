@@ -125,6 +125,7 @@ extern int outtype;
 extern int netout;
 extern int airflt;
 extern int mdly;
+extern int hourly, daily;
 
 extern int gain;
 extern int ppm;
