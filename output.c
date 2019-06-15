@@ -101,7 +101,8 @@ int initOutput(char *logfilename, char *Rawaddr)
 				extension = strdup("");
 			}
 		}
-		return open_outfile();
+		if(open_outfile() < 0)
+			return -1;
 	} else {
 		fdout = stdout;
 		hourly = daily = 0;	// stdout is not rotateable
