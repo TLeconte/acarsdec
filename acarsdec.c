@@ -40,6 +40,8 @@ int outtype = OUTTYPE_STD;
 int netout = NETLOG_NONE;
 int airflt = 0;
 int mdly=600;
+int hourly = 0;
+int daily = 0;
 
 #ifdef WITH_RTL
 int gain = 1000;
@@ -64,7 +66,7 @@ static void usage(void)
 	fprintf(stderr,	"(libacars %s)\n", LA_VERSION);
 #endif
 	fprintf(stderr,
-		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile]");
+		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile [-H|-D]]");
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice  |");
 #endif
@@ -91,7 +93,11 @@ static void usage(void)
 	fprintf(stderr,
 		"\n -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
 	fprintf(stderr,
-		" -l logfile\t\t: Append log messages to logfile (Default : stdout).\n");
+		" -l logfile\t\t: append log messages to logfile (Default : stdout).\n");
+	fprintf(stderr,
+		" -H\t\t\t: rotate log file once every hour\n");
+	fprintf(stderr,
+		" -D\t\t\t: rotate log file once every day\n");
 	fprintf(stderr,
 		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n");
 	fprintf(stderr,
@@ -154,7 +160,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 8);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "varfsRo:t:g:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -235,6 +241,12 @@ int main(int argc, char **argv)
 		case 'l':
 			logfilename = optarg;
 			break;
+		case 'H':
+			hourly = 1;
+			break;
+		case 'D':
+			daily = 1;
+			break;
 		case 'i':
 			idstation = strndup(optarg, 8);
 			break;
@@ -252,6 +264,11 @@ int main(int argc, char **argv)
 	if (res) {
 		fprintf(stderr, "Unable to init input\n");
 		exit(res);
+	}
+
+	if(hourly && daily) {
+		fprintf(stderr, "Options: -H and -D are exclusive\n");
+		exit(1);
 	}
 
 	build_label_filter(lblf);

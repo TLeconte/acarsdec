@@ -16,7 +16,7 @@ as the RTLSDR dongle, the AIRspy and the SDRplay device.
 It allows the user to directly monitor to up to 8 different frequencies simultaneously with very low cost hardware.
 
 ## Usage
-> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N|j ipaddr:port] [-i stationid] [-l logfile] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
+> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
 
  -v :			verbose
  
@@ -26,7 +26,11 @@ It allows the user to directly monitor to up to 8 different frequencies simultan
  
  -t time :		set forget time (TTL) in seconds in monitor mode(default=600s)
  
- -l logfile :		Append log messages to logfile (Default : stdout)
+ -l logfile :		append log messages to logfile (Default : stdout)
+
+ -H :			rotate log file once every hour
+
+ -D :			rotate log file once every day
  
  -n ipaddr:port :	send acars messages to addr:port via UDP in planeplotter compatible format
  

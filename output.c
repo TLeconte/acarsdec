@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <time.h>
 #include <netdb.h>
+#include <errno.h>
 #ifdef HAVE_LIBACARS
 #include <libacars/libacars.h>
 #include <libacars/acars.h>
@@ -21,6 +22,10 @@ extern char *idstation;
 
 static int sockfd = -1;
 static FILE *fdout;
+static char *filename_prefix = NULL;
+static char *extension = NULL;
+static size_t prefix_len;
+static struct tm current_tm;
 
 static char *jsonbuf=NULL;
 #define JSONBUFLEN 30000
@@ -30,6 +35,44 @@ static inline void cls(void)
 	printf("\x1b[H\x1b[2J");
 }
 
+static int open_outfile() {
+	char *filename = NULL;
+	char *fmt = NULL;
+	size_t tlen = 0;
+
+	if(hourly || daily) {
+		time_t t = time(NULL);
+		gmtime_r(&t, &current_tm);
+		char suffix[16];
+		if(hourly) {
+			fmt = "_%Y%m%d_%H";
+		} else {	// daily
+			fmt = "_%Y%m%d";
+		}
+		tlen = strftime(suffix, sizeof(suffix), fmt, &current_tm);
+		if(tlen == 0) {
+			fprintf(stderr, "open_outfile(): strfime returned 0\n");
+			return -1;
+		}
+		filename = calloc(prefix_len + tlen + 2, sizeof(char));
+		if(filename == NULL) {
+			fprintf(stderr, "open_outfile(): failed to allocate memory\n");
+			return -1;
+		}
+		sprintf(filename, "%s%s%s", filename_prefix, suffix, extension);
+	} else {
+		filename = strdup(filename_prefix);
+	}
+
+	if((fdout = fopen(filename, "a+")) == NULL) {
+		fprintf(stderr, "Could not open output file %s: %s\n", filename, strerror(errno));
+		free(filename);
+		return -1;
+	}
+	free(filename);
+	return 0;
+}
+
 int initOutput(char *logfilename, char *Rawaddr)
 {
 	char *addr;
@@ -37,14 +80,33 @@ int initOutput(char *logfilename, char *Rawaddr)
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
 
-	if (logfilename) {
-		fdout = fopen(logfilename, "a+");
-		if (fdout == NULL) {
-			fprintf(stderr, "Could not open : %s\n", logfilename);
-			return -1;
+	if (outtype != OUTTYPE_NONE && logfilename) {
+		filename_prefix = logfilename;
+		prefix_len = strlen(filename_prefix);
+		if(hourly || daily) {
+			char *basename = strrchr(filename_prefix, '/');
+			if(basename != NULL) {
+				basename++;
+			} else {
+				basename = filename_prefix;
+			}
+			char *ext = strrchr(filename_prefix, '.');
+			if(ext != NULL && (ext <= basename || ext[1] == '\0')) {
+				ext = NULL;
+			}
+			if(ext) {
+				extension = strdup(ext);
+				*ext = '\0';
+			} else {
+				extension = strdup("");
+			}
 		}
-	} else
+		if(open_outfile() < 0)
+			return -1;
+	} else {
 		fdout = stdout;
+		hourly = daily = 0;	// stdout is not rotateable
+	}
 
 	if (Rawaddr) {
 
@@ -111,6 +173,18 @@ int initOutput(char *logfilename, char *Rawaddr)
 		jsonbuf = malloc(JSONBUFLEN+1);
 	}
 	
+	return 0;
+}
+
+static int rotate_outfile() {
+	struct tm new_tm;
+	time_t t = time(NULL);
+	gmtime_r(&t, &new_tm);
+	if((hourly && new_tm.tm_hour != current_tm.tm_hour) ||
+	   (daily && new_tm.tm_mday != current_tm.tm_mday)) {
+		fclose(fdout);
+		return open_outfile();
+	}
 	return 0;
 }
 
@@ -572,6 +646,9 @@ void outputmsg(const msgblk_t * blk)
 			jok=buildjson(&msg, blk->chn, blk->tv);
 	}
 
+	if((hourly || daily) && outtype != OUTTYPE_NONE && rotate_outfile() < 0) {
+		_exit(1);
+	}
 	switch (outtype) {
 	case OUTTYPE_NONE:
 		break;
