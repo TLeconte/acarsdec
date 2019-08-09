@@ -249,7 +249,7 @@ void outsv(acarsmsg_t * msg, int chn, struct timeval tv)
 
 void outjson()
 {
-	char pkt[500];
+	char pkt[1400];
 
 	snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
 	write(sockfd, pkt, strlen(pkt));
