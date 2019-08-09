@@ -256,23 +256,17 @@ void outjson()
 }
 
 #ifdef HAVE_LIBACARS
-void decode_and_print_acars_apps(acarsmsg_t * msg) {
+la_proto_node *decode_acars_apps(acarsmsg_t * msg) {
 	if(msg->txt[0] == '\0')
-		return;
+		return NULL;
 
-	la_msg_dir direction;
+	la_msg_dir direction = LA_MSG_DIR_UNKNOWN;
 	if(msg->bid >= '0' && msg->bid <= '9')
 		direction = LA_MSG_DIR_AIR2GND;
 	else
 		direction = LA_MSG_DIR_GND2AIR;
 
-	la_proto_node *node = la_acars_decode_apps(msg->label, msg->txt, direction);
-	if(node != NULL) {
-		la_vstring *vstr = la_proto_tree_format_text(NULL, node);
-		fprintf(fdout, "%s\n", vstr->str);
-		la_vstring_destroy(vstr, true);
-	}
-	la_proto_tree_destroy(node);
+	return la_acars_decode_apps(msg->label, msg->txt, direction);
 }
 #endif
 
@@ -320,9 +314,12 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
         	if(oooi.won[0]) fprintf(fdout,"Wheels on Time : %s\n",oooi.won);
 	}
 #ifdef HAVE_LIBACARS
-	decode_and_print_acars_apps(msg);
+	if(msg->decoded_tree != NULL) {
+		la_vstring *vstr = la_proto_tree_format_text(NULL, msg->decoded_tree);
+		fprintf(fdout, "%s\n", vstr->str);
+		la_vstring_destroy(vstr, true);
+	}
 #endif
-
 	fflush(fdout);
 }
 
@@ -395,6 +392,13 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 		if(oooi.won[0])
 			cJSON_AddStringToObject(json_obj, "wlin", oooi.won);
 	}
+#ifdef HAVE_LIBACARS
+	if(msg->decoded_tree != NULL) {
+		la_vstring *vstr = la_proto_tree_format_json(NULL, msg->decoded_tree);
+		cJSON_AddRawToObject(json_obj, "libacars", vstr->str);
+		la_vstring_destroy(vstr, true);
+	}
+#endif
 	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
 	cJSON_Delete(json_obj);
 	return ok;
@@ -636,6 +640,10 @@ void outputmsg(const msgblk_t * blk)
 
 	if(label_filter(msg.label)==0) return;
 
+#ifdef HAVE_LIBACARS
+	msg.decoded_tree = decode_acars_apps(&msg);
+#endif
+
 	if(outflg)
 		fl=addFlight(&msg,blk->chn,blk->tv);
 
@@ -683,4 +691,7 @@ void outputmsg(const msgblk_t * blk)
 			break;
 		}
 	}
+#ifdef HAVE_LIBACARS
+	la_proto_tree_destroy(msg.decoded_tree);
+#endif
 }
