@@ -24,6 +24,7 @@
 #include <getopt.h>
 #include <sched.h>
 #include <unistd.h>
+#include <limits.h>
 #ifdef HAVE_LIBACARS
 #include <libacars/version.h>
 #endif
