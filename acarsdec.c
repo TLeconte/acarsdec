@@ -153,7 +153,7 @@ int main(int argc, char **argv)
 	int c;
 	int res, n;
 	struct sigaction sigact;
-	char sys_hostname[8];
+	char sys_hostname[HOST_NAME_MAX+1];
 	char *lblf=NULL;
 
 	gethostname(sys_hostname, sizeof(sys_hostname));
