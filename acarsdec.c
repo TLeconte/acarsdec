@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 	char *lblf=NULL;
 
 	gethostname(sys_hostname, sizeof(sys_hostname));
-	idstation = strndup(sys_hostname, 8);
+	idstation = strndup(sys_hostname, 32);
 
 	res = 0;
 	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
@@ -248,7 +248,8 @@ int main(int argc, char **argv)
 			daily = 1;
 			break;
 		case 'i':
-			idstation = strndup(optarg, 8);
+			free(idstation);
+			idstation = strndup(optarg, 32);
 			break;
 
 		default:
