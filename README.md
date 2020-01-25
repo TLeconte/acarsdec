@@ -207,7 +207,7 @@ For sdrplay :
 Notes : 
  * For rtl_sdr, you could change the input sample rate by changing RTLMULT in rtl.c. Default is 2.0Ms/s which is a safe value. You could increase it for the better, but it could be over the limits of some hardware and will increase CPU usage too. 
  * Airspy version will set the R820T tuner bandwidth to suit given frequencies. See : (https://tleconte.github.io/R820T/r820IF.html)
- * libacars support is optional. If the library is installed and can be located with pkg-config, it will be enabled.
+ * libacars support is optional. If the library (version 2.0.0 or later) is installed and can be located with pkg-config, it will be enabled.
  * If you have call cmake .. -Dxxx one time, the option will be sticky . Remove build dir and redo to change sdr option.
  * For raspberry Pi and others ARM machines, the gcc compile option -march=native could not be working, so modify the add_compile_options in CMakeLists.txt to set the correct options for your platform.
 
