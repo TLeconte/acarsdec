@@ -109,6 +109,8 @@ typedef struct {
         char bid;
         char no[5];
         char fid[7];
+        char sublabel[3];
+        char mfi[3];
         char bs, be;
         char txt[250];
         int err, lvl;

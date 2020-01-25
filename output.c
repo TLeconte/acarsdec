@@ -256,16 +256,12 @@ void outjson()
 }
 
 #ifdef HAVE_LIBACARS
+#define IS_DOWNLINK_BLK(bid) ((bid) >= '0' && (bid) <= '9')
 la_proto_node *decode_acars_apps(acarsmsg_t * msg) {
 	if(msg->txt[0] == '\0')
 		return NULL;
 
-	la_msg_dir direction = LA_MSG_DIR_UNKNOWN;
-	if(msg->bid >= '0' && msg->bid <= '9')
-		direction = LA_MSG_DIR_AIR2GND;
-	else
-		direction = LA_MSG_DIR_GND2AIR;
-
+	la_msg_dir direction = IS_DOWNLINK_BLK(msg->bid) ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR;
 	return la_acars_decode_apps(msg->label, msg->txt, direction);
 }
 #endif
@@ -296,6 +292,12 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 		if(msg->bid >= '0' && msg->bid <= '9') {
 			fprintf(fdout, "Flight id: %s\n", msg->fid);
 			fprintf(fdout, "No: %4s", msg->no);
+		}
+		if(msg->sublabel[0] != '\0') {
+			fprintf(fdout, "\nSublabel: %s", msg->sublabel);
+			if(msg->mfi[0] != '\0') {
+				fprintf(fdout, " MFI: %s", msg->mfi);
+			}
 		}
 	}
 
@@ -571,6 +573,7 @@ void outputmsg(const msgblk_t * blk)
 	flight_t *fl=NULL;
 
 	/* fill msg struct */
+	memset(&msg, 0, sizeof(msg));
 	msg.lvl = blk->lvl;
 	msg.err = blk->err;
 
@@ -627,7 +630,14 @@ void outputmsg(const msgblk_t * blk)
 
 			outflg=1;
 		}
-
+#ifdef HAVE_LIBACARS
+		la_msg_dir msg_dir = IS_DOWNLINK_BLK(msg.bid) ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR;
+		// Extract sublabel and MFI if present
+		int offset = la_acars_extract_sublabel_and_mfi(msg.label, msg_dir,
+				blk->txt + k, blk->len - k - 1, msg.sublabel, msg.mfi);
+		if(offset > 0)
+			k += offset;
+#endif
 		/* Message txt */
 		for (i = 0; k < blk->len - 1; i++, k++)
 			msg.txt[i] = blk->txt[k];
