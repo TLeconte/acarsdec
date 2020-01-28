@@ -296,7 +296,7 @@ void outpp(acarsmsg_t * msg)
 			*pstr = ' ';
 
 	snprintf(pkt, sizeof(pkt), "AC%1c %7s %1c %2s %1c %4s %6s %s",
-		msg->mode, msg->addr, msg->ack, msg->label, msg->bid, msg->no,
+		msg->mode, msg->addr, msg->ack, msg->label, msg->bid ? msg->bid : '.', msg->no,
 		msg->fid, txt);
 
 	write(sockfd, pkt, strlen(pkt));
@@ -315,7 +315,7 @@ void outsv(acarsmsg_t * msg, int chn, struct timeval tv)
 		idstation, chn + 1, tmp.tm_mday, tmp.tm_mon + 1,
 		tmp.tm_year + 1900, tmp.tm_hour, tmp.tm_min, tmp.tm_sec,
 		msg->err, msg->lvl, msg->mode, msg->addr, msg->ack, msg->label,
-		msg->bid, msg->no, msg->fid, msg->txt);
+		msg->bid ? msg->bid : '.', msg->no, msg->fid, msg->txt);
 
 	write(sockfd, pkt, strlen(pkt));
 }
