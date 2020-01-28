@@ -349,7 +349,7 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 
 	if(msg->bid) {
 		fprintf(fdout, "Id : %1c ", msg->bid);
-		if(msg->ack==0x15) fprintf(fdout, "Nak\n"); else fprintf(fdout, "Ack : %1c\n", msg->ack);
+		if(msg->ack=='!') fprintf(fdout, "Nak\n"); else fprintf(fdout, "Ack : %1c\n", msg->ack);
 		fprintf(fdout, "Aircraft reg: %s ", msg->addr);
 		if(IS_DOWNLINK_BLK(msg->bid)) {
 			fprintf(fdout, "Flight id: %s\n", msg->fid);
@@ -424,7 +424,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 		snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->bid);
 		cJSON_AddStringToObject(json_obj, "block_id", convert_tmp);
 
-		if(msg->ack == 0x15) {
+		if(msg->ack == '!') {
 			cJSON_AddFalseToObject(json_obj, "ack");
 		} else {
 			snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->ack);
@@ -656,6 +656,8 @@ void outputmsg(const msgblk_t * blk)
 
 	/* ACK/NAK */
 	msg.ack = blk->txt[k];
+	if(msg.ack == 0x15)     // NAK is nonprintable
+		msg.ack = '!';
 	k++;
 
 	msg.label[0] = blk->txt[k];
