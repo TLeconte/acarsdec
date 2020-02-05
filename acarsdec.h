@@ -22,6 +22,7 @@
 #include <complex.h>
 #ifdef HAVE_LIBACARS
 #include <libacars/libacars.h>
+#include <libacars/reassembly.h>
 #endif
 
 #define MAXNBCHANNELS 8
@@ -109,11 +110,16 @@ typedef struct {
         char bid;
         char no[5];
         char fid[7];
+        char sublabel[3];
+        char mfi[3];
         char bs, be;
-        char txt[250];
+        char *txt;
         int err, lvl;
 #ifdef HAVE_LIBACARS
-	la_proto_node *decoded_tree;
+        char msn[4];
+        char msn_seq;
+        la_proto_node *decoded_tree;
+        la_reasm_status reasm_status;
 #endif
 } acarsmsg_t;
 
