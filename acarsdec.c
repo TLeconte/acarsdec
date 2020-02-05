@@ -24,6 +24,7 @@
 #include <getopt.h>
 #include <sched.h>
 #include <unistd.h>
+#include <limits.h>
 #ifdef HAVE_LIBACARS
 #include <libacars/version.h>
 #endif
@@ -153,11 +154,11 @@ int main(int argc, char **argv)
 	int c;
 	int res, n;
 	struct sigaction sigact;
-	char sys_hostname[8];
+	char sys_hostname[HOST_NAME_MAX+1];
 	char *lblf=NULL;
 
 	gethostname(sys_hostname, sizeof(sys_hostname));
-	idstation = strndup(sys_hostname, 8);
+	idstation = strndup(sys_hostname, 32);
 
 	res = 0;
 	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
@@ -248,7 +249,8 @@ int main(int argc, char **argv)
 			daily = 1;
 			break;
 		case 'i':
-			idstation = strndup(optarg, 8);
+			free(idstation);
+			idstation = strndup(optarg, 32);
 			break;
 
 		default:
