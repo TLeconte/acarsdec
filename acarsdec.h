@@ -20,6 +20,9 @@
 #include <time.h>
 #include <pthread.h>
 #include <complex.h>
+#ifdef HAVE_LIBACARS
+#include <libacars/libacars.h>
+#endif
 
 #define MAXNBCHANNELS 8
 #define INTRATE 12500
@@ -109,6 +112,9 @@ typedef struct {
         char bs, be;
         char txt[250];
         int err, lvl;
+#ifdef HAVE_LIBACARS
+	la_proto_node *decoded_tree;
+#endif
 } acarsmsg_t;
 
 extern channel_t channel[MAXNBCHANNELS];
