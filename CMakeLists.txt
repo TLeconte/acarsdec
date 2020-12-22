@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.2)
 project (acarsdec C)
 
-add_compile_options(-Ofast -march=native )
+add_compile_options(-O2)
 
 add_executable(acarsdec acars.c  acarsdec.c  cJSON.c  label.c  msk.c  output.c )
 
