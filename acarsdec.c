@@ -47,6 +47,7 @@ int daily = 0;
 #ifdef WITH_RTL
 int gain = -100;
 int ppm = 0;
+int rtlMult = 160;
 #endif
 #ifdef WITH_AIR
 int gain = 18;
@@ -122,6 +123,7 @@ static void usage(void)
 	fprintf(stderr,
 		" -g gain\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n");
 	fprintf(stderr, " -p ppm\t\t\t: set rtl ppm frequency correction\n");
+	fprintf(stderr, " -m rtlMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
 	fprintf(stderr,
 		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
@@ -175,7 +177,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 32);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -210,8 +212,11 @@ int main(int argc, char **argv)
 		case 'p':
 			ppm = atoi(optarg);
 			break;
-    		case 'g':
+		case 'g':
 			gain = 10 * atof(optarg);
+			break;
+		case 'm':
+			rtlMult = atoi(optarg);
 			break;
 #endif
 #ifdef	WITH_SDRPLAY

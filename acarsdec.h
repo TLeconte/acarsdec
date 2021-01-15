@@ -158,6 +158,7 @@ extern int initRtl(char **argv,int optind);
 extern int runRtlSample(void);
 extern int runRtlCancel(void);
 extern int runRtlClose(void);
+extern int rtlMult;
 #endif
 #ifdef WITH_AIR
 extern int initAirspy(char **argv,int optind);
