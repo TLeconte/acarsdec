@@ -178,8 +178,6 @@ int nearest_gain(int target_gain)
 		}
 	}
 	free(gains);
-	if (verbose)
-		fprintf(stderr, "Tuner gain : %f\n", (float)close_gain / 10.0);
 	return close_gain;
 }
 
@@ -204,8 +202,17 @@ int initRtl(char **argv, int optind)
 		return r;
 	}
 
-	rtlsdr_set_tuner_gain_mode(dev, 1);
-	r = rtlsdr_set_tuner_gain(dev, nearest_gain(gain));
+	if (gain > 520 || gain == -100) {
+		if (verbose)
+			fprintf(stderr, "Tuner gain: AGC\n");
+		r = rtlsdr_set_tuner_gain_mode(dev, 0);
+	} else {
+		rtlsdr_set_tuner_gain_mode(dev, 1);
+        gain = nearest_gain(gain);
+        if (verbose)
+            fprintf(stderr, "Tuner gain: %f\n", (float)gain / 10.0);
+		r = rtlsdr_set_tuner_gain(dev, gain);
+	}
 	if (r < 0)
 		fprintf(stderr, "WARNING: Failed to set gain.\n");
 
@@ -323,14 +330,29 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 
 int runRtlSample(void)
 {
-	int r;
-
-	status = 1;
-	r = rtlsdr_read_async(dev, in_callback, NULL, 4, RTLINBUFSZ);
-	if (r) {
-		fprintf(stderr, "Read async %d\n", r);
-	}
-	return status;
+	rtlsdr_read_async(dev, in_callback, NULL, 4, RTLINBUFSZ);
+	return 0;
 }
+
+int runRtlCancel(void) {
+	if (dev) {
+		rtlsdr_cancel_async(dev); // interrupt read_async
+	}
+	return 0;
+}
+
+int runRtlClose(void) {
+	int res = 0;
+	if (dev) {
+		res = rtlsdr_close(dev);
+		dev = NULL;
+	}
+	if (res) {
+		fprintf(stderr, "rtlsdr_close: %d\n", res);
+	}
+
+	return res;
+}
+
 
 #endif
