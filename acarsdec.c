@@ -44,6 +44,8 @@ int mdly=600;
 int hourly = 0;
 int daily = 0;
 
+int signalExit = 0;
+
 #ifdef WITH_RTL
 int gain = -100;
 int ppm = 0;
@@ -159,6 +161,7 @@ static void sigintHandler(int signum)
 	else
 		fprintf(stderr, "Received signal %d, exiting.\n", strsignal(signum));
 #ifdef WITH_RTL
+	signalExit = 1;
 	runRtlCancel();
 #else
 	exit(0);
