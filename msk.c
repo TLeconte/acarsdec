@@ -101,7 +101,8 @@ void demodMSK(channel_t *ch,int len)
 		/* normalize */
 		lvl=cabsf(v);
 		v/=lvl+1e-6;
-		ch->Msklvl = 0.99 * ch->Msklvl + 0.01*lvl/5.2;
+		ch->MskLvlSum += lvl * lvl / 4;
+		ch->MskBitCount++;
 
 		switch(ch->MskS&3) {
 			case 0:

@@ -47,7 +47,8 @@ typedef struct mskblk_s {
 	int chn;
 	struct timeval tv;
 	int len;
-	int lvl,err;
+	int err;
+	float lvl;
 	char txt[250];
 	unsigned char crc[2];
 } msgblk_t;
@@ -73,8 +74,9 @@ typedef struct {
 	double MskPhi;
 	double MskDf;
 	float Mskpv;
-	float Msklvl;
 	float MskClk;
+	double MskLvlSum;
+	int MskBitCount;
 	unsigned int MskS,idx;
 	float complex *inb;
 
@@ -114,7 +116,8 @@ typedef struct {
         char mfi[3];
         char bs, be;
         char *txt;
-        int err, lvl;
+        int err;
+        float lvl;
 #ifdef HAVE_LIBACARS
         char msn[4];
         char msn_seq;
