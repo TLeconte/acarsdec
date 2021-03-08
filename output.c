@@ -311,7 +311,7 @@ void outsv(acarsmsg_t * msg, int chn, struct timeval tv)
 	gmtime_r(&(tv.tv_sec), &tmp);
 
 	snprintf(pkt, sizeof(pkt),
-		"%8s %1d %02d/%02d/%04d %02d:%02d:%02d %1d %03d %1c %7s %1c %2s %1c %4s %6s %s",
+		"%8s %1d %02d/%02d/%04d %02d:%02d:%02d %2.1f %03d %1c %7s %1c %2s %1c %4s %6s %s",
 		idstation, chn + 1, tmp.tm_mday, tmp.tm_mon + 1,
 		tmp.tm_year + 1900, tmp.tm_hour, tmp.tm_min, tmp.tm_sec,
 		msg->err, msg->lvl, msg->mode, msg->addr, msg->ack, msg->label,
@@ -334,11 +334,11 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 
 #if defined (WITH_RTL) || defined (WITH_AIR)
 	if (inmode >= 3)
-		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+3d E:%1d) ", chn + 1,
+		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+2.1f E:%1d) ", chn + 1,
 			channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
-		fprintf(fdout, "\n[#%1d (L:%+3d E:%1d) ", chn + 1, msg->lvl, msg->err);
+		fprintf(fdout, "\n[#%1d (L:%+2.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (inmode != 2)
 		printdate(tv);
@@ -414,7 +414,8 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 	cJSON_AddNumberToObject(json_obj, "channel", chn);
 	snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
 	cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
-	cJSON_AddNumberToObject(json_obj, "level", msg->lvl);
+	snprintf(convert_tmp, sizeof(convert_tmp), "%2.1f", msg->lvl);
+	cJSON_AddRawToObject(json_obj, "level", convert_tmp);
 	cJSON_AddNumberToObject(json_obj, "error", msg->err);
 	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
 	cJSON_AddStringToObject(json_obj, "mode", convert_tmp);
@@ -483,7 +484,7 @@ static void printoneline(acarsmsg_t * msg, int chn, struct timeval tv)
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
 
-	fprintf(fdout, "#%1d (L:%+3d E:%1d) ", chn + 1, msg->lvl, msg->err);
+	fprintf(fdout, "#%1d (L:%+2.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (inmode != 2)
 		printdate(tv);

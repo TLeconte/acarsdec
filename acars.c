@@ -270,7 +270,8 @@ void decodeAcars(channel_t * ch)
 			ch->blk->len = 0;
 			ch->blk->err = 0;
 			ch->nbits = 8;
-			ch->Msklvl = 0;
+			ch->MskLvlSum = 0;
+			ch->MskBitCount = 0;
 			return;
 		}
 		resetAcars(ch);
@@ -323,7 +324,7 @@ void decodeAcars(channel_t * ch)
 	case CRC2:
 		ch->blk->crc[1] = r;
  putmsg_lbl:
-		ch->blk->lvl = 10*log10(ch->Msklvl);
+		ch->blk->lvl = 10*log10(ch->MskLvlSum / ch->MskBitCount);
 
 		pthread_mutex_lock(&ch->blkmtx);
 		ch->blk->prev = NULL;
