@@ -145,7 +145,10 @@ static void usage(void)
 
 static void sighandler(int signum)
 {
+#ifdef DEBUG
 	fprintf(stderr, "receive signal %d exiting\n", signum);
+	SndWriteClose();
+#endif
 	exit(1);
 }
 
@@ -263,6 +266,7 @@ int main(int argc, char **argv)
 		usage();
 	}
 
+
 	if (res) {
 		fprintf(stderr, "Unable to init input\n");
 		exit(res);
@@ -304,6 +308,11 @@ int main(int argc, char **argv)
 		exit(res);
 	}
 
+#ifdef DEBUG
+	if (inmode !=2 ) {
+		initSndWrite();
+	}
+#endif
 
 	if (verbose)
 		fprintf(stderr, "Decoding %d channels\n", nbch);
