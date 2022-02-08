@@ -88,7 +88,7 @@ void initSndWrite(void)
 
 	infsnd.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 	infsnd.samplerate = INTRATE;
-	infsnd.channels = 2;
+	infsnd.channels = 1;
 	outsnd = sf_open("data.wav", SFM_WRITE, &infsnd);
 	if (outsnd == NULL) {
 		fprintf(stderr, "could not open data\n ");
@@ -99,9 +99,13 @@ void initSndWrite(void)
 
 void SndWrite(float *in)
 {
-	sf_write_float(outsnd, in, 2);
+	sf_write_float(outsnd, in, 1);
 }
 
+void SndWriteClose(void)
+{
+	sf_close(outsnd);
+}
 #endif
 
 #endif

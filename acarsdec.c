@@ -160,6 +160,9 @@ static void sigintHandler(int signum)
 		fprintf(stderr, "Received %s, exiting.\n", s);
 	else
 		fprintf(stderr, "Received signal %d, exiting.\n", strsignal(signum));
+#ifdef DEBUG
+	SndWriteClose();
+#endif
 #ifdef WITH_RTL
 	signalExit = 1;
 	runRtlCancel();
@@ -285,6 +288,7 @@ int main(int argc, char **argv)
 		usage();
 	}
 
+
 	if (res) {
 		fprintf(stderr, "Unable to init input\n");
 		exit(res);
@@ -326,6 +330,11 @@ int main(int argc, char **argv)
 		exit(res);
 	}
 
+#ifdef DEBUG
+	if (inmode !=2 ) {
+		initSndWrite();
+	}
+#endif
 
 	if (verbose)
 		fprintf(stderr, "Decoding %d channels\n", nbch);

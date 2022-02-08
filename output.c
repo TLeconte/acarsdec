@@ -461,6 +461,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 			cJSON_AddStringToObject(json_obj, "wlin", oooi.won);
 	}
 #ifdef HAVE_LIBACARS
+	cJSON_AddStringToObject(json_obj, "assstat", la_reasm_status_name_get(msg->reasm_status));
 	if(msg->decoded_tree != NULL) {
 		la_vstring *vstr = la_proto_tree_format_json(NULL, msg->decoded_tree);
 		cJSON_AddRawToObject(json_obj, "libacars", vstr->str);

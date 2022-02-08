@@ -59,7 +59,8 @@ static inline void putbit(float v, channel_t * ch)
 		decodeAcars(ch);
 }
 
-const double PLLC=3.8e-3;
+const float PLLG=38e-4;
+const float PLLC=0.52;
 void demodMSK(channel_t *ch,int len)
 {
    /* MSK demod */
@@ -80,6 +81,9 @@ void demodMSK(channel_t *ch,int len)
 
 	/* mixer */
 	in = ch->dm_buffer[n];
+#ifdef DEBUG
+	if(ch->chn==1) SndWrite(&in);
+#endif
 	ch->inb[idx] = in * cexp(-p*I);
 	idx=(idx+1)%FLEN;
 
@@ -104,33 +108,22 @@ void demodMSK(channel_t *ch,int len)
 		ch->MskLvlSum += lvl * lvl / 4;
 		ch->MskBitCount++;
 
-		switch(ch->MskS&3) {
-			case 0:
-				vo=crealf(v);
-				putbit(vo, ch);
-				if(vo>=0) dphi=cimagf(v); else dphi=-cimagf(v);
-				break;
-			case 1:
-				vo=cimagf(v);
-				putbit(vo, ch);
-				if(vo>=0) dphi=-crealf(v); else dphi=crealf(v);
-				break;
-			case 2:
-				vo=crealf(v);
-				putbit(-vo, ch);
-				if(vo>=0) dphi=cimagf(v); else dphi=-cimagf(v);
-				break;
-			case 3:
-				vo=cimagf(v);
-				putbit(-vo, ch);
-				if(vo>=0) dphi=-crealf(v); else dphi=crealf(v);
-				break;
+		if(ch->MskS&1) {
+			vo=cimagf(v);
+			if(vo>=0) dphi=-crealf(v); else dphi=crealf(v);
+		} else {
+			vo=crealf(v);
+			if(vo>=0) dphi=cimagf(v); else dphi=-cimagf(v);
+		}
+		if(ch->MskS&2) {
+			putbit(-vo, ch);
+		} else {
+			putbit(vo, ch);
 		}
 		ch->MskS++;
 
 		/* PLL filter */
-		ch->MskDf=PLLC*dphi;
-
+		ch->MskDf=PLLC*ch->MskDf+(1.0-PLLC)*PLLG*dphi;
 	}
     }
 
