@@ -44,9 +44,12 @@ int mdly=600;
 int hourly = 0;
 int daily = 0;
 
+int signalExit = 0;
+
 #ifdef WITH_RTL
-int gain = 1000;
+int gain = -100;
 int ppm = 0;
+int rtlMult = 160;
 #endif
 #ifdef WITH_AIR
 int gain = 18;
@@ -120,8 +123,9 @@ static void usage(void)
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
-		" -g gain\t\t: set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use AGC\n");
+		" -g gain\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n");
 	fprintf(stderr, " -p ppm\t\t\t: set rtl ppm frequency correction\n");
+	fprintf(stderr, " -m rtlMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
 	fprintf(stderr,
 		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
@@ -143,13 +147,28 @@ static void usage(void)
 	exit(1);
 }
 
-static void sighandler(int signum)
+static void sigintHandler(int signum)
 {
+	char *s = NULL;
+	if (signum == SIGTERM)
+		s = "SIGTERM";
+	else if (signum == SIGINT)
+		s = "SIGINT";
+	else if (signum == SIGQUIT)
+		s = "SIGQUIT";
+	if (s)
+		fprintf(stderr, "Received %s, exiting.\n", s);
+	else
+		fprintf(stderr, "Received signal %d, exiting.\n", strsignal(signum));
 #ifdef DEBUG
-	fprintf(stderr, "receive signal %d exiting\n", signum);
 	SndWriteClose();
 #endif
-	exit(1);
+#ifdef WITH_RTL
+	signalExit = 1;
+	runRtlCancel();
+#else
+	exit(0);
+#endif
 }
 
 int main(int argc, char **argv)
@@ -164,7 +183,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 32);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -199,8 +218,11 @@ int main(int argc, char **argv)
 		case 'p':
 			ppm = atoi(optarg);
 			break;
-    		case 'g':
-			gain = atoi(optarg);
+		case 'g':
+			gain = 10 * atof(optarg);
+			break;
+		case 'm':
+			rtlMult = atoi(optarg);
 			break;
 #endif
 #ifdef	WITH_SDRPLAY
@@ -285,7 +307,7 @@ int main(int argc, char **argv)
 		exit(res);
 	}
 
-	sigact.sa_handler = sighandler;
+	sigact.sa_handler = sigintHandler;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;
 	sigaction(SIGINT, &sigact, NULL);
@@ -331,7 +353,8 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_RTL
 	case 3:
-		res = runRtlSample();
+		runRtlSample();
+		res = runRtlClose();
 		break;
 #endif
 #ifdef WITH_AIR
