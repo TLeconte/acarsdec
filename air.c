@@ -130,7 +130,9 @@ int initAirspy(char **argv, int optind)
 		return -1;
 	}
 	free(supported_samplerates);
-	fprintf(stderr,"Using %d sampling rate\n",AIRINRATE);
+	
+	if (verbose)
+		fprintf(stderr,"Using %d sampling rate\n",AIRINRATE);
 	
 
 	result = airspy_set_samplerate(device, i);
