@@ -211,6 +211,15 @@ Notes :
  * If you have call cmake .. -Dxxx one time, the option will be sticky . Remove build dir and redo to change sdr option.
  * For raspberry Pi and others ARM machines, the gcc compile option -march=native could not be working, so modify the add_compile_options in CMakeLists.txt to set the correct options for your platform.
 
+## Troubleshooting
+It seems that the default compile options are sometime problematic.
+Change or remove the line :
+
+> add_compile_options(-Ofast -march=native)
+
+in CMakeLists.txt and rebuild
+
+
 # Acarsserv
 
 acarsserv is a companion program for acarsdec. It listens to acars messages on UDP coming from one or more acarsdec processes and stores them in a sqlite database.
