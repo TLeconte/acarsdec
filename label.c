@@ -324,12 +324,6 @@ static int label_8s(char *txt,oooi_t *oooi)
     memcpy(oooi->eta,&(txt[5]),4);
     return 1;
 }
-static int label_b9(char *txt,oooi_t *oooi)
-{
-    if(txt[0]!='/') return 0;
-    memcpy(oooi->da,&(txt[1]),4);
-    return 1;
-}
 
 
 int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
@@ -388,10 +382,6 @@ int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
 			ov=label_8e(msg->txt,oooi);
 		if(msg->label[1]=='S') 
 			ov=label_8s(msg->txt,oooi);
-		break;
-	case 'B' :
-		if(msg->label[1]=='9') 
-			ov=label_b9(msg->txt,oooi);
 		break;
 	case 'R' :
 		if(msg->label[1]=='B') 
