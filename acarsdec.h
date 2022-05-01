@@ -73,7 +73,6 @@ typedef struct {
 	float *dm_buffer;
 	double MskPhi;
 	double MskDf;
-	float Mskpv;
 	float MskClk;
 	double MskLvlSum;
 	int MskBitCount;
