@@ -46,7 +46,7 @@ for the RTLSDR device
 
  -r rtldevice f1 [f2] ... [fN] :		decode from rtl dongle number or S/N "rtldevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -r 0 131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
  
- -g gain :		set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use maximum gain
+ -g gain :		set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)
  
  -p ppm :		set rtl ppm frequency correction
 
