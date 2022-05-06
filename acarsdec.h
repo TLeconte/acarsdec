@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2015 Thierry Leconte
  *
- *   
+ *
  *   This code is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Library General Public License version 2
  *   published by the Free Software Foundation.
@@ -167,11 +167,14 @@ extern int rtlMult;
 extern int initAirspy(char **argv,int optind);
 extern int runAirspySample(void);
 #endif
+#ifdef WITH_SOAPY
+extern int initSoapy(char **argv,int optind);
+extern int runSoapySample(void);
+#endif
 extern int initRaw(char **argv,int optind);
 extern int runRawSample(void);
 extern int  initMsk(channel_t *);
 extern void demodMSK(channel_t *ch,int len);
-
 
 extern int  initAcars(channel_t *);
 extern void decodeAcars(channel_t *);

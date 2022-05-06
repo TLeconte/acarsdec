@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2015 Thierry Leconte
  *
- *   
+ *
  *   This code is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Library General Public License version 2
  *   published by the Free Software Foundation.
@@ -88,6 +88,9 @@ static void usage(void)
 #ifdef	WITH_SDRPLAY
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
 #endif
+#ifdef	WITH_SOAPY
+	fprintf (stderr, " -d soapydevicestring");
+#endif
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
 	fprintf(stderr,
@@ -137,9 +140,13 @@ static void usage(void)
 #endif
 #ifdef	WITH_SDRPLAY
 	fprintf (stderr,
-	          "-L lnaState: set the lnaState (depends on the device)\n"\
-	          "-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"\
-	          " -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+		"-L lnaState: set the lnaState (depends on the device)\n"\
+		"-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"\
+		" -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+#endif
+#ifdef	WITH_SOAPY
+	fprintf (stderr,
+		"-d soapydevicestring: SoapySDR device string to locate a hardware device\n");
 #endif
 
 	fprintf(stderr,
@@ -240,12 +247,18 @@ int main(int argc, char **argv)
 			GRdB = atoi(optarg);
 			break;
 #endif
+#ifdef WITH_SOAPY
+		case 'd':
+			res = initSoapy(argv, optind);
+			inmode = 6;
+			break;
+#endif
 #ifdef WITH_AIR
 		case 's':
 			res = initAirspy(argv, optind);
 			inmode = 4;
 			break;
-    		case 'g':
+		case 'g':
 			gain = atoi(optarg);
 			break;
 #endif
@@ -364,8 +377,13 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_SDRPLAY
 	case 5:
-              res = runSdrplaySample ();
-              break;
+		res = runSdrplaySample();
+		break;
+#endif
+#ifdef WITH_SOAPY
+	case 6:
+		res = runSoapySample();
+		break;
 #endif
 	default:
 		res = -1;
