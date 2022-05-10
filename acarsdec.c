@@ -89,7 +89,7 @@ static void usage(void)
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
 #endif
 #ifdef	WITH_SOAPY
-	fprintf (stderr, " -d soapydevicestring");
+	fprintf (stderr, " -d devicestring f1 [f2] .. [fN]");
 #endif
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
@@ -140,13 +140,13 @@ static void usage(void)
 #endif
 #ifdef	WITH_SDRPLAY
 	fprintf (stderr,
-		"-L lnaState: set the lnaState (depends on the device)\n"\
-		"-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"\
+		" -L lnaState: set the lnaState (depends on the device)\n"\
+		" -G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"\
 		" -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef	WITH_SOAPY
 	fprintf (stderr,
-		"-d soapydevicestring: SoapySDR device string to locate a hardware device\n");
+		" -d devicestring f1 [f2] .. [f%d]\t: decode from a SoapySDR device at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 
 	fprintf(stderr,
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 32);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:d:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -297,7 +297,7 @@ int main(int argc, char **argv)
 	}
 
 	if (inmode == 0) {
-		fprintf(stderr, "Need at least one of -a|-f|-r|-R options\n");
+		fprintf(stderr, "Need at least one of -a|-f|-r|-R|-d options\n");
 		usage();
 	}
 

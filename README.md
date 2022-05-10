@@ -16,28 +16,28 @@ as the RTLSDR dongle, the AIRspy and the SDRplay device.
 It allows the user to directly monitor to up to 8 different frequencies simultaneously with very low cost hardware.
 
 ## Usage
-> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
+> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN] | -d devicestring  f1 [f2] [... fN]
 
  -v :			verbose
- 
+
  -A :			don't display uplink messages (ie : only aircraft messages)
- 
+
  -o lv :		output format : 0 : no log, 1 : one line by msg, 2 : full (default), 3 : monitor mode, 4 : msg JSON, 5 : route JSON
- 
+
  -t time :		set forget time (TTL) in seconds in monitor mode(default=600s)
- 
+
  -l logfile :		append log messages to logfile (Default : stdout)
 
  -H :			rotate log file once every hour
 
  -D :			rotate log file once every day
- 
+
  -n ipaddr:port :	send acars messages to addr:port via UDP in planeplotter compatible format
- 
+
  -N ipaddr:port :	send acars messages to addr:port via UDP in acarsdec format
 
  -j ipaddr:port :	send acars messages to addr:port via UDP in JSON format
- 
+
  -i station id:		id use in acarsdec network format.
 
  -b filter:		filter output by label (ex: -b "H1:Q0" : only output messages  with label H1 or Q0"
@@ -45,9 +45,9 @@ It allows the user to directly monitor to up to 8 different frequencies simultan
 for the RTLSDR device
 
  -r rtldevice f1 [f2] ... [fN] :		decode from rtl dongle number or S/N "rtldevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -r 0 131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
- 
+
  -g gain :		set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)
- 
+
  -p ppm :		set rtl ppm frequency correction
 
 for the AIRspy device
@@ -61,6 +61,10 @@ for the SDRplay device
  -L lnaState:	set the lnaState (depends on the selected SDRPlay hardware)
 
  -G GRdB:	set the Gain Reduction in dB's. -100 is used for agc.
+
+for the SoapySDR device
+
+ -d devicestring f1 [f2] ... [fN] :		 decode from a SoapySDR device at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 ).
 
 ## Examples
 
@@ -76,7 +80,7 @@ Decoding from airspy on 3 frequencies with verbose logging
 #### One line by mesg format (-o 1)
 
     #2 (L:  -5 E:0) 25/12/2016 16:26:40 .EC-JBA IB3166 X B9 J80A /EGLL.TI2/000EGLLAABB2
-    #3 (L:   8 E:0) 25/12/2016 16:26:44 .G-OZBF ZB494B 2 Q0 S12A 
+    #3 (L:   8 E:0) 25/12/2016 16:26:44 .G-OZBF ZB494B 2 Q0 S12A
     #3 (L:   0 E:0) 25/12/2016 16:26:44 .F-HZDP XK773C 2 16 M38A LAT N 47.176/LON E  2.943
 
 
@@ -87,7 +91,7 @@ Decoding from airspy on 3 frequencies with verbose logging
     Mode : 2 Label : SA Id : 4 Ack : !
     Message no: S31A :
     0EV162743VS/
-    
+
     [#3 (F:131.825 L:   3 E:0) 25/12/2016 16:28:08 --------------------------------
     Aircraft reg: .F-GSPZ Flight id: AF0940
     Mode : 2 Label : B2 Id : 1 Ack : !
@@ -121,7 +125,7 @@ Decoding from airspy on 3 frequencies with verbose logging
     {"timestamp":1543677178.9600339,"flight":"BA750P","depa":"EGLL","dsta":"LFSB"}
 
 
-#### with libacars and ARINC 622 decoding 
+#### with libacars and ARINC 622 decoding
 
     [#2 (F:131.725 L:-33 E:0) 30/11/2018 19:45:46.645 --------------------------------
     Mode : 2 Label : H1 Id : 3 Nak
@@ -167,8 +171,8 @@ It needs cmake and a C compiler.
 It depends on some external libraries :
  * libusb
  * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
- * libairspy for airspy software radio input 
- * libmirsdrapi-rsp for sdrplay software radio input 
+ * libairspy for airspy software radio input
+ * libmirsdrapi-rsp for sdrplay software radio input
  * optionaly libacars for decoding ATS applications (https://github.com/szpajder/libacars)
 
 For rtl_sdr :
@@ -204,8 +208,8 @@ For sdrplay :
 
 > sudo make install
 
-Notes : 
- * For rtl_sdr, you could change the input sample rate by changing RTLMULT in rtl.c. Default is 2.0Ms/s which is a safe value. You could increase it for the better, but it could be over the limits of some hardware and will increase CPU usage too. 
+Notes :
+ * For rtl_sdr, you could change the input sample rate by changing RTLMULT in rtl.c. Default is 2.0Ms/s which is a safe value. You could increase it for the better, but it could be over the limits of some hardware and will increase CPU usage too.
  * Airspy version will set the R820T tuner bandwidth to suit given frequencies. See : (https://tleconte.github.io/R820T/r820IF.html)
  * libacars support is optional. If the library (version 2.0.0 or later) is installed and can be located with pkg-config, it will be enabled.
  * If you have call cmake .. -Dxxx one time, the option will be sticky . Remove build dir and redo to change sdr option.
@@ -226,7 +230,7 @@ acarsserv is a companion program for acarsdec. It listens to acars messages on U
 
 See : [acarsserv](https://github.com/TLeconte/acarsserv)
 
-## Copyrights 
+## Copyrights
 acarsdec and acarsserv are Copyright Thierry Leconte 2015-2018
 
 These code are free software; you can redistribute it and/or modify
