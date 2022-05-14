@@ -18,12 +18,17 @@
 #endif
 #include "acarsdec.h"
 #include "cJSON.h"
+
 extern int label_filter(char *lbl);
 
 extern int inmode;
 extern char *idstation;
 
-static int sockfd = -1;
+extern int Netoutinit(char *Rawaddr);
+extern void Netoutpp(acarsmsg_t * msg);
+extern void Netoutsv(acarsmsg_t * msg, char * idstation, int chn, struct timeval tv);
+extern void Netoutjson(char *jsonbuf);
+
 static FILE *fdout;
 static char *filename_prefix = NULL;
 static char *extension = NULL;
@@ -146,11 +151,6 @@ static int open_outfile() {
 
 int initOutput(char *logfilename, char *Rawaddr)
 {
-	char *addr;
-	char *port;
-	struct addrinfo hints, *servinfo, *p;
-	int rv;
-
 	if (outtype != OUTTYPE_NONE && logfilename) {
 		filename_prefix = logfilename;
 		prefix_len = strlen(filename_prefix);
@@ -179,60 +179,9 @@ int initOutput(char *logfilename, char *Rawaddr)
 		hourly = daily = 0;	// stdout is not rotateable
 	}
 
-	if (Rawaddr) {
-
-		memset(&hints, 0, sizeof hints);
-		if (Rawaddr[0] == '[') {
-			hints.ai_family = AF_INET6;
-			addr = Rawaddr + 1;
-			port = strstr(addr, "]");
-			if (port == NULL) {
-				fprintf(stderr, "Invalid IPV6 address\n");
-				return -1;
-			}
-			*port = 0;
-			port++;
-			if (*port != ':')
-				port = "5555";
-			else
-				port++;
-		} else {
-			hints.ai_family = AF_UNSPEC;
-			addr = Rawaddr;
-			port = strstr(addr, ":");
-			if (port == NULL)
-				port = "5555";
-			else {
-				*port = 0;
-				port++;
-			}
-		}
-
-		hints.ai_socktype = SOCK_DGRAM;
-
-		if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
-			fprintf(stderr, "Invalid/unknown address %s\n", addr);
+	if (Rawaddr) 
+		if(Netoutinit(Rawaddr))
 			return -1;
-		}
-
-		for (p = servinfo; p != NULL; p = p->ai_next) {
-			if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-			continue;
-			}
-
-			if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-				close(sockfd);
-				continue;
-			}
-			break;
-		}
-		if (p == NULL) {
-			fprintf(stderr, "failed to connect\n");
-			return -1;
-		}
-
-		freeaddrinfo(servinfo);
-	}
 
 	if (outtype == OUTTYPE_MONITOR ) {
 		verbose=0;
@@ -240,7 +189,7 @@ int initOutput(char *logfilename, char *Rawaddr)
 		fflush(stdout);
 	}
 
-	if (outtype == OUTTYPE_JSON || outtype == OUTTYPE_ROUTEJSON || (sockfd && netout==NETLOG_JSON)) {
+	if (outtype == OUTTYPE_JSON || outtype == OUTTYPE_ROUTEJSON || netout==NETLOG_JSON) {
 		jsonbuf = malloc(JSONBUFLEN+1);
 	}
 #ifdef HAVE_LIBACARS
@@ -283,49 +232,6 @@ static void printdate(struct timeval tv)
 	fprintf(fdout, "%02d/%02d/%04d ",
 		tmp.tm_mday, tmp.tm_mon + 1, tmp.tm_year + 1900);
 	printtime(tv);
-}
-
-void outpp(acarsmsg_t * msg)
-{
-	char pkt[3600]; // max. 16 blocks * 220 characters + extra space for msg prefix
-	char *pstr;
-
-	char *txt = strdup(msg->txt);
-	for (pstr = txt; *pstr != 0; pstr++)
-		if (*pstr == '\n' || *pstr == '\r')
-			*pstr = ' ';
-
-	snprintf(pkt, sizeof(pkt), "AC%1c %7s %1c %2s %1c %4s %6s %s",
-		msg->mode, msg->addr, msg->ack, msg->label, msg->bid ? msg->bid : '.', msg->no,
-		msg->fid, txt);
-
-	write(sockfd, pkt, strlen(pkt));
-	free(txt);
-}
-
-void outsv(acarsmsg_t * msg, int chn, struct timeval tv)
-{
-	char pkt[3600]; // max. 16 blocks * 220 characters + extra space for msg prefix
-	struct tm tmp;
-
-	gmtime_r(&(tv.tv_sec), &tmp);
-
-	snprintf(pkt, sizeof(pkt),
-		"%8s %1d %02d/%02d/%04d %02d:%02d:%02d %2.1f %03d %1c %7s %1c %2s %1c %4s %6s %s",
-		idstation, chn + 1, tmp.tm_mday, tmp.tm_mon + 1,
-		tmp.tm_year + 1900, tmp.tm_hour, tmp.tm_min, tmp.tm_sec,
-		msg->err, msg->lvl, msg->mode, msg->addr, msg->ack, msg->label,
-		msg->bid ? msg->bid : '.', msg->no, msg->fid, msg->txt);
-
-	write(sockfd, pkt, strlen(pkt));
-}
-
-void outjson()
-{
-	char pkt[3600];
-
-	snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
-	write(sockfd, pkt, strlen(pkt));
 }
 
 static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
@@ -637,7 +543,7 @@ void outputmsg(const msgblk_t * blk)
 	int i, j, k;
 	int jok=0;
 	int outflg=0;
-	flight_t *fl=NULL;
+	flight_t *fl;
 
 	/* fill msg struct */
 	memset(&msg, 0, sizeof(msg));
@@ -826,18 +732,16 @@ void outputmsg(const msgblk_t * blk)
 		break;
 	}
 
-	if (sockfd > 0) {
-		switch (netout) {
+	switch (netout) {
 		case NETLOG_PLANEPLOTTER:
-			outpp(&msg);
+			Netoutpp(&msg);
 			break;
 		case NETLOG_NATIVE:
-			outsv(&msg, blk->chn, blk->tv);
+			Netoutsv(&msg, idstation, blk->chn, blk->tv);
 			break;
 		case NETLOG_JSON:
-			if(jok) outjson();
+			if(jok) Netoutjson(jsonbuf);
 			break;
-		}
 	}
 	free(msg.txt);
 #ifdef HAVE_LIBACARS
