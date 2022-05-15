@@ -32,6 +32,7 @@
 #define NETLOG_PLANEPLOTTER 1
 #define NETLOG_NATIVE 2
 #define NETLOG_JSON 3
+#define NETLOG_MQTT 4
 
 #define OUTTYPE_NONE 0
 #define OUTTYPE_ONELINE 1
@@ -167,6 +168,12 @@ extern int rtlMult;
 extern int initAirspy(char **argv,int optind);
 extern int runAirspySample(void);
 #endif
+#ifdef WITH_MQTT
+extern int MQTTinit(char **urls, char * client_id, char *user,char *passwd);
+extern int MQTTsend(char *msgtxt);
+extern void MQTTend();
+#endif
+
 extern int initRaw(char **argv,int optind);
 extern int runRawSample(void);
 extern int  initMsk(channel_t *);

@@ -51,14 +51,24 @@ int gain = -100;
 int ppm = 0;
 int rtlMult = 160;
 #endif
+
 #ifdef WITH_AIR
 int gain = 18;
 #endif
+
 #ifdef	WITH_SDRPLAY
 int	lnaState	= 2;
 int	GRdB		= 20;
 int	ppm		= 0;
 #endif
+
+#ifdef WITH_MQTT
+char *mqtt_urls[16];
+int mqtt_nburls=0;
+char *mqtt_user=NULL;
+char *mqtt_passwd=NULL;
+#endif
+
 char *Rawaddr = NULL;
 char *logfilename = NULL;
 
@@ -76,6 +86,11 @@ static void usage(void)
 #endif
 #ifdef WITH_SNDFILE
 	fprintf(stderr, " -f inputwavfile  |");
+#endif
+#ifdef WITH_MQTT
+	fprintf(stderr, " -M mqtt_url |");
+	fprintf(stderr, " -U mqtt_user |");
+	fprintf(stderr, " -P mqtt_passwd |");
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
@@ -183,7 +198,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 32);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:M:P:U:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -249,6 +264,22 @@ int main(int argc, char **argv)
 			gain = atoi(optarg);
 			break;
 #endif
+#ifdef WITH_MQTT
+		case 'M':
+			if(mqtt_nburls<15) {
+				mqtt_urls[mqtt_nburls]=strdup(optarg);
+				mqtt_nburls++;
+				mqtt_urls[mqtt_nburls]=NULL;
+				netout = NETLOG_MQTT;
+			}
+			break;
+    		case 'U':
+			mqtt_user = strdup(optarg);
+			break;
+    		case 'P':
+			mqtt_passwd = strdup(optarg);
+			break;
+#endif
 		case 'n':
 			Rawaddr = optarg;
 			netout = NETLOG_PLANEPLOTTER;
@@ -275,7 +306,7 @@ int main(int argc, char **argv)
 			break;
 		case 'i':
 			free(idstation);
-			idstation = strndup(optarg, 32);
+			idstation = strdup(optarg);
 			break;
 
 		default:
@@ -306,6 +337,16 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Unable to init output\n");
 		exit(res);
 	}
+
+#ifdef WITH_MQTT
+	if(netout== NETLOG_MQTT) {
+		res = MQTTinit(mqtt_urls,idstation,mqtt_user,mqtt_passwd);
+		if (res) {
+			fprintf(stderr, "Unable to init MQTT\n");
+			exit(res);
+		}
+	}
+#endif
 
 	sigact.sa_handler = sigintHandler;
 	sigemptyset(&sigact.sa_mask);
@@ -371,10 +412,14 @@ int main(int argc, char **argv)
 		res = -1;
 	}
 
+	fprintf(stderr, "exiting ...\n");
+
 	for (n = 0; n < nbch; n++)
 		deinitAcars(&(channel[n]));
 
-	fprintf(stderr, "exiting ...\n");
+#ifdef WITH_MQTT
+	MQTTend();
+#endif
 	exit(res);
 
 }

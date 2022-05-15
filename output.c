@@ -120,7 +120,7 @@ int initOutput(char *logfilename, char *Rawaddr)
 		fflush(stdout);
 	}
 
-	if (outtype == OUTTYPE_JSON || outtype == OUTTYPE_ROUTEJSON || netout==NETLOG_JSON) {
+	if (outtype == OUTTYPE_JSON || outtype == OUTTYPE_ROUTEJSON || netout==NETLOG_JSON || netout==NETLOG_MQTT ) {
 		jsonbuf = malloc(JSONBUFLEN+1);
 	}
 #ifdef HAVE_LIBACARS
@@ -661,6 +661,11 @@ void outputmsg(const msgblk_t * blk)
 		case NETLOG_JSON:
 			if(jok) Netoutjson(jsonbuf);
 			break;
+#ifdef WITH_MQTT
+		case NETLOG_MQTT:
+			MQTTsend(jsonbuf);
+			break;
+#endif
 	}
 	free(msg.txt);
 #ifdef HAVE_LIBACARS
