@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <time.h>
 #include <netdb.h>
 #include <errno.h>
+
 #include "acarsdec.h"
 
 static int sockfd = -1;
