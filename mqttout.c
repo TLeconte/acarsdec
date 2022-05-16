@@ -39,11 +39,12 @@ int MQTTsend(char *msgtxt)
     pubmsg.qos = 0;
     pubmsg.retained = 0;
 
-    return MQTTClient_publishMessage(client, topic, &pubmsg, &token);
+    MQTTClient_publishMessage(client, topic, &pubmsg, &token);
+    return MQTTClient_waitForCompletion(client, token, 2000);
 }
 
 void MQTTend() 
 {
-    MQTTClient_disconnect(client, 1000);
+    MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);
 }
