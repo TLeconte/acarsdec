@@ -169,7 +169,7 @@ extern int initAirspy(char **argv,int optind);
 extern int runAirspySample(void);
 #endif
 #ifdef WITH_MQTT
-extern int MQTTinit(char **urls, char * client_id, char *user,char *passwd);
+extern int MQTTinit(char **urls, char * client_id, char *topic, char *user,char *passwd);
 extern int MQTTsend(char *msgtxt);
 extern void MQTTend();
 #endif

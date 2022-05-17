@@ -7,8 +7,9 @@
 static  MQTTClient client;
 static  MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
 static  MQTTClient_message pubmsg = MQTTClient_message_initializer;
-static  char *topic;
-int MQTTinit(char **urls, char * client_id, char *user,char *passwd)
+static  char *msgtopic;
+
+int MQTTinit(char **urls, char * client_id, char *topic, char *user,char *passwd)
 {
     int rc;
 
@@ -23,8 +24,11 @@ int MQTTinit(char **urls, char * client_id, char *user,char *passwd)
         return(rc);
     }
 
-    topic=malloc(strlen(client_id)+strlen("acarsdec")+2);
-    sprintf(topic,"%s/%s",client_id,"acarsdec");
+    if(topic == NULL) {
+    	msgtopic=malloc(strlen(client_id)+strlen("acarsdec")+2);
+    	sprintf(msgtopic,"acarsdec/%s",client_id);
+    } else
+	msgtopic=topic;
 	
     return rc;
 }
@@ -39,7 +43,7 @@ int MQTTsend(char *msgtxt)
     pubmsg.qos = 0;
     pubmsg.retained = 0;
 
-    MQTTClient_publishMessage(client, topic, &pubmsg, &token);
+    MQTTClient_publishMessage(client, msgtopic, &pubmsg, &token);
     return MQTTClient_waitForCompletion(client, token, 2000);
 }
 

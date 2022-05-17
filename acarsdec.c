@@ -65,6 +65,7 @@ int	ppm		= 0;
 #ifdef WITH_MQTT
 char *mqtt_urls[16];
 int mqtt_nburls=0;
+char *mqtt_topic=NULL;
 char *mqtt_user=NULL;
 char *mqtt_passwd=NULL;
 #endif
@@ -83,6 +84,7 @@ static void usage(void)
 		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-b 'labels,..'] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
 #ifdef WITH_MQTT
 	fprintf(stderr, " [ -M mqtt_url");
+	fprintf(stderr, " [-T mqtt_topic] |");
 	fprintf(stderr, " [-U mqtt_user |");
 	fprintf(stderr, " -P mqtt_passwd]]|");
 #endif
@@ -130,6 +132,7 @@ static void usage(void)
 		" -j ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec json format\n");
 #ifdef WITH_MQTT
 	fprintf(stderr, " -M mqtt_url\t\t: Url of MQTT broker\n");
+	fprintf(stderr, " -T mqtt_topic\t\t: Optionnal MQTT topic (default : acarsdec/${station_id})\n");
 	fprintf(stderr, " -U mqtt_user\t\t: Optional MQTT username\n");
 	fprintf(stderr, " -P mqtt_passwd\t\t: Optional MQTT password\n");
 #endif
@@ -196,7 +199,7 @@ int main(int argc, char **argv)
 	idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:M:P:U:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:M:P:U:T:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -277,6 +280,9 @@ int main(int argc, char **argv)
     		case 'P':
 			mqtt_passwd = strdup(optarg);
 			break;
+    		case 'T':
+			mqtt_topic = strdup(optarg);
+			break;
 #endif
 		case 'n':
 			Rawaddr = optarg;
@@ -338,7 +344,7 @@ int main(int argc, char **argv)
 
 #ifdef WITH_MQTT
 	if(netout== NETLOG_MQTT) {
-		res = MQTTinit(mqtt_urls,idstation,mqtt_user,mqtt_passwd);
+		res = MQTTinit(mqtt_urls,idstation,mqtt_topic,mqtt_user,mqtt_passwd);
 		if (res) {
 			fprintf(stderr, "Unable to init MQTT\n");
 			exit(res);
