@@ -102,10 +102,10 @@ void Netoutsv(acarsmsg_t * msg, char *idstation, int chn, struct timeval tv)
 	gmtime_r(&(tv.tv_sec), &tmp);
 
 	snprintf(pkt, sizeof(pkt),
-		"%8s %1d %02d/%02d/%04d %02d:%02d:%02d %2.1f %03d %1c %7s %1c %2s %1c %4s %6s %s",
+		"%8s %1d %02d/%02d/%04d %02d:%02d:%02d %1d %03d %1c %7s %1c %2s %1c %4s %6s %s",
 		idstation, chn + 1, tmp.tm_mday, tmp.tm_mon + 1,
 		tmp.tm_year + 1900, tmp.tm_hour, tmp.tm_min, tmp.tm_sec,
-		msg->err, msg->lvl, msg->mode, msg->addr, msg->ack, msg->label,
+		msg->err, (int)(msg->lvl), msg->mode, msg->addr, msg->ack, msg->label,
 		msg->bid ? msg->bid : '.', msg->no, msg->fid, msg->txt);
 
 	write(sockfd, pkt, strlen(pkt));
