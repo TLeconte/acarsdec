@@ -171,17 +171,7 @@ static void usage(void)
 
 static void sigintHandler(int signum)
 {
-	char *s = NULL;
-	if (signum == SIGTERM)
-		s = "SIGTERM";
-	else if (signum == SIGINT)
-		s = "SIGINT";
-	else if (signum == SIGQUIT)
-		s = "SIGQUIT";
-	if (s)
-		fprintf(stderr, "Received %s, exiting.\n", s);
-	else
-		fprintf(stderr, "Received signal %d, exiting.\n", strsignal(signum));
+	fprintf(stderr, "Received signal %s, exiting.\n", strsignal(signum));
 #ifdef DEBUG
 	SndWriteClose();
 #endif
