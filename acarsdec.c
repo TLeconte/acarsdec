@@ -80,17 +80,17 @@ static void usage(void)
 	fprintf(stderr,	"(libacars %s)\n", LA_VERSION);
 #endif
 	fprintf(stderr,
-		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile [-H|-D]]");
+		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-b 'labels,..'] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
+#ifdef WITH_MQTT
+	fprintf(stderr, " [ -M mqtt_url");
+	fprintf(stderr, " [-U mqtt_user |");
+	fprintf(stderr, " -P mqtt_passwd]]|");
+#endif
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice  |");
 #endif
 #ifdef WITH_SNDFILE
 	fprintf(stderr, " -f inputwavfile  |");
-#endif
-#ifdef WITH_MQTT
-	fprintf(stderr, " -M mqtt_url |");
-	fprintf(stderr, " -U mqtt_user |");
-	fprintf(stderr, " -P mqtt_passwd |");
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
@@ -106,27 +106,34 @@ static void usage(void)
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
 	fprintf(stderr,
+		" -i stationid\t\t: station id used in acarsdec network format.\n");
+	fprintf(stderr,
 		" -A\t\t\t: don't display uplink messages (ie : only aircraft messages)\n");
 	fprintf(stderr,
-		"\n -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor , 4 : msg JSON, 5 : route JSON\n");
+		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n");
 	fprintf(stderr,
-		"\n -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
+		" -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor , 4 : msg JSON, 5 : route JSON\n");
+	fprintf(stderr,
+		" -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
 	fprintf(stderr,
 		" -l logfile\t\t: append log messages to logfile (Default : stdout).\n");
 	fprintf(stderr,
 		" -H\t\t\t: rotate log file once every hour\n");
 	fprintf(stderr,
 		" -D\t\t\t: rotate log file once every day\n");
+	fprintf(stderr, "\n");
 	fprintf(stderr,
 		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n");
 	fprintf(stderr,
 		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec native format\n");
 	fprintf(stderr,
 		" -j ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec json format\n");
-	fprintf(stderr,
-		" -i stationid\t\t: station id used in acarsdec network format.\n");
-	fprintf(stderr,
-		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n\n");
+#ifdef WITH_MQTT
+	fprintf(stderr, " -M mqtt_url\t\t: Url of MQTT broker\n");
+	fprintf(stderr, " -U mqtt_user\t\t: Optional MQTT username\n");
+	fprintf(stderr, " -P mqtt_passwd\t\t: Optional MQTT password\n");
+#endif
+	fprintf(stderr, "\n");
 
 #ifdef WITH_ALSA
 	fprintf(stderr,
@@ -158,7 +165,7 @@ static void usage(void)
 #endif
 
 	fprintf(stderr,
-		"\nUp to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
+		" Up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
 	exit(1);
 }
 
