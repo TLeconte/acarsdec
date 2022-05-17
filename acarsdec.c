@@ -194,8 +194,9 @@ int main(int argc, char **argv)
 	char sys_hostname[HOST_NAME_MAX+1];
 	char *lblf=NULL;
 
-	gethostname(sys_hostname, sizeof(sys_hostname));
-	idstation = strndup(sys_hostname, 32);
+	gethostname(sys_hostname, HOST_NAME_MAX);
+	sys_hostname[HOST_NAME_MAX]=0;
+	idstation = strdup(sys_hostname);
 
 	res = 0;
 	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:M:P:U:")) != EOF) {
