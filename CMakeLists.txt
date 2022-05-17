@@ -1,9 +1,9 @@
 cmake_minimum_required (VERSION 3.2)
 project (acarsdec C)
 
-add_compile_options(-O2)
+add_compile_options(-Ofast -march=native)
 
-add_executable(acarsdec acars.c  acarsdec.c  cJSON.c  label.c  msk.c  output.c )
+add_executable(acarsdec acars.c  acarsdec.c  cJSON.c  label.c  msk.c  output.c netout.c fileout.c )
 
 find_package(PkgConfig)
 if(PKG_CONFIG_FOUND)
@@ -17,6 +17,26 @@ link_directories(${LIBACARS_LIBRARY_DIRS})
 else()
 message ( STATUS "Not using libacars")
 endif()
+endif()
+
+find_library(MQTT paho-mqtt3c)
+if(MQTT)
+message ( STATUS "Using MQTT")
+add_definitions(-DWITH_MQTT )
+target_sources( acarsdec PRIVATE mqttout.c)
+target_link_libraries(acarsdec ${MQTT})
+else()
+message ( STATUS "Not using MQTT")
+endif()
+
+find_library(LIBSNDFILE sndfile)
+if(LIBSNDFILE)
+message ( STATUS "Using libsnd")
+add_definitions(-DWITH_SNDFILE )
+target_sources( acarsdec PRIVATE soundfile.c)
+target_link_libraries(acarsdec ${LIBSNDFILE})
+else()
+message ( STATUS "Not using libsndfile")
 endif()
 
 option(rtl "Compiling for rtl sdr" )

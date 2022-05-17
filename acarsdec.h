@@ -32,6 +32,7 @@
 #define NETLOG_PLANEPLOTTER 1
 #define NETLOG_NATIVE 2
 #define NETLOG_JSON 3
+#define NETLOG_MQTT 4
 
 #define OUTTYPE_NONE 0
 #define OUTTYPE_ONELINE 1
@@ -47,7 +48,8 @@ typedef struct mskblk_s {
 	int chn;
 	struct timeval tv;
 	int len;
-	int lvl,err;
+	int err;
+	float lvl;
 	char txt[250];
 	unsigned char crc[2];
 } msgblk_t;
@@ -72,9 +74,9 @@ typedef struct {
 	float *dm_buffer;
 	double MskPhi;
 	double MskDf;
-	float Mskpv;
-	float Msklvl;
 	float MskClk;
+	double MskLvlSum;
+	int MskBitCount;
 	unsigned int MskS,idx;
 	float complex *inb;
 
@@ -114,7 +116,8 @@ typedef struct {
         char mfi[3];
         char bs, be;
         char *txt;
-        int err, lvl;
+        int err;
+        float lvl;
 #ifdef HAVE_LIBACARS
         char msn[4];
         char msn_seq;
@@ -130,6 +133,7 @@ extern unsigned long wrkmask;
 extern pthread_mutex_t datamtx;
 extern pthread_cond_t datawcd;
 
+extern int signalExit;
 
 extern int inpmode;
 extern int verbose;
@@ -156,11 +160,20 @@ extern int runSoundfileSample(void);
 #ifdef WITH_RTL
 extern int initRtl(char **argv,int optind);
 extern int runRtlSample(void);
+extern int runRtlCancel(void);
+extern int runRtlClose(void);
+extern int rtlMult;
 #endif
 #ifdef WITH_AIR
 extern int initAirspy(char **argv,int optind);
 extern int runAirspySample(void);
 #endif
+#ifdef WITH_MQTT
+extern int MQTTinit(char **urls, char * client_id, char *user,char *passwd);
+extern int MQTTsend(char *msgtxt);
+extern void MQTTend();
+#endif
+
 extern int initRaw(char **argv,int optind);
 extern int runRawSample(void);
 extern int  initMsk(channel_t *);

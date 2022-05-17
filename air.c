@@ -28,8 +28,8 @@
 #include <libairspy/airspy.h>
 #include "acarsdec.h"
 
-#define AIRMULT 400
-#define AIRINRATE (INTRATE*AIRMULT)
+static unsigned int AIRMULT;
+static unsigned int AIRINRATE;
 
 static struct airspy_device* device = NULL;
 extern void *compute_thread(void *arg);
@@ -118,14 +118,22 @@ int initAirspy(char **argv, int optind)
 	airspy_get_samplerates(device, &count, 0);
 	supported_samplerates = (uint32_t *) malloc(count * sizeof(uint32_t));
 	airspy_get_samplerates(device, supported_samplerates, count);
-	for(i=0;i<count;i++)
-		if(supported_samplerates[i]==AIRINRATE) break;
+	for(i=0;i<count;i++) {
+		if(supported_samplerates[i]> 10000000) continue;
+		AIRINRATE=supported_samplerates[i];
+		AIRMULT=AIRINRATE/INTRATE;
+		if((AIRMULT*INTRATE)==AIRINRATE) break;
+	}
 	if(i>=count) {
 		fprintf(stderr,"did not find needed sampling rate\n");
 		airspy_exit();
 		return -1;
 	}
 	free(supported_samplerates);
+	
+	if (verbose)
+		fprintf(stderr,"Using %d sampling rate\n",AIRINRATE);
+	
 
 	result = airspy_set_samplerate(device, i);
 	if( result != AIRSPY_SUCCESS ) {

@@ -166,6 +166,7 @@ static int label_qt(char *txt,oooi_t *oooi)
     memcpy(oooi->gin,&(txt[12]),4);
     return 1;
 }
+
 static int label_20(char *txt,oooi_t *oooi)
 {
     if(memcmp(txt,"RST",3)) return 0;
@@ -205,6 +206,7 @@ static int label_2N(char *txt,oooi_t *oooi)
     memcpy(oooi->da,&(txt[24]),4);
     return 1;
 }
+
 static int label_2Z(char *txt,oooi_t *oooi)
 {
     memcpy(oooi->da,txt,4);
@@ -229,11 +231,20 @@ static int label_39(char *txt,oooi_t *oooi)
 }
 static int label_44(char *txt,oooi_t *oooi)
 {
-    if(memcmp(txt,"POS02",5)) return 0;
+    if(txt[0]=='0') {
+	if(txt[1]!='0') return 0;
+	txt+=2;
+    }
+    if(memcmp(txt,"POS0",4) && memcmp(txt,"ETA0",4)) return 0;
+    if(txt[4]!='2' && txt[4]!='3') return 0;
     if(txt[23]!=',') return 0;
     memcpy(oooi->da,&(txt[24]),4);
     if(txt[28]!=',') return 0;
     memcpy(oooi->eta,&(txt[29]),4);
+    if(txt[33]!=',') return 0;
+    if(txt[38]!=',') return 0;
+    if(txt[43]!=',') return 0;
+    memcpy(oooi->eta,&(txt[44]),4);
     return 1;
 }
 static int label_45(char *txt,oooi_t *oooi)
@@ -264,6 +275,7 @@ static int label_12(char *txt,oooi_t *oooi)
     memcpy(oooi->da,&(txt[5]),4);
     return 1;
 }
+
 static int label_15(char *txt,oooi_t *oooi)
 {
     if(memcmp(txt,"FST01",5)) return 0;
@@ -324,13 +336,6 @@ static int label_8s(char *txt,oooi_t *oooi)
     memcpy(oooi->eta,&(txt[5]),4);
     return 1;
 }
-static int label_b9(char *txt,oooi_t *oooi)
-{
-    if(txt[0]!='/') return 0;
-    memcpy(oooi->da,&(txt[1]),4);
-    return 1;
-}
-
 
 int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
 {
@@ -388,10 +393,6 @@ int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
 			ov=label_8e(msg->txt,oooi);
 		if(msg->label[1]=='S') 
 			ov=label_8s(msg->txt,oooi);
-		break;
-	case 'B' :
-		if(msg->label[1]=='9') 
-			ov=label_b9(msg->txt,oooi);
 		break;
 	case 'R' :
 		if(msg->label[1]=='B') 

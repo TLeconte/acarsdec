@@ -23,7 +23,9 @@ pthread_cond_t chprcd,chcscd;
 int chmsk,tmsk;
 
 #define FLEN ((INTRATE/1200)+1)
-static float h[2*FLEN];
+#define MFLTOVER 12
+#define FLENO (FLEN*MFLTOVER+1)
+static float h[FLENO];
 
 int initMsk(channel_t * ch)
 {
@@ -37,12 +39,11 @@ int initMsk(channel_t * ch)
 	ch->idx = 0;
 	ch->inb = calloc(FLEN, sizeof(float complex));
 
-	for (i = 0; i < FLEN; i++) {
-		if(ch->chn==0)  {
-			h[i] = h[i+FLEN]= cosf(2.0*M_PI*600.0/INTRATE*(i-FLEN/2));
+	if(ch->chn==0) 
+		for (i = 0; i < FLENO; i++) {
+			h[i] = cosf(2.0*M_PI*600.0/INTRATE/MFLTOVER*(i-(FLENO-1)/2));
+			if(h[i]<0) h[i]=0;
 		}
-		ch->inb[i] = 0;
-	}
 
 	return 0;
 }
@@ -59,7 +60,8 @@ static inline void putbit(float v, channel_t * ch)
 		decodeAcars(ch);
 }
 
-const double PLLC=3.8e-3;
+const float PLLG=38e-4;
+const float PLLC=0.52;
 void demodMSK(channel_t *ch,int len)
 {
    /* MSK demod */
@@ -80,56 +82,50 @@ void demodMSK(channel_t *ch,int len)
 
 	/* mixer */
 	in = ch->dm_buffer[n];
+#ifdef DEBUG
+	if(ch->chn==1) SndWrite(&in);
+#endif
 	ch->inb[idx] = in * cexp(-p*I);
 	idx=(idx+1)%FLEN;
 
 
 	/* bit clock */
 	ch->MskClk+=s;
-	if (ch->MskClk >=3*M_PI/2.0) {
+	if (ch->MskClk >=3*M_PI/2.0-s/2) {
 		double dphi;
 		float vo,lvl;
 
 		ch->MskClk -= 3*M_PI/2.0;
 
 		/* matched filter */
-		o=FLEN-idx;
-		v=0;
-		for (j = 0; j < FLEN; j++,o++) {
-			v += h[o]*ch->inb[j];
+		o=MFLTOVER*(ch->MskClk/s+0.5);
+		if(o>MFLTOVER) o=MFLTOVER;
+		for (v = 0, j = 0; j < FLEN; j++,o+=MFLTOVER) {
+			v += h[o]*ch->inb[(j+idx)%FLEN];
 		}
+
 		/* normalize */
 		lvl=cabsf(v);
-		v/=lvl+1e-6;
-		ch->Msklvl = 0.99 * ch->Msklvl + 0.01*lvl/5.2;
+		v/=lvl+1e-8;
+		ch->MskLvlSum += lvl * lvl / 4;
+		ch->MskBitCount++;
 
-		switch(ch->MskS&3) {
-			case 0:
-				vo=crealf(v);
-				putbit(vo, ch);
-				if(vo>=0) dphi=cimagf(v); else dphi=-cimagf(v);
-				break;
-			case 1:
-				vo=cimagf(v);
-				putbit(vo, ch);
-				if(vo>=0) dphi=-crealf(v); else dphi=crealf(v);
-				break;
-			case 2:
-				vo=crealf(v);
-				putbit(-vo, ch);
-				if(vo>=0) dphi=cimagf(v); else dphi=-cimagf(v);
-				break;
-			case 3:
-				vo=cimagf(v);
-				putbit(-vo, ch);
-				if(vo>=0) dphi=-crealf(v); else dphi=crealf(v);
-				break;
+		if(ch->MskS&1) {
+			vo=cimagf(v);
+			if(vo>=0) dphi=-crealf(v); else dphi=crealf(v);
+		} else {
+			vo=crealf(v);
+			if(vo>=0) dphi=cimagf(v); else dphi=-cimagf(v);
+		}
+		if(ch->MskS&2) {
+			putbit(-vo, ch);
+		} else {
+			putbit(vo, ch);
 		}
 		ch->MskS++;
 
 		/* PLL filter */
-		ch->MskDf=PLLC*dphi;
-
+		ch->MskDf=PLLC*ch->MskDf+(1.0-PLLC)*PLLG*dphi;
 	}
     }
 

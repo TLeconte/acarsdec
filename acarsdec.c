@@ -44,18 +44,31 @@ int mdly=600;
 int hourly = 0;
 int daily = 0;
 
+int signalExit = 0;
+
 #ifdef WITH_RTL
-int gain = 1000;
+int gain = -100;
 int ppm = 0;
+int rtlMult = 160;
 #endif
+
 #ifdef WITH_AIR
 int gain = 18;
 #endif
+
 #ifdef	WITH_SDRPLAY
 int	lnaState	= 2;
 int	GRdB		= 20;
 int	ppm		= 0;
 #endif
+
+#ifdef WITH_MQTT
+char *mqtt_urls[16];
+int mqtt_nburls=0;
+char *mqtt_user=NULL;
+char *mqtt_passwd=NULL;
+#endif
+
 char *Rawaddr = NULL;
 char *logfilename = NULL;
 
@@ -73,6 +86,11 @@ static void usage(void)
 #endif
 #ifdef WITH_SNDFILE
 	fprintf(stderr, " -f inputwavfile  |");
+#endif
+#ifdef WITH_MQTT
+	fprintf(stderr, " -M mqtt_url |");
+	fprintf(stderr, " -U mqtt_user |");
+	fprintf(stderr, " -P mqtt_passwd |");
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
@@ -120,8 +138,9 @@ static void usage(void)
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
-		" -g gain\t\t: set rtl preamp gain in tenth of db (ie -g 90 for +9db). By default use AGC\n");
+		" -g gain\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n");
 	fprintf(stderr, " -p ppm\t\t\t: set rtl ppm frequency correction\n");
+	fprintf(stderr, " -m rtlMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
 	fprintf(stderr,
 		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
@@ -143,10 +162,28 @@ static void usage(void)
 	exit(1);
 }
 
-static void sighandler(int signum)
+static void sigintHandler(int signum)
 {
-	fprintf(stderr, "receive signal %d exiting\n", signum);
-	exit(1);
+	char *s = NULL;
+	if (signum == SIGTERM)
+		s = "SIGTERM";
+	else if (signum == SIGINT)
+		s = "SIGINT";
+	else if (signum == SIGQUIT)
+		s = "SIGQUIT";
+	if (s)
+		fprintf(stderr, "Received %s, exiting.\n", s);
+	else
+		fprintf(stderr, "Received signal %d, exiting.\n", strsignal(signum));
+#ifdef DEBUG
+	SndWriteClose();
+#endif
+#ifdef WITH_RTL
+	signalExit = 1;
+	runRtlCancel();
+#else
+	exit(0);
+#endif
 }
 
 int main(int argc, char **argv)
@@ -161,7 +198,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 32);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:M:P:U:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -196,8 +233,11 @@ int main(int argc, char **argv)
 		case 'p':
 			ppm = atoi(optarg);
 			break;
-    		case 'g':
-			gain = atoi(optarg);
+		case 'g':
+			gain = 10 * atof(optarg);
+			break;
+		case 'm':
+			rtlMult = atoi(optarg);
 			break;
 #endif
 #ifdef	WITH_SDRPLAY
@@ -222,6 +262,22 @@ int main(int argc, char **argv)
 			break;
     		case 'g':
 			gain = atoi(optarg);
+			break;
+#endif
+#ifdef WITH_MQTT
+		case 'M':
+			if(mqtt_nburls<15) {
+				mqtt_urls[mqtt_nburls]=strdup(optarg);
+				mqtt_nburls++;
+				mqtt_urls[mqtt_nburls]=NULL;
+				netout = NETLOG_MQTT;
+			}
+			break;
+    		case 'U':
+			mqtt_user = strdup(optarg);
+			break;
+    		case 'P':
+			mqtt_passwd = strdup(optarg);
 			break;
 #endif
 		case 'n':
@@ -250,7 +306,7 @@ int main(int argc, char **argv)
 			break;
 		case 'i':
 			free(idstation);
-			idstation = strndup(optarg, 32);
+			idstation = strdup(optarg);
 			break;
 
 		default:
@@ -262,6 +318,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Need at least one of -a|-f|-r|-R options\n");
 		usage();
 	}
+
 
 	if (res) {
 		fprintf(stderr, "Unable to init input\n");
@@ -281,7 +338,17 @@ int main(int argc, char **argv)
 		exit(res);
 	}
 
-	sigact.sa_handler = sighandler;
+#ifdef WITH_MQTT
+	if(netout== NETLOG_MQTT) {
+		res = MQTTinit(mqtt_urls,idstation,mqtt_user,mqtt_passwd);
+		if (res) {
+			fprintf(stderr, "Unable to init MQTT\n");
+			exit(res);
+		}
+	}
+#endif
+
+	sigact.sa_handler = sigintHandler;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;
 	sigaction(SIGINT, &sigact, NULL);
@@ -304,6 +371,11 @@ int main(int argc, char **argv)
 		exit(res);
 	}
 
+#ifdef DEBUG
+	if (inmode !=2 ) {
+		initSndWrite();
+	}
+#endif
 
 	if (verbose)
 		fprintf(stderr, "Decoding %d channels\n", nbch);
@@ -322,7 +394,8 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_RTL
 	case 3:
-		res = runRtlSample();
+		runRtlSample();
+		res = runRtlClose();
 		break;
 #endif
 #ifdef WITH_AIR
@@ -339,10 +412,14 @@ int main(int argc, char **argv)
 		res = -1;
 	}
 
+	fprintf(stderr, "exiting ...\n");
+
 	for (n = 0; n < nbch; n++)
 		deinitAcars(&(channel[n]));
 
-	fprintf(stderr, "exiting ...\n");
+#ifdef WITH_MQTT
+	MQTTend();
+#endif
 	exit(res);
 
 }
