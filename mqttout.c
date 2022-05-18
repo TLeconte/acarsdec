@@ -15,6 +15,7 @@ int MQTTinit(char **urls, char * client_id, char *topic, char *user,char *passwd
     MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
 
     create_opts.maxBufferedMessages=200;
+    create_opts.sendWhileDisconnected=1;
     create_opts.allowDisconnectedSendAtAnyTime=1;
     create_opts.deleteOldestMessages=1;
 
