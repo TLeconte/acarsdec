@@ -19,7 +19,7 @@ message ( STATUS "Not using libacars")
 endif()
 endif()
 
-find_library(MQTT paho-mqtt3c)
+find_library(MQTT paho-mqtt3a)
 if(MQTT)
 message ( STATUS "Using MQTT")
 add_definitions(-DWITH_MQTT )
