@@ -169,7 +169,6 @@ extern int runAirspySample(void);
 #ifdef WITH_SOAPY
 extern int initSoapy(char **argv,int optind);
 extern int runSoapySample(void);
-extern int runSoapyCancel(void);
 extern int runSoapyClose(void);
 extern int rateMult;
 extern int freq;

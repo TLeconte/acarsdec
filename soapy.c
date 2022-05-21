@@ -2,6 +2,7 @@
 
 #define _GNU_SOURCE
 
+#include <complex.h>
 #include <math.h>
 #include <pthread.h>
 #include <signal.h>
@@ -17,6 +18,7 @@
 
 static SoapySDRDevice *dev = NULL;
 static SoapySDRStream *stream = NULL;
+static uint16_t* soapyInBuf = NULL;
 static int soapyInBufSize = 0;
 static int soapyOutBufSize = 0;
 static int soapyInRate = 0;
@@ -84,9 +86,13 @@ int initSoapy(char **argv, int optind)
 	}
 	optind++;
 
-    soapyOutBufSize = 1024;
+    soapyOutBufSize = 16;
     soapyInBufSize = soapyOutBufSize * rateMult * 2;
     soapyInRate = INTRATE * rateMult;
+
+	if (verbose)
+		fprintf(stderr, "Allocating space for %d 16 bit complex samples for the SoapySDR read buffer\n", soapyInBufSize/2);
+	soapyInBuf = malloc(sizeof(uint16_t) * soapyInBufSize);
 
 	if (gain == -10.0) {
 		if (verbose)
@@ -153,6 +159,8 @@ int initSoapy(char **argv, int optind)
 	stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL);
 
 	soapyMTU = SoapySDRDevice_getStreamMTU(dev, stream);
+	if (verbose)
+		fprintf(stderr, "Got stream MTU %d\n", soapyMTU);
 	if (soapyMTU <= 0) {
 		fprintf(stderr, "WARNING: Failed to get stream MTU: %s\n", SoapySDRDevice_lastError());
 	}
@@ -186,49 +194,57 @@ int initSoapy(char **argv, int optind)
 	return 0;
 }
 
-static void in_callback(unsigned char *soapyinbuff, uint32_t nread, void *ctx)
-{
-	int n;
-
-	pthread_mutex_lock(&cbMutex);
-	watchdogCounter = 50;
-	pthread_mutex_unlock(&cbMutex);
-
-	if (nread != soapyInBufSize) {
-		fprintf(stderr, "warning: partial read\n");
-		return;
-
-	}
-
-	for (n = 0; n < nbch; n++) {
-		channel_t *ch = &(channel[n]);
-		int i,m;
-		float complex D,*wf;
-
-		wf = ch->wf;
-		m=0;
-		for (i = 0; i < soapyInBufSize;) {
-			int ind;
-
-			D = 0;
-			for (ind = 0; ind < rateMult; ind++) {
-				float r, g;
-				float complex v;
-
-				r = (float)soapyinbuff[i] - (float)127.37; i++;
-				g = (float)soapyinbuff[i] - (float)127.37; i++;
-
-				v=r+g*I;
-				D+=v*wf[ind];
-			}
-			ch->dm_buffer[m++]=cabsf(D);
-		}
-		demodMSK(ch,m);
-	}
-}
-
 static void *readThreadEntryPoint(void *arg) {
-	rtlsdr_read_async(dev, in_callback, NULL, 4, soapyInBufSize);
+	int n;
+	int res = 0;
+	int flags = 0;
+	long long timens = 0;
+	void* bufs[] = { soapyInBuf };
+
+	while(!signalExit) {
+		res = SoapySDRDevice_readStream(dev, stream, bufs, soapyInBufSize, &flags, &timens, 10000000);
+		if(res <= 0) {
+			fprintf(stderr, "WARNING: Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
+			break;
+		}
+
+		pthread_mutex_lock(&cbMutex);
+		watchdogCounter = 50;
+		pthread_mutex_unlock(&cbMutex);
+
+		if (res != soapyInBufSize) {
+			fprintf(stderr, "warning: partial read\n");
+			break;
+
+		}
+
+		for (n = 0; n < nbch; n++) {
+			channel_t *ch = &(channel[n]);
+			int i,m;
+			float complex D,*wf;
+
+			wf = ch->wf;
+			m=0;
+			for (i = 0; i < soapyInBufSize;) {
+				int ind;
+
+				D = 0;
+				for (ind = 0; ind < rateMult; ind++) {
+					float r, g;
+					float complex v;
+
+					r = (float)soapyInBuf[i] - (float)127.37; i++;
+					g = (float)soapyInBuf[i] - (float)127.37; i++;
+
+					v=r+g*I;
+					D+=v*wf[ind];
+				}
+				ch->dm_buffer[m++]=cabsf(D);
+			}
+			demodMSK(ch,m);
+		}
+	}
+
 	pthread_mutex_lock(&cbMutex);
 	signalExit = 1;
 	pthread_mutex_unlock(&cbMutex);
@@ -245,7 +261,7 @@ int runSoapySample(void)
 	while (!signalExit) {
 		if (--watchdogCounter <= 0) {
 			fprintf(stderr, "No data from SoapySDR for 5 seconds, exiting ...\n");
-			runSoapyCancel(); // watchdog triggered after 5 seconds of no data from SoapySDR
+			signalExit = 1; // watchdog triggered after 5 seconds of no data from SoapySDR
 			break;
 		}
 		pthread_mutex_unlock(&cbMutex);
@@ -269,16 +285,18 @@ int runSoapySample(void)
 	return 0;
 }
 
-int runSoapyCancel(void) {
-	if (dev && stream) {
-		SoapySDRDevice_closeStream(dev, stream);
-	}
-	return 0;
-}
-
 int runSoapyClose(void) {
 	int res = 0;
+	if (soapyInBuf) {
+		free(soapyInBuf);
+		soapyInBuf = NULL;
+	}
 	if (stream) {
+		res = SoapySDRDevice_closeStream(dev, stream);
+		stream = NULL;
+		if (res != 0)
+			fprintf(stderr, "WARNING: Failed to deactivate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+
 		res = SoapySDRDevice_deactivateStream(dev, stream, 0, 0);
 		stream = NULL;
 		if (res != 0)

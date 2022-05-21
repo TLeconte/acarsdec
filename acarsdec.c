@@ -186,7 +186,6 @@ static void sigintHandler(int signum)
 	runRtlCancel();
 #elif WITH_SOAPY
 	signalExit = 1;
-	runSoapyCancel();
 #else
 	exit(0);
 #endif
