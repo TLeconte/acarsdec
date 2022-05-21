@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -198,7 +199,6 @@ static void in_callback(unsigned char *soapyinbuff, uint32_t nread, void *ctx)
 		return;
 
 	}
-	status=0;
 
 	for (n = 0; n < nbch; n++) {
 		channel_t *ch = &(channel[n]);
