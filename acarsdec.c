@@ -60,7 +60,7 @@ int	GRdB		= 20;
 int	ppm		= 0;
 #endif
 #ifdef WITH_SOAPY
-double gain = -10.0;
+int gain = -10;
 int ppm = 0;
 int rateMult = 160;
 #endif

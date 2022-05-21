@@ -144,8 +144,8 @@ extern int hourly, daily;
 
 extern int gain;
 extern int ppm;
-extern	int	lnaState;
-extern	int	GRdB;
+extern int lnaState;
+extern int GRdB;
 extern int initOutput(char*,char *);
 
 #ifdef WITH_ALSA
