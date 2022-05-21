@@ -56,7 +56,7 @@ typedef struct mskblk_s {
 typedef struct {
 	int chn;
 
-#if defined(WITH_RTL) || defined(WITH_AIR)
+#if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
 	int Fr;
 	float complex *wf;
 #endif
@@ -142,7 +142,6 @@ extern int airflt;
 extern int mdly;
 extern int hourly, daily;
 
-extern int gain;
 extern int ppm;
 extern int lnaState;
 extern int GRdB;
@@ -171,6 +170,10 @@ extern int runAirspySample(void);
 extern int initSoapy(char **argv,int optind);
 extern int runSoapySample(void);
 extern int rateMult;
+extern int freq;
+extern double gain;
+#else
+extern int gain;
 #endif
 extern int initRaw(char **argv,int optind);
 extern int runRawSample(void);

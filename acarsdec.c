@@ -36,7 +36,7 @@ unsigned int nbch;
 
 char *idstation = NULL;
 int inmode = 0;
-int verbose = 0;
+int verbose = 1;
 int outtype = OUTTYPE_STD;
 int netout = NETLOG_NONE;
 int airflt = 0;
@@ -60,9 +60,10 @@ int	GRdB		= 20;
 int	ppm		= 0;
 #endif
 #ifdef WITH_SOAPY
-int gain = -10;
+double gain = -10.0;
 int ppm = 0;
 int rateMult = 160;
+int freq = 0;
 #endif
 char *Rawaddr = NULL;
 char *logfilename = NULL;
@@ -94,7 +95,7 @@ static void usage(void)
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
 #endif
 #ifdef	WITH_SOAPY
-	fprintf (stderr, " [-g gain] [-p ppm] -d devicestring f1 [f2] .. [fN]");
+	fprintf (stderr, " [-g gain] [-p ppm] [-f freq] -d devicestring f1 [f2] .. [fN]");
 #endif
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
@@ -153,6 +154,7 @@ static void usage(void)
 	fprintf(stderr,
 		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n");
 	fprintf(stderr, " -p ppm\t\t\t: set ppm frequency correction\n");
+	fprintf(stderr, " -f freq\t\t\t: set frequency to tune to\n");
 	fprintf(stderr, " -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
 	fprintf (stderr,
 		" -d devicestring f1 [f2] .. [f%d]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
@@ -199,7 +201,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 32);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:d:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvardfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -263,6 +265,9 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			ppm = atoi(optarg);
+			break;
+		case 'f':
+			freq = atoi(optarg);
 			break;
 		case 'g':
 			gain = atof(optarg);
