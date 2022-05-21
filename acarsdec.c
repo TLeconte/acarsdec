@@ -184,6 +184,9 @@ static void sigintHandler(int signum)
 #ifdef WITH_RTL
 	signalExit = 1;
 	runRtlCancel();
+#elif WITH_SOAPY
+	signalExit = 1;
+	runSoapyCancel();
 #else
 	exit(0);
 #endif
@@ -405,7 +408,8 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_SOAPY
 	case 6:
-		res = runSoapySample();
+		runSoapySample();
+		res = runSoapyClose();
 		break;
 #endif
 	default:

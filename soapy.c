@@ -185,7 +185,7 @@ int initSoapy(char **argv, int optind)
 	return 0;
 }
 
-static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
+static void in_callback(unsigned char *soapyinbuff, uint32_t nread, void *ctx)
 {
 	int n;
 
@@ -193,7 +193,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	watchdogCounter = 50;
 	pthread_mutex_unlock(&cbMutex);
 
-	if (nread != rtlInBufSize) {
+	if (nread != soapyInBufSize) {
 		fprintf(stderr, "warning: partial read\n");
 		return;
 
@@ -207,7 +207,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 
 		wf = ch->wf;
 		m=0;
-		for (i = 0; i < rtlInBufSize;) {
+		for (i = 0; i < soapyInBufSize;) {
 			int ind;
 
 			D = 0;
@@ -215,8 +215,8 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 				float r, g;
 				float complex v;
 
-				r = (float)rtlinbuff[i] - (float)127.37; i++;
-				g = (float)rtlinbuff[i] - (float)127.37; i++;
+				r = (float)soapyinbuff[i] - (float)127.37; i++;
+				g = (float)soapyinbuff[i] - (float)127.37; i++;
 
 				v=r+g*I;
 				D+=v*wf[ind];
@@ -228,7 +228,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 }
 
 static void *readThreadEntryPoint(void *arg) {
-	rtlsdr_read_async(dev, in_callback, NULL, 4, rtlInBufSize);
+	rtlsdr_read_async(dev, in_callback, NULL, 4, soapyInBufSize);
 	pthread_mutex_lock(&cbMutex);
 	signalExit = 1;
 	pthread_mutex_unlock(&cbMutex);
@@ -244,8 +244,8 @@ int runSoapySample(void)
 
 	while (!signalExit) {
 		if (--watchdogCounter <= 0) {
-			fprintf(stderr, "No data from the SDR for 5 seconds, exiting ...\n");
-			runRtlCancel(); // watchdog triggered after 5 seconds of no data from SDR
+			fprintf(stderr, "No data from SoapySDR for 5 seconds, exiting ...\n");
+			runSoapyCancel(); // watchdog triggered after 5 seconds of no data from SoapySDR
 			break;
 		}
 		pthread_mutex_unlock(&cbMutex);
@@ -266,11 +266,35 @@ int runSoapySample(void)
 		raise(SIGKILL);
 		return 1;
 	}
-
-	SoapySDRDevice_closeStream(dev, stream);
-	SoapySDRDevice_deactivateStream(dev, stream, 0, 0);
-	SoapySDRDevice_unmake(dev);
 	return 0;
+}
+
+int runSoapyCancel(void) {
+	if (dev && stream) {
+		SoapySDRDevice_closeStream(dev, stream);
+	}
+	return 0;
+}
+
+int runSoapyClose(void) {
+	int res = 0;
+	if (stream) {
+		res = SoapySDRDevice_deactivateStream(dev, stream, 0, 0);
+		stream = NULL;
+		if (res != 0)
+			fprintf(stderr, "WARNING: Failed to deactivate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+	}
+	if (dev) {
+		res = SoapySDRDevice_unmake(dev);
+		dev = NULL;
+		if (res != 0)
+			fprintf(stderr, "WARNING: Failed to close SoapySDR device: %s\n", SoapySDRDevice_lastError());
+	}
+	if (res) {
+		fprintf(stderr, "rtlsdr_close: %d\n", res);
+	}
+
+	return res;
 }
 
 #endif
