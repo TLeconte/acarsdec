@@ -49,7 +49,7 @@ int signalExit = 0;
 #ifdef WITH_RTL
 int gain = -100;
 int ppm = 0;
-int rtlMult = 160;
+int rateMult = 160;
 #endif
 #ifdef WITH_AIR
 int gain = 18;
@@ -58,6 +58,11 @@ int gain = 18;
 int	lnaState	= 2;
 int	GRdB		= 20;
 int	ppm		= 0;
+#endif
+#ifdef WITH_SOAPY
+double gain = -10.0;
+int ppm = 0;
+int rateMult = 160;
 #endif
 char *Rawaddr = NULL;
 char *logfilename = NULL;
@@ -89,7 +94,7 @@ static void usage(void)
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
 #endif
 #ifdef	WITH_SOAPY
-	fprintf (stderr, " -d devicestring f1 [f2] .. [fN]");
+	fprintf (stderr, " [-g gain] [-p ppm] -d devicestring f1 [f2] .. [fN]");
 #endif
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
@@ -128,7 +133,7 @@ static void usage(void)
 	fprintf(stderr,
 		" -g gain\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n");
 	fprintf(stderr, " -p ppm\t\t\t: set rtl ppm frequency correction\n");
-	fprintf(stderr, " -m rtlMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
+	fprintf(stderr, " -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
 	fprintf(stderr,
 		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
@@ -141,12 +146,16 @@ static void usage(void)
 #ifdef	WITH_SDRPLAY
 	fprintf (stderr,
 		" -L lnaState: set the lnaState (depends on the device)\n"\
-		" -G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"\
+		" -G Gain reduction in dB's, range 20 .. 59 (-100 is autogain)\n"\
 		" -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef	WITH_SOAPY
+	fprintf(stderr,
+		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n");
+	fprintf(stderr, " -p ppm\t\t\t: set ppm frequency correction\n");
+	fprintf(stderr, " -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
 	fprintf (stderr,
-		" -d devicestring f1 [f2] .. [f%d]\t: decode from a SoapySDR device at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+		" -d devicestring f1 [f2] .. [f%d]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 
 	fprintf(stderr,
@@ -229,7 +238,7 @@ int main(int argc, char **argv)
 			gain = 10 * atof(optarg);
 			break;
 		case 'm':
-			rtlMult = atoi(optarg);
+			rateMult = atoi(optarg);
 			break;
 #endif
 #ifdef	WITH_SDRPLAY
@@ -251,6 +260,15 @@ int main(int argc, char **argv)
 		case 'd':
 			res = initSoapy(argv, optind);
 			inmode = 6;
+			break;
+		case 'p':
+			ppm = atoi(optarg);
+			break;
+		case 'g':
+			gain = atof(optarg);
+			break;
+		case 'm':
+			rateMult = atoi(optarg);
 			break;
 #endif
 #ifdef WITH_AIR
