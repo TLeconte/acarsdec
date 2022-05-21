@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2016 Thierry Leconte
  *
- *   
+ *
  *   This code is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Library General Public License version 2
  *   published by the Free Software Foundation.
@@ -16,7 +16,7 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
-#ifdef WITH_RTL
+//#ifdef WITH_RTL
 
 #define _GNU_SOURCE
 #include <stdlib.h>
@@ -32,9 +32,9 @@
 // set the sameple rate by changing RTMULT
 // 2.5Ms/s is the best but could be over limit for some hardware
 // 2.0Ms/s is safer
-// rtlMult 160	// 2.0000 Ms/s
-// rtlMult 192	// 2.4000 Ms/s
-// rtlMult 200   // 2.5000 Ms/s
+// rateMult 160	// 2.0000 Ms/s
+// rateMult 192	// 2.4000 Ms/s
+// rateMult 200   // 2.5000 Ms/s
 
 static rtlsdr_dev_t *dev = NULL;
 static int status = 0;
@@ -203,8 +203,8 @@ int initRtl(char **argv, int optind)
 	optind++;
 
 
-    rtlInBufSize = RTLOUTBUFSZ * rtlMult * 2;
-    rtlInRate = INTRATE * rtlMult;
+    rtlInBufSize = RTLOUTBUFSZ * rateMult * 2;
+    rtlInRate = INTRATE * rateMult;
 
 	r = rtlsdr_open(&dev, dev_index);
 	if (r < 0) {
@@ -267,12 +267,12 @@ int initRtl(char **argv, int optind)
 		int ind;
 		float AMFreq;
 
-		ch->wf = malloc(rtlMult * sizeof(float complex));
+		ch->wf = malloc(rateMult * sizeof(float complex));
 		ch->dm_buffer=malloc(RTLOUTBUFSZ*sizeof(float));
 
 		AMFreq = (ch->Fr - (float)Fc) / (float)(rtlInRate) * 2.0 * M_PI;
-		for (ind = 0; ind < rtlMult; ind++) {
-			ch->wf[ind]=cexpf(AMFreq*ind*-I)/rtlMult/127.5;
+		for (ind = 0; ind < rateMult; ind++) {
+			ch->wf[ind]=cexpf(AMFreq*ind*-I)/rateMult/127.5;
 		}
 	}
 
@@ -327,7 +327,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 			int ind;
 
 			D = 0;
-			for (ind = 0; ind < rtlMult; ind++) {
+			for (ind = 0; ind < rateMult; ind++) {
 				float r, g;
 				float complex v;
 
