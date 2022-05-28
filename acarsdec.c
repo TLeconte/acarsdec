@@ -76,7 +76,7 @@ char *logfilename = NULL;
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv 3.5 Copyright (c) 2017 Thierry Leconte\n");
+		"Acarsdec/acarsserv %s Copyright (c) 2017 Thierry Leconte\n", ACARSDEC_VERSION);
 #ifdef HAVE_LIBACARS
 	fprintf(stderr,	"(libacars %s)\n", LA_VERSION);
 #endif
