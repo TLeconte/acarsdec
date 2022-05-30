@@ -293,6 +293,14 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 		la_vstring_destroy(vstr, true);
 	}
 #endif
+
+	cJSON *app_info = cJSON_AddObjectToObject(json_obj, "app");
+	if (app_info) {
+		cJSON_AddStringToObject(app_info, "name", "acarsdec");
+		cJSON_AddStringToObject(app_info, "ver", ACARSDEC_VERSION);
+	}
+
+
 	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
 	cJSON_Delete(json_obj);
 	return ok;
