@@ -22,9 +22,10 @@ static int16_t* soapyInBuf = NULL;
 static int soapyInBufSize = 0;
 static int soapyInRate = 0;
 static int watchdogCounter = 50;
+static int current_index = 0;
 static pthread_mutex_t cbMutex = PTHREAD_MUTEX_INITIALIZER;
 
-#define SOAPYOUTBUFSZ 512
+#define SOAPYOUTBUFSZ 1024
 
 static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
 {
@@ -154,12 +155,12 @@ int initSoapy(char **argv, int optind)
 		int ind;
 		float AMFreq;
 
-		ch->wf = malloc(rateMult * sizeof(float complex));
-		ch->dm_buffer=malloc(SOAPYOUTBUFSZ*sizeof(float));
+		ch->oscillator = malloc(rateMult * sizeof(float complex));
+		ch->dm_buffer = malloc(SOAPYOUTBUFSZ*sizeof(float));
 
 		AMFreq = (ch->Fr - (float)freq) / (float)(soapyInRate) * 2.0 * M_PI;
 		for (ind = 0; ind < rateMult; ind++) {
-			ch->wf[ind]=cexpf(AMFreq*ind*-I)/rateMult/32768.0;
+			ch->oscillator[ind] = cexpf(AMFreq*ind*-I)/rateMult/32768.0;
 		}
 	}
 
@@ -194,43 +195,41 @@ static void *readThreadEntryPoint(void *arg) {
 		watchdogCounter = 50;
 		pthread_mutex_unlock(&cbMutex);
 
-		res = 0;
-		do {
-			res += SoapySDRDevice_readStream(dev, stream, bufs, soapyInBufSize/2-res, &flags, &timens, 10000000);
-			if(res <= 0) {
-				fprintf(stderr, "WARNING: Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
-				pthread_mutex_lock(&cbMutex);
-				signalExit = 1;
-				pthread_mutex_unlock(&cbMutex);
-				return NULL;
-			}
-		} while (res < soapyInBufSize/2);
+		res = SoapySDRDevice_readStream(dev, stream, bufs, soapyInBufSize/2, &flags, &timens, 10000000);
+		if(res <= 0) {
+			fprintf(stderr, "WARNING: Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
+			pthread_mutex_lock(&cbMutex);
+			signalExit = 1;
+			pthread_mutex_unlock(&cbMutex);
+			return NULL;
+		}
+
+		int n, i;
+		int	local_ind;
 
 		for (n = 0; n < nbch; n++) {
+	   		local_ind = current_index;
 			channel_t *ch = &(channel[n]);
-			int i,m;
-			float complex D,*wf;
+			float complex D = ch->D;
 
-			wf = ch->wf;
-			m=0;
-			for (i = 0; i < soapyInBufSize;) {
-				int ind;
-
-				D = 0;
-				for (ind = 0; ind < rateMult; ind++) {
-					float r, g;
-					float complex v;
-
-					r = (float)soapyInBuf[i]; i++;
-					g = (float)soapyInBuf[i]; i++;
-
-					v=r+g*I;
-					D+=v*wf[ind];
+			for (i = 0; i < res*2; i+=2) {
+				float r = (float)soapyInBuf[i];
+				float g = (float)soapyInBuf[i+1];
+				float complex v = r + g*I;
+				D += v * ch->oscillator[local_ind++];
+				if (local_ind >= rateMult) {
+					ch->dm_buffer[ch->counter++] = cabsf(D);
+					local_ind = 0;
+					D = 0;
+					if (ch->counter >= SOAPYOUTBUFSZ) {
+						demodMSK(ch, SOAPYOUTBUFSZ);
+						ch->counter = 0;
+					}
 				}
-				ch->dm_buffer[m++]=cabsf(D);
 			}
-			demodMSK(ch,m);
+			ch->D = D;
 		}
+		current_index = (current_index + res*2) % rateMult;
 	}
 
 	pthread_mutex_lock(&cbMutex);

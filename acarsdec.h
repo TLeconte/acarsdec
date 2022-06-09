@@ -59,17 +59,17 @@ typedef struct mskblk_s {
 typedef struct {
 	int chn;
 
-#if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
+#if defined(WITH_RTL) || defined(WITH_AIR)
 	int Fr;
 	float complex *wf;
 #endif
 #if defined(WITH_AIR)
 	float complex D;
 #endif
-#if defined(WITH_SDRPLAY)
-	float	Fr;
-        float	complex *oscillator;
-        float	complex D;
+#if defined(WITH_SDRPLAY) || defined(WITH_SOAPY)
+	float Fr;
+    float complex *oscillator;
+    float complex D;
 	int	counter;
 #endif
 
