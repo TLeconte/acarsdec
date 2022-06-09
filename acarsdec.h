@@ -68,8 +68,8 @@ typedef struct {
 #endif
 #if defined(WITH_SDRPLAY) || defined(WITH_SOAPY)
 	float Fr;
-    float complex *oscillator;
-    float complex D;
+	float complex *oscillator;
+	float complex D;
 	int	counter;
 #endif
 

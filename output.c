@@ -110,7 +110,7 @@ int initOutput(char *logfilename, char *Rawaddr)
 		fdout = stdout;
 	}
 
-	if (Rawaddr) 
+	if (Rawaddr)
 		if(Netoutinit(Rawaddr))
 			return -1;
 
@@ -157,7 +157,7 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 	oooi_t oooi;
 
-#if defined (WITH_RTL) || defined (WITH_AIR)
+#if defined (WITH_RTL) || defined (WITH_AIR) || defined (WITH_SOAPY)
 	if (inmode >= 3)
 		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+2.1f E:%1d) ", chn + 1,
 			channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
@@ -220,7 +220,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 {
 
 	oooi_t oooi;
-#if defined (WITH_RTL) || defined (WITH_AIR)
+#if defined (WITH_RTL) || defined (WITH_AIR) || defined (WITH_SOAPY)
 	float freq = channel[chn].Fr / 1000000.0;
 #else
 	float freq = 0;
@@ -429,7 +429,7 @@ static int routejson(flight_t *fl,struct timeval tv)
 
 	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
 	cJSON_Delete(json_obj);
-	
+
 	fl->rt=ok;
 	return ok;
  } else

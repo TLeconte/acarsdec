@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2015 Thierry Leconte
  *
- *
+ *   
  *   This code is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Library General Public License version 2
  *   published by the Free Software Foundation.
@@ -16,7 +16,7 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  *	Taken the input variant from rtl.c, a variant for use with the
- *	sdrplay was created
+ *	sdrplay was created 
  *	J van Katwijk, Lazy Chair Computing (J.vanKatwijk@gmail.com)
  */
 #ifdef WITH_SDRPLAY
@@ -160,7 +160,7 @@ mir_sdr_ErrT err;
            correctionPhase = (ch -> Fr - (float)Fc) / (float)(SDRPLAY_INRATE) * 2.0 * M_PI;
 	   fprintf (stderr, "Fc = %d, phase = %f (%f)\n",
 	                     Fc, correctionPhase, ch -> Fr - (float)Fc);
-	   for (ind = 0; ind < SDRPLAY_MULT; ind++)
+	   for (ind = 0; ind < SDRPLAY_MULT; ind++) 
 	      ch -> oscillator [ind] = cexpf (correctionPhase * ind * -I) / SDRPLAY_MULT;
 	}
 
@@ -192,7 +192,7 @@ mir_sdr_ErrT err;
 	else
 	   fprintf (stderr, "SDRplay device selects freq %d and sets %d as gain reduction\n",
 	         Fc, get_lnaGRdB (hwVersion, lnaState) + GRdB);
-
+	
 	return 0;
 }
 
@@ -201,7 +201,7 @@ int current_index = 0;
 static
 void myStreamCallback (int16_t		*xi,
 	               int16_t		*xq,
-	               uint32_t		firstSampleNum,
+	               uint32_t		firstSampleNum, 
 	               int32_t		grChanged,
 	               int32_t		rfChanged,
 	               int32_t		fsChanged,
@@ -241,7 +241,7 @@ void	myGainChangeCallback (uint32_t	gRdB,
 	                      uint32_t	lnaGRdB,
 	                      void	*cbContext) {
 	(void)gRdB;
-	(void)lnaGRdB;
+	(void)lnaGRdB;	
 	(void)cbContext;
 }
 
@@ -272,7 +272,7 @@ int	localGRdB	= (20 <= GRdB) && (GRdB <= 59) ? GRdB : 20;
 	if (GRdB == -100) {
            result  = mir_sdr_AgcControl (mir_sdr_AGC_100HZ,
                                          -30, 0, 0, 0, 0, lnaState);
-	   if (result != mir_sdr_Success)
+	   if (result != mir_sdr_Success) 
 	      fprintf (stderr, "Error %d on AgcControl\n", result);
 	}
 
