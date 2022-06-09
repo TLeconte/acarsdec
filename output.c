@@ -5,9 +5,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/socket.h>
 #include <time.h>
-#include <netdb.h>
 #include <errno.h>
 #ifdef HAVE_LIBACARS
 #include <sys/time.h>
@@ -18,17 +16,14 @@
 #endif
 #include "acarsdec.h"
 #include "cJSON.h"
+#include "output.h"
+
 extern int label_filter(char *lbl);
 
 extern int inmode;
 extern char *idstation;
 
-static int sockfd = -1;
 static FILE *fdout;
-static char *filename_prefix = NULL;
-static char *extension = NULL;
-static size_t prefix_len;
-static struct tm current_tm;
 
 static char *jsonbuf=NULL;
 #define JSONBUFLEN 30000
@@ -106,133 +101,18 @@ static inline void cls(void)
 	printf("\x1b[H\x1b[2J");
 }
 
-static int open_outfile() {
-	char *filename = NULL;
-	char *fmt = NULL;
-	size_t tlen = 0;
-
-	if(hourly || daily) {
-		time_t t = time(NULL);
-		gmtime_r(&t, &current_tm);
-		char suffix[16];
-		if(hourly) {
-			fmt = "_%Y%m%d_%H";
-		} else {	// daily
-			fmt = "_%Y%m%d";
-		}
-		tlen = strftime(suffix, sizeof(suffix), fmt, &current_tm);
-		if(tlen == 0) {
-			fprintf(stderr, "open_outfile(): strfime returned 0\n");
-			return -1;
-		}
-		filename = calloc(prefix_len + tlen + 2, sizeof(char));
-		if(filename == NULL) {
-			fprintf(stderr, "open_outfile(): failed to allocate memory\n");
-			return -1;
-		}
-		sprintf(filename, "%s%s%s", filename_prefix, suffix, extension);
-	} else {
-		filename = strdup(filename_prefix);
-	}
-
-	if((fdout = fopen(filename, "a+")) == NULL) {
-		fprintf(stderr, "Could not open output file %s: %s\n", filename, strerror(errno));
-		free(filename);
-		return -1;
-	}
-	free(filename);
-	return 0;
-}
-
 int initOutput(char *logfilename, char *Rawaddr)
 {
-	char *addr;
-	char *port;
-	struct addrinfo hints, *servinfo, *p;
-	int rv;
-
 	if (outtype != OUTTYPE_NONE && logfilename) {
-		filename_prefix = logfilename;
-		prefix_len = strlen(filename_prefix);
-		if(hourly || daily) {
-			char *basename = strrchr(filename_prefix, '/');
-			if(basename != NULL) {
-				basename++;
-			} else {
-				basename = filename_prefix;
-			}
-			char *ext = strrchr(filename_prefix, '.');
-			if(ext != NULL && (ext <= basename || ext[1] == '\0')) {
-				ext = NULL;
-			}
-			if(ext) {
-				extension = strdup(ext);
-				*ext = '\0';
-			} else {
-				extension = strdup("");
-			}
-		}
-		if(open_outfile() < 0)
+		if((fdout=Fileoutinit(logfilename)) == NULL)
 			return -1;
 	} else {
 		fdout = stdout;
-		hourly = daily = 0;	// stdout is not rotateable
 	}
 
-	if (Rawaddr) {
-
-		memset(&hints, 0, sizeof hints);
-		if (Rawaddr[0] == '[') {
-			hints.ai_family = AF_INET6;
-			addr = Rawaddr + 1;
-			port = strstr(addr, "]");
-			if (port == NULL) {
-				fprintf(stderr, "Invalid IPV6 address\n");
-				return -1;
-			}
-			*port = 0;
-			port++;
-			if (*port != ':')
-				port = "5555";
-			else
-				port++;
-		} else {
-			hints.ai_family = AF_UNSPEC;
-			addr = Rawaddr;
-			port = strstr(addr, ":");
-			if (port == NULL)
-				port = "5555";
-			else {
-				*port = 0;
-				port++;
-			}
-		}
-
-		hints.ai_socktype = SOCK_DGRAM;
-
-		if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
-			fprintf(stderr, "Invalid/unknown address %s\n", addr);
+	if (Rawaddr) 
+		if(Netoutinit(Rawaddr))
 			return -1;
-		}
-
-		for (p = servinfo; p != NULL; p = p->ai_next) {
-			if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-			continue;
-			}
-
-			if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-				close(sockfd);
-				continue;
-			}
-			break;
-		}
-		if (p == NULL) {
-			fprintf(stderr, "failed to connect\n");
-			return -1;
-		}
-
-		freeaddrinfo(servinfo);
-	}
 
 	if (outtype == OUTTYPE_MONITOR ) {
 		verbose=0;
@@ -240,24 +120,12 @@ int initOutput(char *logfilename, char *Rawaddr)
 		fflush(stdout);
 	}
 
-	if (outtype == OUTTYPE_JSON || outtype == OUTTYPE_ROUTEJSON || (sockfd && netout==NETLOG_JSON)) {
+	if (outtype == OUTTYPE_JSON || outtype == OUTTYPE_ROUTEJSON || netout==NETLOG_JSON || netout==NETLOG_MQTT ) {
 		jsonbuf = malloc(JSONBUFLEN+1);
 	}
 #ifdef HAVE_LIBACARS
 	reasm_ctx = la_reasm_ctx_new();
 #endif
-	return 0;
-}
-
-static int rotate_outfile() {
-	struct tm new_tm;
-	time_t t = time(NULL);
-	gmtime_r(&t, &new_tm);
-	if((hourly && new_tm.tm_hour != current_tm.tm_hour) ||
-	   (daily && new_tm.tm_mday != current_tm.tm_mday)) {
-		fclose(fdout);
-		return open_outfile();
-	}
 	return 0;
 }
 
@@ -283,49 +151,6 @@ static void printdate(struct timeval tv)
 	fprintf(fdout, "%02d/%02d/%04d ",
 		tmp.tm_mday, tmp.tm_mon + 1, tmp.tm_year + 1900);
 	printtime(tv);
-}
-
-void outpp(acarsmsg_t * msg)
-{
-	char pkt[3600]; // max. 16 blocks * 220 characters + extra space for msg prefix
-	char *pstr;
-
-	char *txt = strdup(msg->txt);
-	for (pstr = txt; *pstr != 0; pstr++)
-		if (*pstr == '\n' || *pstr == '\r')
-			*pstr = ' ';
-
-	snprintf(pkt, sizeof(pkt), "AC%1c %7s %1c %2s %1c %4s %6s %s",
-		msg->mode, msg->addr, msg->ack, msg->label, msg->bid ? msg->bid : '.', msg->no,
-		msg->fid, txt);
-
-	write(sockfd, pkt, strlen(pkt));
-	free(txt);
-}
-
-void outsv(acarsmsg_t * msg, int chn, struct timeval tv)
-{
-	char pkt[3600]; // max. 16 blocks * 220 characters + extra space for msg prefix
-	struct tm tmp;
-
-	gmtime_r(&(tv.tv_sec), &tmp);
-
-	snprintf(pkt, sizeof(pkt),
-		"%8s %1d %02d/%02d/%04d %02d:%02d:%02d %2.1f %03d %1c %7s %1c %2s %1c %4s %6s %s",
-		idstation, chn + 1, tmp.tm_mday, tmp.tm_mon + 1,
-		tmp.tm_year + 1900, tmp.tm_hour, tmp.tm_min, tmp.tm_sec,
-		msg->err, msg->lvl, msg->mode, msg->addr, msg->ack, msg->label,
-		msg->bid ? msg->bid : '.', msg->no, msg->fid, msg->txt);
-
-	write(sockfd, pkt, strlen(pkt));
-}
-
-void outjson()
-{
-	char pkt[3600];
-
-	snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
-	write(sockfd, pkt, strlen(pkt));
 }
 
 static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
@@ -468,6 +293,14 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 		la_vstring_destroy(vstr, true);
 	}
 #endif
+
+	cJSON *app_info = cJSON_AddObjectToObject(json_obj, "app");
+	if (app_info) {
+		cJSON_AddStringToObject(app_info, "name", "acarsdec");
+		cJSON_AddStringToObject(app_info, "ver", ACARSDEC_VERSION);
+	}
+
+
 	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
 	cJSON_Delete(json_obj);
 	return ok;
@@ -637,7 +470,7 @@ void outputmsg(const msgblk_t * blk)
 	int i, j, k;
 	int jok=0;
 	int outflg=0;
-	flight_t *fl=NULL;
+	flight_t *fl;
 
 	/* fill msg struct */
 	memset(&msg, 0, sizeof(msg));
@@ -802,7 +635,7 @@ void outputmsg(const msgblk_t * blk)
 			jok=buildjson(&msg, blk->chn, blk->tv);
 	}
 
-	if((hourly || daily) && outtype != OUTTYPE_NONE && rotate_outfile() < 0) {
+	if((hourly || daily) && outtype != OUTTYPE_NONE && (fdout=Fileoutrotate(fdout))==NULL) {
 		_exit(1);
 	}
 	switch (outtype) {
@@ -826,18 +659,21 @@ void outputmsg(const msgblk_t * blk)
 		break;
 	}
 
-	if (sockfd > 0) {
-		switch (netout) {
+	switch (netout) {
 		case NETLOG_PLANEPLOTTER:
-			outpp(&msg);
+			Netoutpp(&msg);
 			break;
 		case NETLOG_NATIVE:
-			outsv(&msg, blk->chn, blk->tv);
+			Netoutsv(&msg, idstation, blk->chn, blk->tv);
 			break;
 		case NETLOG_JSON:
-			if(jok) outjson();
+			if(jok) Netoutjson(jsonbuf);
 			break;
-		}
+#ifdef WITH_MQTT
+		case NETLOG_MQTT:
+			MQTTsend(jsonbuf);
+			break;
+#endif
 	}
 	free(msg.txt);
 #ifdef HAVE_LIBACARS

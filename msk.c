@@ -23,7 +23,9 @@ pthread_cond_t chprcd,chcscd;
 int chmsk,tmsk;
 
 #define FLEN ((INTRATE/1200)+1)
-static float h[2*FLEN];
+#define MFLTOVER 12
+#define FLENO (FLEN*MFLTOVER+1)
+static float h[FLENO];
 
 int initMsk(channel_t * ch)
 {
@@ -37,12 +39,11 @@ int initMsk(channel_t * ch)
 	ch->idx = 0;
 	ch->inb = calloc(FLEN, sizeof(float complex));
 
-	for (i = 0; i < FLEN; i++) {
-		if(ch->chn==0)  {
-			h[i] = h[i+FLEN]= cosf(2.0*M_PI*600.0/INTRATE*(i-FLEN/2));
+	if(ch->chn==0) 
+		for (i = 0; i < FLENO; i++) {
+			h[i] = cosf(2.0*M_PI*600.0/INTRATE/MFLTOVER*(i-(FLENO-1)/2));
+			if(h[i]<0) h[i]=0;
 		}
-		ch->inb[i] = 0;
-	}
 
 	return 0;
 }
@@ -90,21 +91,22 @@ void demodMSK(channel_t *ch,int len)
 
 	/* bit clock */
 	ch->MskClk+=s;
-	if (ch->MskClk >=3*M_PI/2.0) {
+	if (ch->MskClk >=3*M_PI/2.0-s/2) {
 		double dphi;
 		float vo,lvl;
 
 		ch->MskClk -= 3*M_PI/2.0;
 
 		/* matched filter */
-		o=FLEN-idx;
-		v=0;
-		for (j = 0; j < FLEN; j++,o++) {
-			v += h[o]*ch->inb[j];
+		o=MFLTOVER*(ch->MskClk/s+0.5);
+		if(o>MFLTOVER) o=MFLTOVER;
+		for (v = 0, j = 0; j < FLEN; j++,o+=MFLTOVER) {
+			v += h[o]*ch->inb[(j+idx)%FLEN];
 		}
+
 		/* normalize */
 		lvl=cabsf(v);
-		v/=lvl+1e-6;
+		v/=lvl+1e-8;
 		ch->MskLvlSum += lvl * lvl / 4;
 		ch->MskBitCount++;
 

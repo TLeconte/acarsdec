@@ -51,9 +51,11 @@ int gain = -100;
 int ppm = 0;
 int rateMult = 160;
 #endif
+
 #ifdef WITH_AIR
 int gain = 18;
 #endif
+
 #ifdef	WITH_SDRPLAY
 int	lnaState	= 2;
 int	GRdB		= 20;
@@ -65,18 +67,33 @@ int ppm = 0;
 int rateMult = 160;
 int freq = 0;
 #endif
+
+#ifdef WITH_MQTT
+char *mqtt_urls[16];
+int mqtt_nburls=0;
+char *mqtt_topic=NULL;
+char *mqtt_user=NULL;
+char *mqtt_passwd=NULL;
+#endif
+
 char *Rawaddr = NULL;
 char *logfilename = NULL;
 
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv 3.5 Copyright (c) 2017 Thierry Leconte\n");
+		"Acarsdec/acarsserv %s Copyright (c) 2017 Thierry Leconte\n", ACARSDEC_VERSION);
 #ifdef HAVE_LIBACARS
 	fprintf(stderr,	"(libacars %s)\n", LA_VERSION);
 #endif
 	fprintf(stderr,
-		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-n ipaddr:port] [-l logfile [-H|-D]]");
+		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-b 'labels,..'] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
+#ifdef WITH_MQTT
+	fprintf(stderr, " [ -M mqtt_url");
+	fprintf(stderr, " [-T mqtt_topic] |");
+	fprintf(stderr, " [-U mqtt_user |");
+	fprintf(stderr, " -P mqtt_passwd]]|");
+#endif
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice  |");
 #endif
@@ -100,27 +117,35 @@ static void usage(void)
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, " -v\t\t\t: verbose\n");
 	fprintf(stderr,
+		" -i stationid\t\t: station id used in acarsdec network format.\n");
+	fprintf(stderr,
 		" -A\t\t\t: don't display uplink messages (ie : only aircraft messages)\n");
 	fprintf(stderr,
-		"\n -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor , 4 : msg JSON, 5 : route JSON\n");
+		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n");
 	fprintf(stderr,
-		"\n -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
+		" -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor , 4 : msg JSON, 5 : route JSON\n");
+	fprintf(stderr,
+		" -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
 	fprintf(stderr,
 		" -l logfile\t\t: append log messages to logfile (Default : stdout).\n");
 	fprintf(stderr,
 		" -H\t\t\t: rotate log file once every hour\n");
 	fprintf(stderr,
 		" -D\t\t\t: rotate log file once every day\n");
+	fprintf(stderr, "\n");
 	fprintf(stderr,
 		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n");
 	fprintf(stderr,
 		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec native format\n");
 	fprintf(stderr,
 		" -j ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec json format\n");
-	fprintf(stderr,
-		" -i stationid\t\t: station id used in acarsdec network format.\n");
-	fprintf(stderr,
-		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n\n");
+#ifdef WITH_MQTT
+	fprintf(stderr, " -M mqtt_url\t\t: Url of MQTT broker\n");
+	fprintf(stderr, " -T mqtt_topic\t\t: Optionnal MQTT topic (default : acarsdec/${station_id})\n");
+	fprintf(stderr, " -U mqtt_user\t\t: Optional MQTT username\n");
+	fprintf(stderr, " -P mqtt_passwd\t\t: Optional MQTT password\n");
+#endif
+	fprintf(stderr, "\n");
 
 #ifdef WITH_ALSA
 	fprintf(stderr,
@@ -161,23 +186,13 @@ static void usage(void)
 #endif
 
 	fprintf(stderr,
-		"\nUp to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
+		" Up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
 	exit(1);
 }
 
 static void sigintHandler(int signum)
 {
-	char *s = NULL;
-	if (signum == SIGTERM)
-		s = "SIGTERM";
-	else if (signum == SIGINT)
-		s = "SIGINT";
-	else if (signum == SIGQUIT)
-		s = "SIGQUIT";
-	if (s)
-		fprintf(stderr, "Received %s, exiting.\n", s);
-	else
-		fprintf(stderr, "Received signal %d, exiting.\n", strsignal(signum));
+	fprintf(stderr, "Received signal %s, exiting.\n", strsignal(signum));
 #ifdef DEBUG
 	SndWriteClose();
 #endif
@@ -199,11 +214,12 @@ int main(int argc, char **argv)
 	char sys_hostname[HOST_NAME_MAX+1];
 	char *lblf=NULL;
 
-	gethostname(sys_hostname, sizeof(sys_hostname));
-	idstation = strndup(sys_hostname, 32);
+	gethostname(sys_hostname, HOST_NAME_MAX);
+	sys_hostname[HOST_NAME_MAX]=0;
+	idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvardsRf:o:t:g:m:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvardsRf:o:t:g:m:Ap:n:N:j:l:c:i:L:G:b:M:P:U:T:")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 1;
@@ -286,6 +302,25 @@ int main(int argc, char **argv)
 			gain = atoi(optarg);
 			break;
 #endif
+#ifdef WITH_MQTT
+		case 'M':
+			if(mqtt_nburls<15) {
+				mqtt_urls[mqtt_nburls]=strdup(optarg);
+				mqtt_nburls++;
+				mqtt_urls[mqtt_nburls]=NULL;
+				netout = NETLOG_MQTT;
+			}
+			break;
+    		case 'U':
+			mqtt_user = strdup(optarg);
+			break;
+    		case 'P':
+			mqtt_passwd = strdup(optarg);
+			break;
+    		case 'T':
+			mqtt_topic = strdup(optarg);
+			break;
+#endif
 		case 'n':
 			Rawaddr = optarg;
 			netout = NETLOG_PLANEPLOTTER;
@@ -312,7 +347,7 @@ int main(int argc, char **argv)
 			break;
 		case 'i':
 			free(idstation);
-			idstation = strndup(optarg, 32);
+			idstation = strdup(optarg);
 			break;
 
 		default:
@@ -343,6 +378,16 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Unable to init output\n");
 		exit(res);
 	}
+
+#ifdef WITH_MQTT
+	if(netout== NETLOG_MQTT) {
+		res = MQTTinit(mqtt_urls,idstation,mqtt_topic,mqtt_user,mqtt_passwd);
+		if (res) {
+			fprintf(stderr, "Unable to init MQTT\n");
+			exit(res);
+		}
+	}
+#endif
 
 	sigact.sa_handler = sigintHandler;
 	sigemptyset(&sigact.sa_mask);
@@ -414,10 +459,14 @@ int main(int argc, char **argv)
 		res = -1;
 	}
 
+	fprintf(stderr, "exiting ...\n");
+
 	for (n = 0; n < nbch; n++)
 		deinitAcars(&(channel[n]));
 
-	fprintf(stderr, "exiting ...\n");
+#ifdef WITH_MQTT
+	MQTTend();
+#endif
 	exit(res);
 
 }

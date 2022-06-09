@@ -25,6 +25,8 @@
 #include <libacars/reassembly.h>
 #endif
 
+#define ACARSDEC_VERSION "3.5"
+
 #define MAXNBCHANNELS 8
 #define INTRATE 12500
 
@@ -32,6 +34,7 @@
 #define NETLOG_PLANEPLOTTER 1
 #define NETLOG_NATIVE 2
 #define NETLOG_JSON 3
+#define NETLOG_MQTT 4
 
 #define OUTTYPE_NONE 0
 #define OUTTYPE_ONELINE 1
@@ -176,6 +179,12 @@ extern double gain;
 #else
 extern int gain;
 #endif
+#ifdef WITH_MQTT
+extern int MQTTinit(char **urls, char * client_id, char *topic, char *user,char *passwd);
+extern int MQTTsend(char *msgtxt);
+extern void MQTTend();
+#endif
+
 extern int initRaw(char **argv,int optind);
 extern int runRawSample(void);
 extern int  initMsk(channel_t *);
