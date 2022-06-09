@@ -203,8 +203,7 @@ int main(int argc, char **argv)
 	idstation = strndup(sys_hostname, 32);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvardfsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
-
+	while ((c = getopt(argc, argv, "HDvardsRf:o:t:g:m:Ap:n:N:j:l:c:i:L:G:b:")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 1;
