@@ -50,6 +50,8 @@ for the RTLSDR device
 
  -p ppm :		set rtl ppm frequency correction
 
+ -m rateMult :		set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)
+
 for the AIRspy device
 
  -s f1 [f2] ... [fN] :		decode from airspy receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
@@ -65,6 +67,14 @@ for the SDRplay device
 for the SoapySDR device
 
  -d devicestring f1 [f2] ... [fN] :		 decode from a SoapySDR device at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 ).
+
+ -g gain :		set gain in db (-10 will result in AGC; default is AGC)
+
+ -p ppm :		set rtl ppm frequency correction
+
+ -c freq :		set center frequency to tune to
+
+ -m rateMult :		set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)
 
 ## Examples
 
