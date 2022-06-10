@@ -162,7 +162,7 @@ int initSoapy(char **argv, int optind)
 
 		AMFreq = (ch->Fr - (float)freq) / (float)(soapyInRate) * 2.0 * M_PI;
 		for (ind = 0; ind < rateMult; ind++) {
-			ch->oscillator[ind] = cexpf(AMFreq*ind*-I)/rateMult/32768.0;
+			ch->oscillator[ind] = cexpf(AMFreq*ind*-I)/rateMult;
 		}
 	}
 
@@ -219,7 +219,7 @@ static void *readThreadEntryPoint(void *arg) {
 				float r = (float)soapyInBuf[i];
 				float g = (float)soapyInBuf[i+1];
 				float complex v = r + g*I;
-				D += v * ch->oscillator[local_ind++];
+				D += v * ch->oscillator[local_ind++] / 32768.0;
 				if (local_ind >= rateMult) {
 					ch->dm_buffer[ch->counter++] = cabsf(D);
 					local_ind = 0;
