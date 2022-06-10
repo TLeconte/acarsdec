@@ -155,6 +155,8 @@ int initSoapy(char **argv, int optind)
 		int ind;
 		float AMFreq;
 
+		ch->counter = 0;
+		ch->D = 0;
 		ch->oscillator = malloc(rateMult * sizeof(float complex));
 		ch->dm_buffer = malloc(SOAPYOUTBUFSZ*sizeof(float));
 
