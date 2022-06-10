@@ -36,7 +36,7 @@ unsigned int nbch;
 
 char *idstation = NULL;
 int inmode = 0;
-int verbose = 1;
+int verbose = 0;
 int outtype = OUTTYPE_STD;
 int netout = NETLOG_NONE;
 int airflt = 0;
