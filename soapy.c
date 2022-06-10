@@ -197,6 +197,7 @@ static void *readThreadEntryPoint(void *arg) {
 		watchdogCounter = 50;
 		pthread_mutex_unlock(&cbMutex);
 
+		flags = 0;
 		res = SoapySDRDevice_readStream(dev, stream, bufs, soapyInBufSize/2, &flags, &timens, 10000000);
 		if(res <= 0) {
 			fprintf(stderr, "WARNING: Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
@@ -231,7 +232,7 @@ static void *readThreadEntryPoint(void *arg) {
 			}
 			ch->D = D;
 		}
-		current_index = (current_index + res*2) % rateMult;
+		current_index = (current_index + res) % rateMult;
 	}
 
 	pthread_mutex_lock(&cbMutex);
