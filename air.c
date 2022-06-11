@@ -37,24 +37,26 @@ extern void *compute_thread(void *arg);
 static const unsigned int r820t_hf[]={1953050,1980748,2001344,2032592,2060291,2087988};
 static const unsigned int r820t_lf[]={525548,656935,795424,898403,1186034,1502073,1715133,1853622};
 
-static unsigned int chooseFc(unsigned int minF,unsigned int maxF)
+static unsigned int chooseFc(unsigned int minF,unsigned int maxF,int filter)
 {
 	unsigned int bw=maxF-minF+2*INTRATE;
-	unsigned int off;
+	unsigned int off=0;
 	int i,j;
 
-	for(i=7;i>=0;i--)
-		if((r820t_hf[5]-r820t_lf[i])>=bw) break;
-	if(i<0) return 0;
+	if(filter) {
+		for(i=7;i>=0;i--)
+			if((r820t_hf[5]-r820t_lf[i])>=bw) break;
+		if(i<0) return 0;
 
-	for(j=5;j>=0;j--)
-		if((r820t_hf[j]-r820t_lf[i])<=bw) break;
-	j++;
+		for(j=5;j>=0;j--)
+			if((r820t_hf[j]-r820t_lf[i])<=bw) break;
+		j++;
 
-	off=(r820t_hf[j]+r820t_lf[i])/2-AIRINRATE/4;
+		off=(r820t_hf[j]+r820t_lf[i])/2-AIRINRATE/4;
 
-        airspy_r820t_write(device, 10, 0xB0 | (15-j));
-        airspy_r820t_write(device, 11, 0xE0 | (15-i));
+        	airspy_r820t_write(device, 10, 0xB0 | (15-j));
+        	airspy_r820t_write(device, 11, 0xE0 | (15-i));
+	}
 
 	return(((maxF+minF)/2+off+INTRATE/2)/INTRATE*INTRATE);
 }
@@ -151,7 +153,7 @@ int initAirspy(char **argv, int optind)
 		fprintf(stderr,"airspy_set_vga_gain() failed: %s (%d)\n", airspy_error_name(result), result);
 	}
 
-	Fc=chooseFc(minFc,maxFc);
+	Fc=chooseFc(minFc,maxFc,AIRINRATE==5000000);
 	if(Fc==0) {
 		fprintf(stderr, "Frequencies too far apart\n");
 		return 1;
