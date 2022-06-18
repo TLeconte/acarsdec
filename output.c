@@ -309,11 +309,11 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 
 static void printoneline(acarsmsg_t * msg, int chn, struct timeval tv)
 {
-	char txt[30];
+	char txt[60];
 	char *pstr;
 
-	strncpy(txt, msg->txt, 29);
-	txt[29] = 0;
+	strncpy(txt, msg->txt, 59);
+	txt[59] = 0;
 	for (pstr = txt; *pstr != 0; pstr++)
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
