@@ -159,11 +159,11 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 
 #if defined (WITH_RTL) || defined (WITH_AIR)
 	if (inmode >= 3)
-		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+2.1f E:%1d) ", chn + 1,
+		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+5.1f E:%1d) ", chn + 1,
 			channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
-		fprintf(fdout, "\n[#%1d (L:%+2.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
+		fprintf(fdout, "\n[#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (inmode != 2)
 		printdate(tv);
@@ -318,7 +318,7 @@ static void printoneline(acarsmsg_t * msg, int chn, struct timeval tv)
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
 
-	fprintf(fdout, "#%1d (L:%+2.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
+	fprintf(fdout, "#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (inmode != 2)
 		printdate(tv);
