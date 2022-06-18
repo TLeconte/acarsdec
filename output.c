@@ -628,6 +628,9 @@ void outputmsg(const msgblk_t * blk)
 	if(outflg)
 		fl=addFlight(&msg,blk->chn,blk->tv);
 
+	if(emptymsg && ( msg.txt == NULL || msg.txt[0] == '\0'))
+			return;
+
 	if(jsonbuf) {
 		if(outtype == OUTTYPE_ROUTEJSON )
 			jok=routejson(fl,blk->tv);
