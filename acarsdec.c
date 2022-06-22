@@ -40,6 +40,7 @@ int verbose = 0;
 int outtype = OUTTYPE_STD;
 int netout = NETLOG_NONE;
 int airflt = 0;
+int emptymsg = 0;
 int mdly=600;
 int hourly = 0;
 int daily = 0;
@@ -119,7 +120,9 @@ static void usage(void)
 	fprintf(stderr,
 		" -i stationid\t\t: station id used in acarsdec network format.\n");
 	fprintf(stderr,
-		" -A\t\t\t: don't display uplink messages (ie : only aircraft messages)\n");
+		" -A\t\t\t: don't output uplink messages (ie : only aircraft messages)\n");
+	fprintf(stderr,
+		" -e\t\t\t: don't output empty messages (ie : _d,Q0, etc ...)\n");
 	fprintf(stderr,
 		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n");
 	fprintf(stderr,
@@ -219,7 +222,8 @@ int main(int argc, char **argv)
 	idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvarfdsRo:t:g:m:Ap:n:N:j:l:c:i:L:G:b:M:P:U:T:")) != EOF) {
+	while ((c = getopt(argc, argv, "HDvarfdsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:")) != EOF) {
+
 		switch (c) {
 		case 'v':
 			verbose = 1;
@@ -335,6 +339,9 @@ int main(int argc, char **argv)
 			break;
 		case 'A':
 			airflt = 1;
+			break;
+		case 'e':
+			emptymsg = 1;
 			break;
 		case 'l':
 			logfilename = optarg;

@@ -159,11 +159,11 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 
 #if defined (WITH_RTL) || defined (WITH_AIR) || defined (WITH_SOAPY)
 	if (inmode >= 3)
-		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+2.1f E:%1d) ", chn + 1,
+		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+5.1f E:%1d) ", chn + 1,
 			channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
-		fprintf(fdout, "\n[#%1d (L:%+2.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
+		fprintf(fdout, "\n[#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (inmode != 2)
 		printdate(tv);
@@ -309,16 +309,16 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 
 static void printoneline(acarsmsg_t * msg, int chn, struct timeval tv)
 {
-	char txt[30];
+	char txt[60];
 	char *pstr;
 
-	strncpy(txt, msg->txt, 29);
-	txt[29] = 0;
+	strncpy(txt, msg->txt, 59);
+	txt[59] = 0;
 	for (pstr = txt; *pstr != 0; pstr++)
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
 
-	fprintf(fdout, "#%1d (L:%+2.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
+	fprintf(fdout, "#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (inmode != 2)
 		printdate(tv);
@@ -627,6 +627,9 @@ void outputmsg(const msgblk_t * blk)
 
 	if(outflg)
 		fl=addFlight(&msg,blk->chn,blk->tv);
+
+	if(emptymsg && ( msg.txt == NULL || msg.txt[0] == '\0'))
+			return;
 
 	if(jsonbuf) {
 		if(outtype == OUTTYPE_ROUTEJSON )

@@ -142,6 +142,7 @@ extern int verbose;
 extern int outtype;
 extern int netout;
 extern int airflt;
+extern int emptymsg;
 extern int mdly;
 extern int hourly, daily;
 
