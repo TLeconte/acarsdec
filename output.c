@@ -124,7 +124,7 @@ int initOutput(char *logfilename, char *Rawaddr)
 		jsonbuf = malloc(JSONBUFLEN+1);
 	}
 #ifdef HAVE_LIBACARS
-	reasm_ctx = la_reasm_ctx_new();
+	reasm_ctx = skip_reassembly ? NULL : la_reasm_ctx_new();
 #endif
 	return 0;
 }
@@ -187,7 +187,9 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 			}
 		}
 #ifdef HAVE_LIBACARS
-		fprintf(fdout, "\nReassembly: %s", la_reasm_status_name_get(msg->reasm_status));
+		if (!skip_reassembly) {
+			fprintf(fdout, "\nReassembly: %s", la_reasm_status_name_get(msg->reasm_status));
+		}
 #endif
 	}
 
@@ -293,7 +295,9 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 		}
 	}
 #ifdef HAVE_LIBACARS
-	cJSON_AddStringToObject(json_obj, "assstat", la_reasm_status_name_get(msg->reasm_status));
+	if (!skip_reassembly) {
+		cJSON_AddStringToObject(json_obj, "assstat", la_reasm_status_name_get(msg->reasm_status));
+	}
 	if(msg->decoded_tree != NULL) {
 		la_vstring *vstr = la_proto_tree_format_json(NULL, msg->decoded_tree);
 		cJSON_AddRawToObject(json_obj, "libacars", vstr->str);
