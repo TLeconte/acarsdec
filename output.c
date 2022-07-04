@@ -285,6 +285,13 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 		if(oooi.won[0])
 			cJSON_AddStringToObject(json_obj, "wlin", oooi.won);
 	}
+
+	if (msg->sublabel[0] != '\0') {
+		cJSON_AddStringToObject(json_obj, "sublabel", msg->sublabel);
+		if (msg->mfi[0] != '\0') {
+			cJSON_AddStringToObject(json_obj, "mfi", msg->mfi);
+		}
+	}
 #ifdef HAVE_LIBACARS
 	cJSON_AddStringToObject(json_obj, "assstat", la_reasm_status_name_get(msg->reasm_status));
 	if(msg->decoded_tree != NULL) {
