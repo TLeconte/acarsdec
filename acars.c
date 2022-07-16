@@ -231,9 +231,7 @@ int initAcars(channel_t * ch)
 	ch->nbits = 8;
 	ch->Acarsstate = WSYN;
 
-
-	ch->blk = malloc(sizeof(msgblk_t));
-	ch->blk->chn = ch->chn;
+	ch->blk = NULL;
 
 	return 0;
 }
@@ -282,8 +280,16 @@ void decodeAcars(channel_t * ch)
 
 	case SOH1:
 		if (r == SOH) {
+			if(ch->blk == NULL) {
+				ch->blk = malloc(sizeof(msgblk_t));
+				if(ch->blk == NULL) {
+					resetAcars(ch);
+					return;
+				}
+			}
 			gettimeofday(&(ch->blk->tv), NULL);
 			ch->Acarsstate = TXT;
+			ch->blk->chn = ch->chn;
 			ch->blk->len = 0;
 			ch->blk->err = 0;
 			ch->nbits = 8;
@@ -295,6 +301,7 @@ void decodeAcars(channel_t * ch)
 		return;
 
 	case TXT:
+
 		ch->blk->txt[ch->blk->len] = r;
 		ch->blk->len++;
 		if ((numbits[(unsigned char)r] & 1) == 0) {
@@ -356,9 +363,7 @@ void decodeAcars(channel_t * ch)
 		pthread_cond_signal(&blkq_wcd);
 		pthread_mutex_unlock(&blkq_mtx);
 
-		ch->blk = malloc(sizeof(msgblk_t));
-		ch->blk->chn = ch->chn;
-
+		ch->blk=NULL;
 		ch->Acarsstate = END;
 		ch->nbits = 8;
 		return;

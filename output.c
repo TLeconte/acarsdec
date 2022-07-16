@@ -71,6 +71,8 @@ static void acars_key_destroy(void *ptr) {
 static void *acars_tmp_key_get(void const *msg) {
 	acarsmsg_t *amsg = (acarsmsg_t *)msg;
 	acars_key *key = calloc(1, sizeof(acars_key));
+	if(key == NULL) 
+		return NULL;
 	key->addr = amsg->addr;
 	key->label = amsg->label;
 	key->msn = amsg->msn;
@@ -80,6 +82,8 @@ static void *acars_tmp_key_get(void const *msg) {
 static void *acars_key_get(void const *msg) {
 	acarsmsg_t *amsg = (acarsmsg_t *)msg;
 	acars_key *key = calloc(1, sizeof(acars_key));
+	if(key == NULL) 
+		return NULL;
 	key->addr = strdup(amsg->addr);
 	key->label = strdup(amsg->label);
 	key->msn = strdup(amsg->msn);
@@ -122,6 +126,8 @@ int initOutput(char *logfilename, char *Rawaddr)
 
 	if (outtype == OUTTYPE_JSON || outtype == OUTTYPE_ROUTEJSON || netout==NETLOG_JSON || netout==NETLOG_MQTT ) {
 		jsonbuf = malloc(JSONBUFLEN+1);
+		if(jsonbuf == NULL) 
+			return -1;
 	}
 #ifdef HAVE_LIBACARS
 	reasm_ctx = la_reasm_ctx_new();
@@ -356,6 +362,8 @@ static  flight_t *addFlight(acarsmsg_t * msg, int chn, struct timeval tv)
 
 	if(fl==NULL) {
 		fl=calloc(1,sizeof(flight_t));
+		if(fl==NULL) 
+			return (NULL);
 		strncpy(fl->addr,msg->addr,8);
 		fl->nbm=0;
 		fl->ts=tv;
@@ -599,7 +607,7 @@ void outputmsg(const msgblk_t * blk)
 		} else {
 #endif // HAVE_LIBACARS
 			msg.txt = calloc(txt_len + 1, sizeof(char));
-			if(txt_len > 0) {
+			if(msg.txt && txt_len > 0) {
 				memcpy(msg.txt, blk->txt + k, txt_len);
 			}
 #ifdef HAVE_LIBACARS
@@ -632,10 +640,12 @@ void outputmsg(const msgblk_t * blk)
 			return;
 
 	if(jsonbuf) {
-		if(outtype == OUTTYPE_ROUTEJSON )
-			jok=routejson(fl,blk->tv);
-		else
+		if(outtype == OUTTYPE_ROUTEJSON ) {
+			if(fl)
+			       	jok=routejson(fl,blk->tv);
+		} else {
 			jok=buildjson(&msg, blk->chn, blk->tv);
+		}
 	}
 
 	if((hourly || daily) && outtype != OUTTYPE_NONE && (fdout=Fileoutrotate(fdout))==NULL) {

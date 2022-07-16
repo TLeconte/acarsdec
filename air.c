@@ -119,6 +119,12 @@ int initAirspy(char **argv, int optind)
 
 	airspy_get_samplerates(device, &count, 0);
 	supported_samplerates = (uint32_t *) malloc(count * sizeof(uint32_t));
+	if(supported_samplerates == NULL ) {
+		fprintf(stderr,"malloc error\n");
+		airspy_close(device);
+		airspy_exit();
+		return -1;
+	}
 	airspy_get_samplerates(device, supported_samplerates, count);
 	for(i=0;i<count;i++) {
 		if(supported_samplerates[i]> 10000000) continue;
@@ -128,6 +134,7 @@ int initAirspy(char **argv, int optind)
 	}
 	if(i>=count) {
 		fprintf(stderr,"did not find needed sampling rate\n");
+		airspy_close(device);
 		airspy_exit();
 		return -1;
 	}
@@ -177,6 +184,12 @@ int initAirspy(char **argv, int optind)
 
 		ch->wf = malloc(AIRMULT * sizeof(float complex));
 		ch->dm_buffer = malloc(512 * sizeof(double));
+		if(ch->wf == NULL || ch->dm_buffer == NULL ) {
+			fprintf(stderr,"malloc error\n");
+			airspy_close(device);
+			airspy_exit();
+			return -1;
+		}
 		ch->D=0;
 
 		AMFreq = 2.0*M_PI*(double)(Fc-ch->Fr+AIRINRATE/4)/(double)(AIRINRATE);

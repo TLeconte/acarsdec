@@ -34,6 +34,8 @@ int MQTTinit(char **urls, char * client_id, char *topic, char *user,char *passwd
 
     if(topic == NULL) {
     	msgtopic=malloc(strlen(client_id)+strlen("acarsdec")+2);
+	if(msgtopic==NULL)
+			return -1;
     	sprintf(msgtopic,"acarsdec/%s",client_id);
     } else
 	msgtopic=topic;
