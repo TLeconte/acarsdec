@@ -424,8 +424,7 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "exiting ...\n");
 
-	for (n = 0; n < nbch; n++)
-		deinitAcars(&(channel[n]));
+	deinitAcars();
 
 #ifdef WITH_MQTT
 	MQTTend();
