@@ -25,7 +25,7 @@
 #include <libacars/reassembly.h>
 #endif
 
-#define ACARSDEC_VERSION "3.5"
+#define ACARSDEC_VERSION "3.6"
 
 #define MAXNBCHANNELS 8
 #define INTRATE 12500
