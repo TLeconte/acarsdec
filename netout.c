@@ -80,6 +80,7 @@ void Netoutpp(acarsmsg_t * msg)
 {
 	char pkt[3600]; // max. 16 blocks * 220 characters + extra space for msg prefix
 	char *pstr;
+	int res;
 
 	char *txt = strdup(msg->txt);
 	for (pstr = txt; *pstr != 0; pstr++)
@@ -90,7 +91,7 @@ void Netoutpp(acarsmsg_t * msg)
 		msg->mode, msg->addr, msg->ack, msg->label, msg->bid ? msg->bid : '.', msg->no,
 		msg->fid, txt);
 
-	write(sockfd, pkt, strlen(pkt));
+	res=write(sockfd, pkt, strlen(pkt));
 	free(txt);
 }
 
@@ -98,6 +99,7 @@ void Netoutsv(acarsmsg_t * msg, char *idstation, int chn, struct timeval tv)
 {
 	char pkt[3600]; // max. 16 blocks * 220 characters + extra space for msg prefix
 	struct tm tmp;
+	int res;
 
 	gmtime_r(&(tv.tv_sec), &tmp);
 
@@ -108,15 +110,16 @@ void Netoutsv(acarsmsg_t * msg, char *idstation, int chn, struct timeval tv)
 		msg->err, (int)(msg->lvl), msg->mode, msg->addr, msg->ack, msg->label,
 		msg->bid ? msg->bid : '.', msg->no, msg->fid, msg->txt);
 
-	write(sockfd, pkt, strlen(pkt));
+	res=write(sockfd, pkt, strlen(pkt));
 }
 
 void Netoutjson(char *jsonbuf)
 {
 	char pkt[3600];
+	int res;
 
 	snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
-	write(sockfd, pkt, strlen(pkt));
+	res=write(sockfd, pkt, strlen(pkt));
 }
 
 

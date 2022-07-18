@@ -81,7 +81,7 @@ char *logfilename = NULL;
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv %s Copyright (c) 2017 Thierry Leconte\n", ACARSDEC_VERSION);
+		"Acarsdec/acarsserv %s Copyright (c) 2022 Thierry Leconte\n", ACARSDEC_VERSION);
 #ifdef HAVE_LIBACARS
 	fprintf(stderr,	"(libacars %s)\n", LA_VERSION);
 #endif
@@ -444,8 +444,7 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "exiting ...\n");
 
-	for (n = 0; n < nbch; n++)
-		deinitAcars(&(channel[n]));
+	deinitAcars();
 
 #ifdef WITH_MQTT
 	MQTTend();

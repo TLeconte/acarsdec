@@ -25,7 +25,7 @@
 #include <libacars/reassembly.h>
 #endif
 
-#define ACARSDEC_VERSION "3.5"
+#define ACARSDEC_VERSION "3.6"
 
 #define MAXNBCHANNELS 8
 #define INTRATE 12500
@@ -88,12 +88,7 @@ typedef struct {
 	enum { WSYN, SYN2, SOH1, TXT, CRC1,CRC2, END } Acarsstate;
 	msgblk_t *blk;
 
-	pthread_mutex_t blkmtx;
-	pthread_cond_t blkwcd;
-	msgblk_t *blkq_s;
-	msgblk_t *blkq_e;
 	pthread_t th;
-	char acars_shutdown;
 } channel_t;
 
 typedef struct {
@@ -188,7 +183,7 @@ extern void demodMSK(channel_t *ch,int len);
 
 extern int  initAcars(channel_t *);
 extern void decodeAcars(channel_t *);
-extern int  deinitAcars(channel_t *);
+extern int  deinitAcars(void);
 
 extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 

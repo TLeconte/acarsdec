@@ -170,10 +170,11 @@ int nearest_gain(int target_gain)
 	int i, err1, err2, count, close_gain;
 	int *gains;
 	count = rtlsdr_get_tuner_gains(dev, NULL);
-	if (count <= 0) {
+	if (count <= 0) 
 		return 0;
-	}
 	gains = malloc(sizeof(int) * count);
+	if(gains == NULL) 
+		return 0;
 	count = rtlsdr_get_tuner_gains(dev, gains);
 	close_gain = gains[0];
 	for (i = 0; i < count; i++) {
@@ -269,7 +270,10 @@ int initRtl(char **argv, int optind)
 
 		ch->wf = malloc(rtlMult * sizeof(float complex));
 		ch->dm_buffer=malloc(RTLOUTBUFSZ*sizeof(float));
-
+		if( ch->wf == NULL || ch->dm_buffer == NULL) {
+			fprintf(stderr, "ERROR : malloc\n");
+			return 1;
+		}
 		AMFreq = (ch->Fr - (float)Fc) / (float)(rtlInRate) * 2.0 * M_PI;
 		for (ind = 0; ind < rtlMult; ind++) {
 			ch->wf[ind]=cexpf(AMFreq*ind*-I)/rtlMult/127.5;

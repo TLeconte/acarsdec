@@ -26,6 +26,14 @@
 #define ETB 0x97
 #define DLE 0x7f
 
+/* message queue */
+static pthread_mutex_t blkq_mtx;
+static pthread_cond_t blkq_wcd;
+static msgblk_t *blkq_s,*blkq_e;
+static pthread_t blkth_id;
+
+static int acars_shutdown;
+
 #include "syndrom.h"
 
 static int fixprerr(msgblk_t * blk, const unsigned short crc, int *pr, int pn)
@@ -84,31 +92,38 @@ static int fixdberr(msgblk_t * blk, const unsigned short crc)
 #define MAXPERR 3
 static void *blk_thread(void *arg)
 {
-	channel_t* ch = (channel_t*)arg;
 	do {
 		msgblk_t *blk;
 		int i, pn;
 		unsigned short crc;
 		int pr[MAXPERR];
 
-		pthread_mutex_lock(&ch->blkmtx);
-		while ((ch->blkq_e == NULL)&&!ch->acars_shutdown)
-			pthread_cond_wait(&ch->blkwcd, &ch->blkmtx);
+		if (verbose)
+			fprintf(stderr, "blk_starting\n");
 
-		if (ch->acars_shutdown) {
-			pthread_mutex_unlock(&ch->blkmtx);
+		/* get a message */
+		pthread_mutex_lock(&blkq_mtx);
+		while ((blkq_e == NULL) && !acars_shutdown)
+			pthread_cond_wait(&blkq_wcd, &blkq_mtx);
+
+		if (acars_shutdown) {
+			pthread_mutex_unlock(&blkq_mtx);
 			break;
 		}
-		blk = ch->blkq_e;
-		ch->blkq_e = blk->prev;
-		if (ch->blkq_e == NULL)
-			ch->blkq_s = NULL;
-		pthread_mutex_unlock(&ch->blkmtx);
 
+		blk = blkq_e;
+		blkq_e = blk->prev;
+		if (blkq_e == NULL)
+			blkq_s = NULL;
+		pthread_mutex_unlock(&blkq_mtx);
+
+		if (verbose)
+			fprintf(stderr, "get message #%d\n", blk->chn + 1);
+
+		/* handle message */
 		if (blk->len < 13) {
 			if (verbose)
-				fprintf(stderr, "#%d too short\n",
-					blk->chn + 1);
+				fprintf(stderr, "#%d too short\n", blk->chn + 1);
 			free(blk);
 			continue;
 		}
@@ -202,21 +217,21 @@ static void *blk_thread(void *arg)
 
 int initAcars(channel_t * ch)
 {
+	if(ch->chn==0) {
+        	/* init global message queue */
+        	pthread_mutex_init(&blkq_mtx, NULL);
+        	pthread_cond_init(&blkq_wcd, NULL);
+        	blkq_e=blkq_s=NULL;
+        	pthread_create(&blkth_id , NULL, blk_thread, NULL);
+
+		acars_shutdown = 0;
+	}
+
 	ch->outbits = 0;
 	ch->nbits = 8;
 	ch->Acarsstate = WSYN;
 
-	ch->blkq_s = NULL;
-	ch->blkq_e = NULL;
-	ch->acars_shutdown = 0;
-
-	ch->blk = malloc(sizeof(msgblk_t));
-	ch->blk->chn = ch->chn;
-
-	pthread_mutex_init(&ch->blkmtx, NULL);
-	pthread_cond_init(&ch->blkwcd, NULL);
-
-	pthread_create(&ch->th, NULL, blk_thread, ch);
+	ch->blk = NULL;
 
 	return 0;
 }
@@ -265,8 +280,16 @@ void decodeAcars(channel_t * ch)
 
 	case SOH1:
 		if (r == SOH) {
+			if(ch->blk == NULL) {
+				ch->blk = malloc(sizeof(msgblk_t));
+				if(ch->blk == NULL) {
+					resetAcars(ch);
+					return;
+				}
+			}
 			gettimeofday(&(ch->blk->tv), NULL);
 			ch->Acarsstate = TXT;
+			ch->blk->chn = ch->chn;
 			ch->blk->len = 0;
 			ch->blk->err = 0;
 			ch->nbits = 8;
@@ -278,6 +301,7 @@ void decodeAcars(channel_t * ch)
 		return;
 
 	case TXT:
+
 		ch->blk->txt[ch->blk->len] = r;
 		ch->blk->len++;
 		if ((numbits[(unsigned char)r] & 1) == 0) {
@@ -326,19 +350,20 @@ void decodeAcars(channel_t * ch)
  putmsg_lbl:
 		ch->blk->lvl = 10*log10(ch->MskLvlSum / ch->MskBitCount);
 
-		pthread_mutex_lock(&ch->blkmtx);
+		if (verbose)
+			fprintf(stderr, "put message #%d\n", ch->chn + 1);
+
+		pthread_mutex_lock(&blkq_mtx);
 		ch->blk->prev = NULL;
-		if (ch->blkq_s)
-			ch->blkq_s->prev = ch->blk;
-		ch->blkq_s = ch->blk;
-		if (ch->blkq_e == NULL)
-			ch->blkq_e = ch->blkq_s;
-		pthread_cond_signal(&ch->blkwcd);
-		pthread_mutex_unlock(&ch->blkmtx);
+		if (blkq_s)
+			blkq_s->prev = ch->blk;
+		blkq_s = ch->blk;
+		if (blkq_e == NULL)
+			blkq_e = blkq_s;
+		pthread_cond_signal(&blkq_wcd);
+		pthread_mutex_unlock(&blkq_mtx);
 
-		ch->blk = malloc(sizeof(msgblk_t));
-		ch->blk->chn = ch->chn;
-
+		ch->blk=NULL;
 		ch->Acarsstate = END;
 		ch->nbits = 8;
 		return;
@@ -350,14 +375,14 @@ void decodeAcars(channel_t * ch)
 }
 
 
-int deinitAcars(channel_t * ch)
+int deinitAcars(void)
 {
-	pthread_mutex_lock(&ch->blkmtx);
-	ch->acars_shutdown = 1;
-	pthread_cond_signal(&ch->blkwcd);
-	pthread_mutex_unlock(&ch->blkmtx);
+	pthread_mutex_lock(&blkq_mtx);
+	acars_shutdown = 1;
+	pthread_mutex_unlock(&blkq_mtx);
+	pthread_cond_signal(&blkq_wcd);
 
-	pthread_join(ch->th, NULL);
+	pthread_join(blkth_id, NULL);
 
 	return 0;
 }
