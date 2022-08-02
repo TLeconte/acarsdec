@@ -28,6 +28,7 @@
 #include "acarsdec.h"
 #include <signal.h>
 #include <unistd.h>
+#include "threadpool.h"
 
 // set the sameple rate by changing RTMULT
 // 2.5Ms/s is the best but could be over limit for some hardware
@@ -43,6 +44,17 @@ static int rtlInRate = 0;
 
 static int watchdogCounter = 50;
 static pthread_mutex_t cbMutex = PTHREAD_MUTEX_INITIALIZER;
+
+typedef struct {
+    unsigned char *rtlinbuff;
+    uint32_t nread;
+    channel_t *ch;
+} task_info_t;
+
+static task_info_t *task_info;
+static threadpool_task_t *tasks;
+static threadpool_t *demod_pool;
+
 
 #define RTLOUTBUFSZ 1024
 
@@ -302,8 +314,51 @@ int initRtl(char **argv, int optind)
 		return 1;
 	}
 
+
+    task_info = malloc(sizeof(task_info_t) * nbch);
+    tasks = malloc(sizeof(threadpool_task_t) * nbch);
+
+    demod_pool = threadpool_create(3, 0);
+
+    if (!task_info || !tasks || !demod_pool) {
+        fprintf(stderr, "ERROR : malloc\n");
+        return 1;
+    }
+
 	return 0;
 }
+
+static void demodChannel(channel_t *ch, unsigned char *rtlinbuff, uint32_t nread) {
+    int i,m;
+    float complex D,*wf;
+
+    wf = ch->wf;
+    m=0;
+    for (i = 0; i < rtlInBufSize;) {
+        int ind;
+
+        D = 0;
+        for (ind = 0; ind < rtlMult; ind++) {
+            float r, g;
+            float complex v;
+
+            r = (float)rtlinbuff[i] - (float)127.37; i++;
+            g = (float)rtlinbuff[i] - (float)127.37; i++;
+
+            v=r+g*I;
+            D+=v*wf[ind];
+        }
+        ch->dm_buffer[m++]=cabsf(D);
+    }
+    demodMSK(ch,m);
+}
+
+static void demodTask(void *arg, threadpool_threadbuffers_t *buffer_group) {
+    task_info_t *info = (task_info_t *) arg;
+
+    demodChannel(info->ch, info->rtlinbuff, info->nread);
+}
+
 
 static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
@@ -321,30 +376,20 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	status=0;
 
 	for (n = 0; n < nbch; n++) {
-		channel_t *ch = &(channel[n]);
-		int i,m;
-		float complex D,*wf;
+        task_info_t *info = &task_info[n];
 
-		wf = ch->wf;
-		m=0;
-		for (i = 0; i < rtlInBufSize;) {
-			int ind;
+        info->ch = &(channel[n]);
+        info->rtlinbuff = rtlinbuff;
+        info->nread = nread;
 
-			D = 0;
-			for (ind = 0; ind < rtlMult; ind++) {
-				float r, g;
-				float complex v;
+        threadpool_task_t *task = &tasks[n];
 
-				r = (float)rtlinbuff[i] - (float)127.37; i++;
-				g = (float)rtlinbuff[i] - (float)127.37; i++;
-
-				v=r+g*I;
-				D+=v*wf[ind];
-			}
-			ch->dm_buffer[m++]=cabsf(D);
-		}
-		demodMSK(ch,m);
+        task->function = demodTask;
+        task->argument = info;
 	}
+
+    threadpool_run(demod_pool, tasks, nbch);
+
 }
 
 static void *readThreadEntryPoint(void *arg) {
@@ -406,6 +451,14 @@ int runRtlClose(void) {
 	if (res) {
 		fprintf(stderr, "rtlsdr_close: %d\n", res);
 	}
+
+    free(tasks);
+    tasks = NULL;
+    free(task_info);
+    task_info = NULL;
+
+    threadpool_destroy(demod_pool);
+    demod_pool = NULL;
 
 	return res;
 }
