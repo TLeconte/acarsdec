@@ -86,7 +86,7 @@ static void usage(void)
 	fprintf(stderr,	"(libacars %s)\n", LA_VERSION);
 #endif
 	fprintf(stderr,
-		"\nUsage: acarsdec  [-v|--verbose] [-o lv] [-t time] [-A] [-b 'labels,..'] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
+		"\nUsage: acarsdec  [-o lv] [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " [--skip-reassembly] ");
 #endif
@@ -114,7 +114,6 @@ static void usage(void)
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
 #endif
 	fprintf(stderr, "\n\n");
-	fprintf(stderr, " -v, --verbose\t\t: verbose\n");
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " --skip-reassembly\t: disable reassembling fragmented ACARS messages\n");
 #endif
