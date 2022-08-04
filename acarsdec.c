@@ -47,6 +47,10 @@ int daily = 0;
 
 int signalExit = 0;
 
+#ifdef HAVE_LIBACARS
+int skip_reassembly = 0;
+#endif
+
 #ifdef WITH_RTL
 int gain = -100;
 int ppm = 0;
@@ -82,7 +86,10 @@ static void usage(void)
 	fprintf(stderr,	"(libacars %s)\n", LA_VERSION);
 #endif
 	fprintf(stderr,
-		"\nUsage: acarsdec  [-v] [-o lv] [-t time] [-A] [-b 'labels,..'] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
+		"\nUsage: acarsdec  [-v|--verbose] [-o lv] [-t time] [-A] [-b 'labels,..'] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
+#ifdef HAVE_LIBACARS
+	fprintf(stderr, " [--skip-reassembly] ");
+#endif
 #ifdef WITH_MQTT
 	fprintf(stderr, " [ -M mqtt_url");
 	fprintf(stderr, " [-T mqtt_topic] |");
@@ -107,7 +114,10 @@ static void usage(void)
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
 #endif
 	fprintf(stderr, "\n\n");
-	fprintf(stderr, " -v\t\t\t: verbose\n");
+	fprintf(stderr, " -v, --verbose\t\t: verbose\n");
+#ifdef HAVE_LIBACARS
+	fprintf(stderr, " --skip-reassembly\t: disable reassembling fragmented ACARS messages\n");
+#endif
 	fprintf(stderr,
 		" -i stationid\t\t: station id used in acarsdec network format.\n");
 	fprintf(stderr,
@@ -194,6 +204,11 @@ int main(int argc, char **argv)
 	int c;
 	int res, n;
 	struct sigaction sigact;
+	struct option long_opts[] = {
+		{ "verbose", no_argument, NULL, 'v' },
+		{ "skip-reassembly", no_argument, NULL, 1 },
+		{ NULL, 0, NULL, 0 }
+	};
 	char sys_hostname[HOST_NAME_MAX+1];
 	char *lblf=NULL;
 
@@ -202,7 +217,7 @@ int main(int argc, char **argv)
 	idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt(argc, argv, "HDvarfsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:")) != EOF) {
+	while ((c = getopt_long(argc, argv, "HDvarfsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:", long_opts, NULL)) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -217,6 +232,11 @@ int main(int argc, char **argv)
 		case 'b':
 			lblf=optarg;
 			break;
+#ifdef HAVE_LIBACARS
+		case 1:
+			skip_reassembly = 1;
+			break;
+#endif
 #ifdef WITH_ALSA
 		case 'a':
 			res = initAlsa(argv, optind);
