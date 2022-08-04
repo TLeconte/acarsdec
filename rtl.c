@@ -36,6 +36,8 @@
 // rtlMult 192	// 2.4000 Ms/s
 // rtlMult 200   // 2.5000 Ms/s
 
+#define RTLMULTMAX 320 // this is well beyond the rtl-sdr capabilities
+
 static rtlsdr_dev_t *dev = NULL;
 static int status = 0;
 static int rtlInBufSize = 0;
@@ -203,6 +205,10 @@ int initRtl(char **argv, int optind)
 	dev_index = verbose_device_search(argv[optind]);
 	optind++;
 
+	if (rtlMult > RTLMULTMAX) {
+		fprintf(stderr, "rtlMult can't be larger than 360\n");
+		return 1;
+	}
 
     rtlInBufSize = RTLOUTBUFSZ * rtlMult * 2;
     rtlInRate = INTRATE * rtlMult;
@@ -320,30 +326,37 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	}
 	status=0;
 
+	// code requires this relationship set in initRtl:
+	// rtlInBufSize = RTLOUTBUFSZ * rtlMult * 2;
+
+	float complex vb[RTLMULTMAX];
+	int i = 0;
+	for (int m = 0; m < RTLOUTBUFSZ; m++) {
+		for (int ind = 0; ind < rtlMult; ind++) {
+			float r, g;
+
+			r = (float)rtlinbuff[i] - 127.37f; i++;
+			g = (float)rtlinbuff[i] - 127.37f; i++;
+
+			vb[ind]=r+g*I;
+		}
+
+		for (n = 0; n < nbch; n++) {
+			channel_t *ch = &(channel[n]);
+			float complex D,*wf;
+
+			wf = ch->wf;
+			D = 0;
+			for (int ind = 0; ind < rtlMult; ind++) {
+				D += vb[ind] * wf[ind];
+			}
+			ch->dm_buffer[m]=cabsf(D);
+		}
+	}
+
 	for (n = 0; n < nbch; n++) {
 		channel_t *ch = &(channel[n]);
-		int i,m;
-		float complex D,*wf;
-
-		wf = ch->wf;
-		m=0;
-		for (i = 0; i < rtlInBufSize;) {
-			int ind;
-
-			D = 0;
-			for (ind = 0; ind < rtlMult; ind++) {
-				float r, g;
-				float complex v;
-
-				r = (float)rtlinbuff[i] - (float)127.37; i++;
-				g = (float)rtlinbuff[i] - (float)127.37; i++;
-
-				v=r+g*I;
-				D+=v*wf[ind];
-			}
-			ch->dm_buffer[m++]=cabsf(D);
-		}
-		demodMSK(ch,m);
+		demodMSK(ch,RTLOUTBUFSZ);
 	}
 }
 
