@@ -16,16 +16,16 @@ as the RTLSDR dongle, the AIRspy and the SDRplay device.
 It allows the user to directly monitor to up to 8 different frequencies simultaneously with very low cost hardware.
 
 ## Usage
-> acarsdec  [-v] [-o lv] [-t time] [-A] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
+> acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
 
- -v :			verbose
- 
- -A :			don't display uplink messages (ie : only aircraft messages)
- 
  -o lv :		output format : 0 : no log, 1 : one line by msg, 2 : full (default), 3 : monitor mode, 4 : msg JSON, 5 : route JSON
  
  -t time :		set forget time (TTL) in seconds in monitor mode(default=600s)
+
+ -A :			don't display uplink messages (ie : only aircraft messages)
  
+ -e :			don't output empty messages (ie : _d,Q0, etc ...)
+
  -l logfile :		append log messages to logfile (Default : stdout)
 
  -H :			rotate log file once every hour
@@ -171,6 +171,8 @@ It depends on some external libraries :
  * libmirsdrapi-rsp for sdrplay software radio input 
  * optionaly libacars for decoding ATS applications (https://github.com/szpajder/libacars)
 
+> :warning: Raspberry Pi users : read Troubleshooting first
+
 For rtl_sdr :
 > mkdir build
 
@@ -212,13 +214,16 @@ Notes :
  * For raspberry Pi and others ARM machines, the gcc compile option -march=native could not be working, so modify the add_compile_options in CMakeLists.txt to set the correct options for your platform.
 
 ## Troubleshooting
-It seems that the default compile options are sometime problematic.
-Change or remove the line :
+It seems that the default compile options are problematic on Raspberry Pi.
+In CMakeLists.txt change the line :
 
 > add_compile_options(-Ofast -march=native)
 
-in CMakeLists.txt and rebuild
+to 
 
+> add_compile_options(-Ofast -mcpu=cortex-a53 -mfpu=neon-fp-armv8)
+
+then rebuild (remove anyting in build directory then follow Compilation procedure)
 
 # Acarsserv
 
