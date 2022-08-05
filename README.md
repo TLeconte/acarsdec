@@ -21,7 +21,7 @@ For RTL-SDR:
 
 > acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
 
-For Airspy R2:
+For Airspy R2 / Mini:
 
 > acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] [-g gain] [-k airspy_serial] -s f1 [f2] [... fN] | -s f1 [f2] [... fN]
 
