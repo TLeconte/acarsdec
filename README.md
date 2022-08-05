@@ -19,11 +19,12 @@ It allows the user to directly monitor to up to 8 different frequencies simultan
 
 For RTL-SDR:
 
-> acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]
+`acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]`
+
 
 For Airspy R2 / Mini:
 
-> acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] [-g gain] [-k airspy_serial] -s f1 [f2] [... fN] | -s f1 [f2] [... fN]
+`acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] [-g gain] [-k airspy_serial] -s f1 [f2] [... fN] | -s f1 [f2] [... fN]`
 
  -o lv :		output format : 0 : no log, 1 : one line by msg, 2 : full (default), 3 : monitor mode, 4 : msg JSON, 5 : route JSON
  
@@ -76,10 +77,12 @@ for the SDRplay device
 
 Decoding from rtl dongle number 0 on 3 frequencies , sending aircraft messages only to 192.168.1.1 on port 5555
 and no other loging :
-> acarsdec -A -N 192.168.1.1:5555 -o0 -r 0 131.525 131.725 131.825
 
-Decoding from airspy on 3 frequencies with verbose logging
-> acarsdec -s 131.525 131.725 131.825
+`acarsdec -A -N 192.168.1.1:5555 -o0 -r 0 131.525 131.725 131.825`
+
+Decoding from airspy on 3 frequencies with verbose logging :
+
+`acarsdec -s 131.525 131.725 131.825`
 
 ### Output formats examples
 
@@ -184,54 +187,51 @@ It depends on some external libraries :
 > :warning: Raspberry Pi users : read Troubleshooting first
 
 For rtl_sdr :
-> mkdir build
-
-> cd build
-
-> cmake .. -Drtl=ON
-
-> make
-
-> sudo make install
+```
+mkdir build
+cd build
+cmake .. -Drtl=ON
+make
+sudo make install
+```
 
 For airspy :
-> mkdir build
-
-> cd build
-
-> cmake .. -Dairspy=ON
-
-> make
-
-> sudo make install
+```
+mkdir build
+cd build
+cmake .. -Dairspy=ON
+make
+sudo make install
+```
 
 For sdrplay :
-> mkdir build
-
-> cd build
-
-> cmake .. -Dsdrplay=ON
-
-> make
-
-> sudo make install
+```
+mkdir build
+cd build
+cmake .. -Dsdrplay=ON
+make
+sudo make install
+```
 
 Notes : 
- * For rtl_sdr, you could change the input sample rate by changing RTLMULT in rtl.c. Default is 2.0Ms/s which is a safe value. You could increase it for the better, but it could be over the limits of some hardware and will increase CPU usage too. 
  * Airspy version will set the R820T tuner bandwidth to suit given frequencies. See : (https://tleconte.github.io/R820T/r820IF.html)
  * libacars support is optional. If the library (version 2.0.0 or later) is installed and can be located with pkg-config, it will be enabled.
  * If you have call cmake .. -Dxxx one time, the option will be sticky . Remove build dir and redo to change sdr option.
- * For raspberry Pi and others ARM machines, the gcc compile option -march=native could not be working, so modify the add_compile_options in CMakeLists.txt to set the correct options for your platform.
-
+ 
 ## Troubleshooting
-It seems that the default compile options are problematic on Raspberry Pi.
+It seems that the default compile options `-march=native` is problematic on Raspberry Pi.
+
 In CMakeLists.txt change the line :
 
-> add_compile_options(-Ofast -march=native)
+`add_compile_options(-Ofast -march=native)`
 
-to 
+to :
 
-> add_compile_options(-Ofast -mcpu=cortex-a53 -mfpu=neon-fp-armv8)
+for PI 2B : `add_compile_options(-Ofast -mcpu=cortex-a7 -mfpu=neon-vfpv4)`
+
+for PI 3B : `add_compile_options(-Ofast -mcpu=cortex-a53 -mfpu=neon-fp-armv8)`
+
+for PI 4B : `add_compile_options(-Ofast -mcpu=cortex-a72 -mfpu=neon-fp-armv8)`
 
 then rebuild (remove anyting in build directory then follow Compilation procedure)
 
