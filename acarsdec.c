@@ -59,6 +59,7 @@ int rtlMult = 160;
 
 #ifdef WITH_AIR
 int gain = 18;
+uint64_t airspy_serial = 0;
 #endif
 
 #ifdef	WITH_SDRPLAY
@@ -108,7 +109,7 @@ static void usage(void)
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
-		"[-g linearity_gain] -s f1 [f2] ... [fN]");
+		"[-g linearity_gain] [-k airspy_serial_number] -s f1 [f2] ... [fN]");
 #endif
 #ifdef	WITH_SDRPLAY
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
@@ -170,6 +171,8 @@ static void usage(void)
 	fprintf(stderr,
 		" -g linearity_gain\t: set linearity gain [0-21] default : 18\n");
 	fprintf(stderr,
+		" -k airspy_serial\t: airspy serial number to bind to i9n hex, (ie : 0xA74068C82F591693)\n");
+	fprintf(stderr,
 		" -s f1 [f2]...[f%d]\t: decode from airspy receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef	WITH_SDRPLAY
@@ -216,7 +219,7 @@ int main(int argc, char **argv)
 	idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt_long(argc, argv, "HDvarfsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:", long_opts, NULL)) != EOF) {
+	while ((c = getopt_long(argc, argv, "HDvarfsRo:t:g:k:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:", long_opts, NULL)) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -282,6 +285,9 @@ int main(int argc, char **argv)
 		case 's':
 			res = initAirspy(argv, optind);
 			inmode = 4;
+			break;
+		case 'k':
+			airspy_serial = strtoull(optarg, NULL, 16);
 			break;
     		case 'g':
 			gain = atoi(optarg);

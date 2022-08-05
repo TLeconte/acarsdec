@@ -39,26 +39,27 @@ static const unsigned int r820t_lf[]={525548,656935,795424,898403,1186034,150207
 
 static unsigned int chooseFc(unsigned int minF,unsigned int maxF,int filter)
 {
-	unsigned int bw=maxF-minF+2*INTRATE;
-	unsigned int off=0;
-	int i,j;
+        unsigned int bw=maxF-minF+2*INTRATE;
+        unsigned int off=0;
+        int i,j;
 
-	if(filter) {
-		for(i=7;i>=0;i--)
-			if((r820t_hf[5]-r820t_lf[i])>=bw) break;
-		if(i<0) return 0;
+        if(filter) {
+                for(i=7;i>=0;i--)
+                        if((r820t_hf[5]-r820t_lf[i])>=bw) break;
 
-		for(j=5;j>=0;j--)
-			if((r820t_hf[j]-r820t_lf[i])<=bw) break;
-		j++;
+                if(i<0) return 0;
 
-		off=(r820t_hf[j]+r820t_lf[i])/2-AIRINRATE/4;
+                for(j=5;j>=0;j--)
+                        if((r820t_hf[j]-r820t_lf[i])<=bw) break;
+                j++;
 
-        	airspy_r820t_write(device, 10, 0xB0 | (15-j));
-        	airspy_r820t_write(device, 11, 0xE0 | (15-i));
-	}
+                off=(r820t_hf[j]+r820t_lf[i])/2-AIRINRATE/4;
 
-	return(((maxF+minF)/2+off+INTRATE/2)/INTRATE*INTRATE);
+                airspy_r820t_write(device, 10, 0xB0 | (15-j));
+                airspy_r820t_write(device, 11, 0xE0 | (15-i));
+        }
+
+        return(((maxF+minF)/2+off+INTRATE/2)/INTRATE*INTRATE);
 }
 
 int initAirspy(char **argv, int optind)
@@ -102,7 +103,15 @@ int initAirspy(char **argv, int optind)
 
 	/* init airspy */
 
-	result = airspy_open(&device);
+	if (airspy_serial > 0) {
+	    if (verbose) {
+		fprintf(stderr, "attempting to open airspy serial 0x%016lx\n", airspy_serial);
+	    }
+	    result = airspy_open_sn(&device, airspy_serial);
+	} else {
+	    result = airspy_open(&device);
+	}
+
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_open() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_exit();
@@ -132,17 +141,19 @@ int initAirspy(char **argv, int optind)
 		AIRMULT=AIRINRATE/INTRATE;
 		if((AIRMULT*INTRATE)==AIRINRATE) break;
 	}
+
 	if(i>=count) {
 		fprintf(stderr,"did not find needed sampling rate\n");
 		airspy_close(device);
 		airspy_exit();
 		return -1;
 	}
+
 	free(supported_samplerates);
-	
+
 	if (verbose)
 		fprintf(stderr,"Using %d sampling rate\n",AIRINRATE);
-	
+
 
 	result = airspy_set_samplerate(device, i);
 	if( result != AIRSPY_SUCCESS ) {
@@ -195,7 +206,7 @@ int initAirspy(char **argv, int optind)
 		AMFreq = 2.0*M_PI*(double)(Fc-ch->Fr+AIRINRATE/4)/(double)(AIRINRATE);
 		for (i = 0, Ph=0; i < AIRMULT; i++) {
 			ch->wf[i]=cexpf(Ph*-I)/AIRMULT;
-			Ph+=AMFreq;	
+			Ph+=AMFreq;
 			if(Ph>2.0*M_PI) Ph-=2.0*M_PI;
 			if(Ph<-2.0*M_PI) Ph+=2.0*M_PI;
 		}
@@ -207,8 +218,7 @@ int initAirspy(char **argv, int optind)
 int ind=0;
 static int rx_callback(airspy_transfer_t* transfer)
 {
-
-	float* pt_rx_buffer;	
+	float* pt_rx_buffer;
 	int n,i;
         int bo,be,ben,nbk;
 
@@ -219,63 +229,63 @@ static int rx_callback(airspy_transfer_t* transfer)
         be=nbk*AIRMULT+bo;
         ben=transfer->sample_count-be;
 
-	for(n=0;n<nbch;n++) {
-        	channel_t *ch = &(channel[n]);
+        for(n=0;n<nbch;n++) {
+                channel_t *ch = &(channel[n]);
                 float S;
                 int k,bn,m;
-        	float complex D;
+                float complex D;
 
-        	D=ch->D;
+                D=ch->D;
 
                 /* compute */
                 m=0;k=0;
                 for (i=ind; i < AIRMULT;i++,k++) {
                         S = pt_rx_buffer[k];
                         D += ch->wf[i] * S;
-                 }
-                 ch->dm_buffer[m++]=cabsf(D);
+                }
+                ch->dm_buffer[m++]=cabsf(D);
 
-                 for (bn=0; bn<nbk;bn++) {
+                for (bn=0; bn<nbk;bn++) {
                         D=0;
                         for (i=0; i < AIRMULT;i++,k++) {
                                 S = pt_rx_buffer[k];
                                 D += ch->wf[i] * S;
                         }
                         ch->dm_buffer[m++]=cabsf(D);
-                 }
+                }
 
-                 D=0;
-                 for (i=0; i<ben;i++,k++) {
+                D=0;
+                for (i=0; i<ben;i++,k++) {
                         S = pt_rx_buffer[k];
                         D += ch->wf[i] * S;
-                 }
-        	 ch->D=D;
+                }
+                ch->D=D;
 
-                 demodMSK(ch,m);
-	}
+                demodMSK(ch,m);
+        }
         ind=ben;
 
 	return 0;
 }
 
 
-int runAirspySample(void) 
+int runAirspySample(void)
 {
- int result ;
+        int result;
 
- result = airspy_start_rx(device, rx_callback, NULL);
- if( result != AIRSPY_SUCCESS ) {
-	fprintf(stderr,"airspy_start_rx() failed: %s (%d)\n", airspy_error_name(result), result);
-	airspy_close(device);
-	airspy_exit();
-	return -1;
- }
+        result = airspy_start_rx(device, rx_callback, NULL);
+        if( result != AIRSPY_SUCCESS ) {
+                fprintf(stderr,"airspy_start_rx() failed: %s (%d)\n", airspy_error_name(result), result);
+                airspy_close(device);
+                airspy_exit();
+                return -1;
+        }
 
- while(airspy_is_streaming(device) == AIRSPY_TRUE) {
- 	sleep(2);
- }
+        while(airspy_is_streaming(device) == AIRSPY_TRUE) {
+                sleep(2);
+        }
 
- return 0;
+        return 0;
 }
 
 #endif
