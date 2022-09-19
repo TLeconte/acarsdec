@@ -12,6 +12,7 @@
 #include "acarsdec.h"
 
 static int sockfd = -1;
+static char *netOutputRawaddr = NULL;
 
 
 int Netoutinit(char *Rawaddr)
@@ -20,6 +21,8 @@ int Netoutinit(char *Rawaddr)
 	char *port;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
+
+	netOutputRawaddr = Rawaddr;
 
 	memset(&hints, 0, sizeof hints);
 	if (Rawaddr[0] == '[') {
@@ -76,6 +79,25 @@ int Netoutinit(char *Rawaddr)
 	return 0;
 }
 
+static int Netwrite(const void *buf, size_t count) {
+    if (!netOutputRawaddr) {
+        return -1;
+    }
+
+    int res;
+	res = write(sockfd, buf, count);
+	if (res == -1) {
+		perror("Netwrite");
+		close(sockfd);
+        // retry the write if the reconnect succeeds
+        if (Netoutinit(netOutputRawaddr) == 0) {
+            res = write(sockfd, buf, count);
+        }
+	}
+	return res;
+}
+
+
 void Netoutpp(acarsmsg_t * msg)
 {
 	char pkt[3600]; // max. 16 blocks * 220 characters + extra space for msg prefix
@@ -91,7 +113,7 @@ void Netoutpp(acarsmsg_t * msg)
 		msg->mode, msg->addr, msg->ack, msg->label, msg->bid ? msg->bid : '.', msg->no,
 		msg->fid, txt);
 
-	res=write(sockfd, pkt, strlen(pkt));
+	res=Netwrite(pkt, strlen(pkt));
 	free(txt);
 }
 
@@ -110,7 +132,7 @@ void Netoutsv(acarsmsg_t * msg, char *idstation, int chn, struct timeval tv)
 		msg->err, (int)(msg->lvl), msg->mode, msg->addr, msg->ack, msg->label,
 		msg->bid ? msg->bid : '.', msg->no, msg->fid, msg->txt);
 
-	res=write(sockfd, pkt, strlen(pkt));
+	res=Netwrite(pkt, strlen(pkt));
 }
 
 void Netoutjson(char *jsonbuf)
@@ -119,7 +141,7 @@ void Netoutjson(char *jsonbuf)
 	int res;
 
 	snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
-	res=write(sockfd, pkt, strlen(pkt));
+	res=Netwrite(pkt, strlen(pkt));
 }
 
 
