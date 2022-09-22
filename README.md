@@ -24,7 +24,7 @@ For RTL-SDR:
 
 For Airspy R2 / Mini:
 
-`acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] [-g gain] [-k airspy_serial] -s f1 [f2] [... fN] | -s f1 [f2] [... fN]`
+> acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] [-g gain] -s airspydevicenumber f1 [f2] [... fN] | -s f1 [f2] [... fN]
 
  -o lv :		output format : 0 : no log, 1 : one line by msg, 2 : full (default), 3 : monitor mode, 4 : msg JSON, 5 : route JSON
  
@@ -61,9 +61,7 @@ for the RTLSDR device
 for the AirSpy device
  -g gain :              set airspy gain (0..21)
 
- -k airspy_serial_number :            decode from airspy device with supplied serial number specified in hex, ie 0xA74068C82F591693
-
- -s f1 [f2] ... [fN] :		decode from airspy receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
+ -s airspydevice f1 [f2] ... [fN] :		decode from airspy device number or S/N "airspydevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
 
 for the SDRplay device
 

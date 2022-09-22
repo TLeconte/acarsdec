@@ -20,6 +20,7 @@
 
 #define _GNU_SOURCE
 #include <stdlib.h>
+#include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -71,7 +72,93 @@ int initAirspy(char **argv, int optind)
 	int result;
 	uint32_t i,count;
 	uint32_t * supported_samplerates;
+        uint64_t airspy_serial = 0;
+        int airspy_device_count = 0;
+        uint64_t *airspy_device_list = NULL;
 
+
+        // Request the total number of libairspy devices connected, allocate space, then request the list.
+        result = airspy_device_count = airspy_list_devices(NULL, 0);
+        if(result < 1) {
+            if(result == 0) {
+                fprintf(stderr, "No airspy devices found.\n");
+            } else {
+                fprintf(stderr, "airspy_list_devices() failed: %s (%d).\n", airspy_error_name(result), result);
+            }
+            airspy_exit();
+            return -1;
+        }
+
+        airspy_device_list = (uint64_t *)malloc(sizeof(uint64_t)*airspy_device_count);
+        if (airspy_device_list == NULL) return -1;
+        result = airspy_list_devices(airspy_device_list, airspy_device_count);
+        if (result != airspy_device_count) {
+            fprintf(stderr, "airspy_list_devices() failed.\n");
+            free(airspy_device_list);
+            airspy_exit();
+            return -1;
+        }
+
+
+        // clear errno to catch invalid input.
+        errno = 0;
+        // Attempt to interpret first argument as a specific device serial.
+        airspy_serial = strtoull(argv[optind], &argF, 16);
+
+        // If strtoull result is an integer from 0 to airspy_device_count:
+        //  1. Attempt to open airspy serial indicated.
+        //  2. If successful, consume argument and continue.
+        // If still no device and strtoull successfully finds a 16bit hex value, then:
+        //  1. Attempt to open a specific airspy device using value as a serialnumber.
+        //  2. If succesful, consume argument and continue.
+        // If still no device and strtoull result fails
+        //  1. Iterate over list of airspy devices and attempt to open each one.
+        //  2. If opened succesfully, do not consume argument and continue.
+        // Else:
+        //  1. Give up.
+
+        if ( (argv[optind] != argF) && (errno == 0)) {
+            if ( (airspy_serial < airspy_device_count) ) {
+                if(verbose) {
+                    fprintf(stderr, "Attempting to open airspy device slot #%lu with serial %016lx.\n", airspy_serial, airspy_device_list[airspy_serial]);
+                }
+                result = airspy_open_sn(&device, airspy_device_list[airspy_serial]);
+                if (result == AIRSPY_SUCCESS) {
+                    optind++; // consume parameter
+                }
+            } else {
+                if (verbose) {
+                    fprintf(stderr, "Attempting to open airspy serial 0x%016lx\n", airspy_serial);
+                }
+                result = airspy_open_sn(&device, airspy_serial);
+                if (result == AIRSPY_SUCCESS) {
+                    optind++; // consume parameter
+                }
+            }
+        }
+
+        if (device == NULL) {
+            for(n = 0; n < airspy_device_count; n++) {
+                if (verbose) {
+                        fprintf(stderr, "Attempting to open airspy device #%d.\n", n);
+                }
+                result = airspy_open_sn(&device, airspy_device_list[n]);
+                if (result == AIRSPY_SUCCESS) 
+                    break;
+            }
+        }
+        memset(airspy_device_list, 0, sizeof(uint64_t)*airspy_device_count);
+        free(airspy_device_list);
+        airspy_device_list = NULL;
+
+        if (device == NULL) {
+            result = airspy_open(&device);
+            if (result != AIRSPY_SUCCESS) {
+                fprintf(stderr, "Failed to open any airspy device.\n");
+                airspy_exit();
+                return -1;
+            }
+        }
 
 	/* parse args */
 	nbch = 0;
@@ -103,16 +190,7 @@ int initAirspy(char **argv, int optind)
 
 	/* init airspy */
 
-	if (airspy_serial > 0) {
-	    if (verbose) {
-		fprintf(stderr, "attempting to open airspy serial 0x%016lx\n", airspy_serial);
-	    }
-	    result = airspy_open_sn(&device, airspy_serial);
-	} else {
-	    result = airspy_open(&device);
-	}
-
-	if( result != AIRSPY_SUCCESS ) {
+        if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_open() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_exit();
 		return -1;

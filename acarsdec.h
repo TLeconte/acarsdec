@@ -142,9 +142,6 @@ extern int mdly;
 extern int hourly, daily;
 
 extern int gain;
-#if defined(WITH_AIR)
-extern uint64_t airspy_serial;
-#endif
 extern int ppm;
 extern	int	lnaState;
 extern	int	GRdB;
