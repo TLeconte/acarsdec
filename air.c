@@ -190,12 +190,6 @@ int initAirspy(char **argv, int optind)
 
 	/* init airspy */
 
-        if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_open() failed: %s (%d)\n", airspy_error_name(result), result);
-		airspy_exit();
-		return -1;
-	}
-
 	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_FLOAT32_REAL);
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_set_sample_type() failed: %s (%d)\n", airspy_error_name(result), result);
