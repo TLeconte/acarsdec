@@ -108,7 +108,7 @@ static void usage(void)
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
-		"[-g linearity_gain] -s f1 [f2] ... [fN]");
+		"[-g linearity_gain] -s airspydevicenumber f1 [f2] ... [fN]");
 #endif
 #ifdef	WITH_SDRPLAY
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
@@ -170,7 +170,7 @@ static void usage(void)
 	fprintf(stderr,
 		" -g linearity_gain\t: set linearity gain [0-21] default : 18\n");
 	fprintf(stderr,
-		" -s f1 [f2]...[f%d]\t: decode from airspy receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+		" -s airspydevice f1 [f2]...[f%d]\t: decode from airspy dongle number or hex serial number receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef	WITH_SDRPLAY
 	fprintf (stderr,

@@ -27,7 +27,7 @@
 
 #define ACARSDEC_VERSION "3.7"
 
-#define MAXNBCHANNELS 8
+#define MAXNBCHANNELS 16
 #define INTRATE 12500
 
 #define NETLOG_NONE 0

@@ -16,7 +16,15 @@ as the RTLSDR dongle, the AIRspy and the SDRplay device.
 It allows the user to directly monitor to up to 8 different frequencies simultaneously with very low cost hardware.
 
 ## Usage
+
+For RTL-SDR:
+
 `acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] -r rtldevicenumber  f1 [f2] [... fN] | -s f1 [f2] [... fN]`
+
+
+For Airspy R2 / Mini:
+
+> acarsdec  [-o lv] [-t time] [-A] [-b filter ] [-e] [-n|N|j ipaddr:port] [-i stationid] [-l logfile [-H|-D]] [-g gain] -s airspydevicenumber f1 [f2] [... fN] | -s f1 [f2] [... fN]
 
  -o lv :		output format : 0 : no log, 1 : one line by msg, 2 : full (default), 3 : monitor mode, 4 : msg JSON, 5 : route JSON
  
@@ -50,9 +58,10 @@ for the RTLSDR device
  
  -p ppm :		set rtl ppm frequency correction
 
-for the AIRspy device
+for the AirSpy device
+ -g gain :              set airspy gain (0..21)
 
- -s f1 [f2] ... [fN] :		decode from airspy receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
+ -s airspydevice f1 [f2] ... [fN] :		decode from airspy device number or S/N "airspydevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
 
 for the SDRplay device
 
