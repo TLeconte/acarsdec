@@ -66,6 +66,12 @@ int	lnaState	= 2;
 int	GRdB		= 20;
 int	ppm		= 0;
 #endif
+#ifdef WITH_SOAPY
+double gain = -10.0;
+int ppm = 0;
+int rateMult = 160;
+int freq = 0;
+#endif
 
 #ifdef WITH_MQTT
 char *mqtt_urls[16];
@@ -112,6 +118,9 @@ static void usage(void)
 #endif
 #ifdef	WITH_SDRPLAY
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
+#endif
+#ifdef	WITH_SOAPY
+	fprintf (stderr, " [-g gain] [-p ppm] [-c freq] -d devicestring f1 [f2] .. [fN]");
 #endif
 	fprintf(stderr, "\n\n");
 #ifdef HAVE_LIBACARS
@@ -178,6 +187,15 @@ static void usage(void)
 	          "-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"\
 	          " -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
+#ifdef	WITH_SOAPY
+	fprintf(stderr,
+		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n");
+	fprintf(stderr, " -p ppm\t\t\t: set ppm frequency correction\n");
+	fprintf(stderr, " c freq\t\t\t: set center frequency to tune to\n");
+	fprintf(stderr, " -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
+	fprintf (stderr,
+		" -d devicestring f1 [f2] .. [f%d]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+#endif
 
 	fprintf(stderr,
 		" Up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
@@ -193,6 +211,8 @@ static void sigintHandler(int signum)
 #ifdef WITH_RTL
 	signalExit = 1;
 	runRtlCancel();
+#elif WITH_SOAPY
+	signalExit = 1;
 #else
 	exit(0);
 #endif
@@ -216,7 +236,7 @@ int main(int argc, char **argv)
 	idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt_long(argc, argv, "HDvarfsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:", long_opts, NULL)) != EOF) {
+	while ((c = getopt_long(argc, argv, "HDvarfdsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:", long_opts, NULL)) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -276,6 +296,24 @@ int main(int argc, char **argv)
 			break;
     		case 'G':
 			GRdB = atoi(optarg);
+			break;
+#endif
+#ifdef WITH_SOAPY
+		case 'd':
+			res = initSoapy(argv, optind);
+			inmode = 6;
+			break;
+		case 'p':
+			ppm = atoi(optarg);
+			break;
+		case 'c':
+			freq = atoi(optarg);
+			break;
+		case 'g':
+			gain = atof(optarg);
+			break;
+		case 'm':
+			rateMult = atoi(optarg);
 			break;
 #endif
 #ifdef WITH_AIR
@@ -344,7 +382,7 @@ int main(int argc, char **argv)
 	}
 
 	if (inmode == 0) {
-		fprintf(stderr, "Need at least one of -a|-f|-r|-R options\n");
+		fprintf(stderr, "Need at least one of -a|-f|-r|-R|-d options\n");
 		usage();
 	}
 
@@ -436,6 +474,12 @@ int main(int argc, char **argv)
 	case 5:
               res = runSdrplaySample ();
               break;
+#endif
+#ifdef WITH_SOAPY
+	case 6:
+		runSoapySample();
+		res = runSoapyClose();
+		break;
 #endif
 	default:
 		res = -1;

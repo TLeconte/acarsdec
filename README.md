@@ -71,6 +71,18 @@ for the SDRplay device
 
  -G GRdB:	set the Gain Reduction in dB's. -100 is used for agc.
 
+for the SoapySDR device
+
+ -d devicestring f1 [f2] ... [fN] :		 decode from a SoapySDR device at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 ).
+
+ -g gain :		set gain in db (-10 will result in AGC; default is AGC)
+
+ -p ppm :		set rtl ppm frequency correction
+
+ -c freq :		set center frequency to tune to
+
+ -m rateMult :		set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)
+
 ## Examples
 
 Decoding from rtl dongle number 0 on 3 frequencies , sending aircraft messages only to 192.168.1.1 on port 5555
