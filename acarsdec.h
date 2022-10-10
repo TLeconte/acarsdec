@@ -66,7 +66,7 @@ typedef struct {
 #if defined(WITH_AIR)
 	float complex D;
 #endif
-#if defined(WITH_SDRPLAY)
+#if defined(WITH_SDRPLAY) || defined(WITH_SOAPY)
 	float	Fr;
         float	complex *oscillator;
         float	complex D;
@@ -141,7 +141,6 @@ extern int emptymsg;
 extern int mdly;
 extern int hourly, daily;
 
-extern int gain;
 extern int ppm;
 extern	int	lnaState;
 extern	int	GRdB;
@@ -168,6 +167,16 @@ extern int rtlMult;
 #ifdef WITH_AIR
 extern int initAirspy(char **argv,int optind);
 extern int runAirspySample(void);
+#endif
+#ifdef WITH_SOAPY
+extern int initSoapy(char **argv,int optind);
+extern int runSoapySample(void);
+extern int runSoapyClose(void);
+extern int rateMult;
+extern int freq;
+extern double gain;
+#else
+extern int gain;
 #endif
 #ifdef WITH_MQTT
 extern int MQTTinit(char **urls, char * client_id, char *topic, char *user,char *passwd);
