@@ -132,7 +132,7 @@ int initSoapy(char **argv, int optind)
 			MAXNBCHANNELS);
 
 	if (nbch == 0) {
-		fprintf(stderr, "Need a least one frequency\n");
+ 		fprintf(stderr, "Need a least one frequency\n");
 		return 1;
 	}
 
@@ -180,6 +180,25 @@ int initSoapy(char **argv, int optind)
 
 	stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL);
 
+	return 0;
+}
+
+int soapySetAntenna(const char *antenna) {
+	if (dev == NULL) {
+		fprintf(stderr, "soapySetAntenna: SoapySDR not init'd\n");
+		return 1;
+	}
+	
+	if (antenna == NULL) {
+		fprintf(stderr, "soapySetAntenna: antenna is NULL\n");
+		return 1;
+	}
+
+	if (SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, 0, antenna) != 0) {
+		fprintf(stderr, "soapySetAntenna: SoapySDRDevice_setAntenna failed (check antenna validity)\n");
+		return 1;
+	}
+	
 	return 0;
 }
 

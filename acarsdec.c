@@ -67,6 +67,7 @@ int	GRdB		= 20;
 int	ppm		= 0;
 #endif
 #ifdef WITH_SOAPY
+char *antenna=NULL;
 double gain = -10.0;
 int ppm = 0;
 int rateMult = 160;
@@ -120,7 +121,7 @@ static void usage(void)
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
 #endif
 #ifdef	WITH_SOAPY
-	fprintf (stderr, " [-g gain] [-p ppm] [-c freq] -d devicestring f1 [f2] .. [fN]");
+	fprintf (stderr, " [--antenna antenna] [-g gain] [-p ppm] [-c freq] -d devicestring f1 [f2] .. [fN]");
 #endif
 	fprintf(stderr, "\n\n");
 #ifdef HAVE_LIBACARS
@@ -188,6 +189,8 @@ static void usage(void)
 	          " -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef	WITH_SOAPY
+	fprintf(stderr, 
+		" --antenna antenna\t: set antenna port to use\n");
 	fprintf(stderr,
 		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n");
 	fprintf(stderr, " -p ppm\t\t\t: set ppm frequency correction\n");
@@ -226,6 +229,9 @@ int main(int argc, char **argv)
 	struct option long_opts[] = {
 		{ "verbose", no_argument, NULL, 'v' },
 		{ "skip-reassembly", no_argument, NULL, 1 },
+#ifdef WITH_SOAPY
+		{ "antenna", required_argument, NULL, 2},
+#endif
 		{ NULL, 0, NULL, 0 }
 	};
 	char sys_hostname[HOST_NAME_MAX+1];
@@ -291,7 +297,7 @@ int main(int argc, char **argv)
 		case 'p':
 			ppm = atoi(optarg);
 			break;
-    		case 'L':
+    case 'L':
 			lnaState = atoi(optarg);
 			break;
     		case 'G':
@@ -299,6 +305,9 @@ int main(int argc, char **argv)
 			break;
 #endif
 #ifdef WITH_SOAPY
+		case 2:
+			antenna = optarg;
+			break;
 		case 'd':
 			res = initSoapy(argv, optind);
 			inmode = 6;
@@ -406,7 +415,7 @@ int main(int argc, char **argv)
 	}
 
 #ifdef WITH_MQTT
-	if(netout== NETLOG_MQTT) {
+	if (netout == NETLOG_MQTT) {
 		res = MQTTinit(mqtt_urls,idstation,mqtt_topic,mqtt_user,mqtt_passwd);
 		if (res) {
 			fprintf(stderr, "Unable to init MQTT\n");
@@ -415,6 +424,17 @@ int main(int argc, char **argv)
 	}
 #endif
 
+#ifdef WITH_SOAPY
+	if (antenna) {
+		if (verbose) fprintf(stderr, "Setting soapy antenna to %s\n", antenna);
+		res = soapySetAntenna(antenna);
+		if (res) {
+			fprintf(stderr, "Unable to set antenna for SoapySDR\n");
+			exit(res);
+		}
+	}
+#endif
+	
 	sigact.sa_handler = sigintHandler;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;

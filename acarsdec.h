@@ -170,6 +170,7 @@ extern int runAirspySample(void);
 #endif
 #ifdef WITH_SOAPY
 extern int initSoapy(char **argv,int optind);
+extern int soapySetAntenna(const char *antenna);
 extern int runSoapySample(void);
 extern int runSoapyClose(void);
 extern int rateMult;
