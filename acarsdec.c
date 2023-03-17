@@ -415,7 +415,7 @@ int main(int argc, char **argv)
 	}
 
 #ifdef WITH_MQTT
-	if (netout== NETLOG_MQTT) {
+	if (netout == NETLOG_MQTT) {
 		res = MQTTinit(mqtt_urls,idstation,mqtt_topic,mqtt_user,mqtt_passwd);
 		if (res) {
 			fprintf(stderr, "Unable to init MQTT\n");
