@@ -430,7 +430,7 @@ int main(int argc, char **argv)
 		res = soapySetAntenna(antenna);
 		if (res) {
 			fprintf(stderr, "Unable to set antenna for SoapySDR\n");
-			exit(res)
+			exit(res);
 		}
 	}
 #endif
