@@ -63,7 +63,7 @@ for the RTLSDR device
 for the AirSpy device
  -g gain :              set airspy gain (0..21)
 
- -s airspydevice f1 [f2] ... [fN] :		decode from airspy device number or S/N "airspydevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 2MHz.
+ -s airspydevice f1 [f2] ... [fN] :		decode from airspy device number or S/N "airspydevice" receiving at VHF frequencies "f1" and optionally "f2" to "fN" in Mhz (ie : -s  131.525 131.725 131.825 ). Frequencies must be within the same 3MHz for the airspy mini and 5 MHz for the airspy R2.
 
 for the SDRplay device
 
@@ -74,6 +74,8 @@ for the SDRplay device
  -G GRdB:	set the Gain Reduction in dB's. -100 is used for agc.
 
 for the SoapySDR device
+
+ --antenna antenna : set antenna port to use 
 
  -d devicestring f1 [f2] ... [fN] :		 decode from a SoapySDR device at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 ).
 
@@ -95,6 +97,22 @@ and no other loging :
 Decoding from airspy on 3 frequencies with verbose logging :
 
 `acarsdec -s 131.525 131.725 131.825`
+
+Decoding from rtl dongle with serial number `ACARS2` on 1 frequency with gain 34.0 :
+
+`acarsdec -g 34 -r ACARS2 130.450`
+
+Decoding from airspy mini with serial number `0xa74068c82f531693` on 11 frequencies with gain 18 :
+
+`acarsdec -g 18 -s 0xa74068c82f531693 129.350 130.025 130.425 130.450 130.650 131.125 131.475 131.550 131.600 131.725 131.850`
+
+Decoding from first airspy available with 3 frequencies :
+
+`acarsdec -s 130.450 131.550 131.125`
+
+Decoding with JSON output, an sdrplay device using Soapy driver, and specifying Antenna C :
+
+`acarsdec -o 4 -v --antenna "Antenna C" -d driver=sdrplay,agc_setpoint=-15 130.025 130.450 130.825 131.125 131.550 131.650 131.725`
 
 ### Output formats examples
 
@@ -224,6 +242,16 @@ cmake .. -Dsdrplay=ON
 make
 sudo make install
 ```
+
+For soapy :
+```
+mkdir build
+cd build
+cmake .. -Dsoapy=ON
+make
+sudo make install
+```
+
 
 Notes : 
  * Airspy version will set the R820T tuner bandwidth to suit given frequencies. See : (https://tleconte.github.io/R820T/r820IF.html)
