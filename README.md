@@ -96,17 +96,21 @@ Decoding from airspy on 3 frequencies with verbose logging :
 
 `acarsdec -s 131.525 131.725 131.825`
 
-Decoding from rtl dongle with serial number `ACARS2` on 1 frequency with gain 34.0:
+Decoding from rtl dongle with serial number `ACARS2` on 1 frequency with gain 34.0 :
 
 `acarsdec -g 34 -r ACARS2 130.450`
 
-Decoding from airspy mini with serial number `0xa74068c82f531693` on 11 frequencies with gain 18:
+Decoding from airspy mini with serial number `0xa74068c82f531693` on 11 frequencies with gain 18 :
 
 `acarsdec -g 18 -s 0xa74068c82f531693 129.350 130.025 130.425 130.450 130.650 131.125 131.475 131.550 131.600 131.725 131.850`
 
-Decoding from first airspy available with 3 frequencies:
+Decoding from first airspy available with 3 frequencies :
 
 `acarsdec -s 130.450 131.550 131.125`
+
+Decoding with JSON output, an sdrplay device using Soapy driver, and specifying Antenna C :
+
+`acarsdec -o 4 -v --antenna "Antenna C" -d driver=sdrplay,agc_setpoint=-15 130.025 130.450 130.825 131.125 131.550 131.650 131.725`
 
 ### Output formats examples
 
