@@ -45,19 +45,26 @@ static unsigned int chooseFc(unsigned int minF,unsigned int maxF,int filter)
         int i,j;
 
         if(filter) {
+                /* The reasoning and research for this is described here:
+                 * https://tleconte.github.io/R820T/r820IF.html */
+
                 for(i=7;i>=0;i--)
                         if((r820t_hf[5]-r820t_lf[i])>=bw) break;
 
-                if(i<0) return 0;
+                if(i<0) {
+                    fprintf(stderr, "Unable to use airspy R820T filter optimization, continuing.\n");
+                } else {
+                    fprintf(stderr, "Enabling airspy R820T filter optimization.\n");
 
-                for(j=5;j>=0;j--)
-                        if((r820t_hf[j]-r820t_lf[i])<=bw) break;
-                j++;
+                    for(j=5;j>=0;j--)
+                            if((r820t_hf[j]-r820t_lf[i])<=bw) break;
+                    j++;
 
-                off=(r820t_hf[j]+r820t_lf[i])/2-AIRINRATE/4;
+                    off=(r820t_hf[j]+r820t_lf[i])/2-AIRINRATE/4;
 
-                airspy_r820t_write(device, 10, 0xB0 | (15-j));
-                airspy_r820t_write(device, 11, 0xE0 | (15-i));
+                    airspy_r820t_write(device, 10, 0xB0 | (15-j));
+                    airspy_r820t_write(device, 11, 0xE0 | (15-i));
+                }
         }
 
         return(((maxF+minF)/2+off+INTRATE/2)/INTRATE*INTRATE);
