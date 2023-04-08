@@ -235,8 +235,8 @@ int initAirspy(char **argv, int optind)
 		return -1;
 	}
 
-       /* had problem with packing , disable it*/
-        airspy_set_packing(device, 0);
+       /* enable packed samples */
+        airspy_set_packing(device, 1);
 
 	result = airspy_set_linearity_gain(device, gain);
 	if( result != AIRSPY_SUCCESS ) {
