@@ -14,6 +14,8 @@
 static int sockfd = -1;
 static char *netOutputRawaddr = NULL;
 
+static struct sockaddr *netOutputAddr = NULL;
+static int netOutputAddrLen = 0;
 
 int Netoutinit(char *Rawaddr)
 {
@@ -54,23 +56,30 @@ int Netoutinit(char *Rawaddr)
 	hints.ai_socktype = SOCK_DGRAM;
 
 	if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
-		fprintf(stderr, "Invalid/unknown address %s\n", addr);
-		return -1;
+            if (rv == EAI_AGAIN) {
+                fprintf(stderr, "Temporary error resolving %s, retrying later.\n", addr);
+                return -1;
+            } else if (rv == EAI_FAIL) {
+                fprintf(stderr, "Host %s not found. Aborting.\n", addr);
+                exit(1);
+            }
+
+            fprintf(stderr, "Invalid/unknown error '%s' resolving '%s', retrying later.\n", gai_strerror(rv), addr);
+            return -1;
 	}
 
 	for (p = servinfo; p != NULL; p = p->ai_next) {
 		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-		continue;
+                    continue;
 		}
 
-		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-			close(sockfd);
-			continue;
-		}
+                netOutputAddrLen = p->ai_addrlen;
+                netOutputAddr = malloc(netOutputAddrLen);
+                memcpy(netOutputAddr, p->ai_addr, netOutputAddrLen);
 		break;
 	}
 	if (p == NULL) {
-		fprintf(stderr, "failed to connect\n");
+		fprintf(stderr, "failed to resolve: %s\n", addr);
 		return -1;
 	}
 
@@ -80,20 +89,28 @@ int Netoutinit(char *Rawaddr)
 }
 
 static int Netwrite(const void *buf, size_t count) {
+    int res;
     if (!netOutputRawaddr) {
         return -1;
     }
 
-    int res;
-    res = write(sockfd, buf, count);
-    if (res == -1) {
-        perror("Netwrite");
-        close(sockfd);
-        // retry the write if the reconnect succeeds
-        if (Netoutinit(netOutputRawaddr) == 0) {
-            res = write(sockfd, buf, count);
+    if (!netOutputAddrLen) { 
+        /* The destination address hasn't yet been succesfully resolved. */
+        res = Netoutinit(netOutputRawaddr);
+        if(!res) {
+            /* Resolution failed, so we'll drop this message and try again next time. */
+            return res;
         }
     }
+
+    res = sendto(sockfd, buf, count, 0, netOutputAddr, netOutputAddrLen);
+    if(!res && (errno == EAGAIN || errno == ECONNRESET || errno == EINTR)) {
+        /* Automatically retry these errors once and drop message if retry fails. */
+        return sendto(sockfd, buf, count, 0, netOutputAddr, netOutputAddrLen);
+    } else if (!res) {
+        perror("Netwrite");
+    }
+
     return res;
 }
 
