@@ -97,6 +97,8 @@ static void usage(void)
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " [--skip-reassembly] ");
 #endif
+	fprintf(stderr,
+            "-s |");
 #ifdef WITH_MQTT
 	fprintf(stderr, " [ -M mqtt_url");
 	fprintf(stderr, " [-T mqtt_topic] |");
@@ -159,6 +161,8 @@ static void usage(void)
 	fprintf(stderr, " -P mqtt_passwd\t\t: Optional MQTT password\n");
 #endif
 	fprintf(stderr, "\n");
+	fprintf(stderr,
+        " -s\t\t\t: decode from a raw IQ data stream on STDIN (sample rate: %d)\n",INTRATE);
 
 #ifdef WITH_ALSA
 	fprintf(stderr,
@@ -262,6 +266,10 @@ int main(int argc, char **argv)
 			skip_reassembly = 1;
 			break;
 #endif
+        case 's':
+            res = initStdIn(argv, optind);
+            inmode = 7;
+            break;
 #ifdef WITH_ALSA
 		case 'a':
 			res = initAlsa(argv, optind);
@@ -391,7 +399,7 @@ int main(int argc, char **argv)
 	}
 
 	if (inmode == 0) {
-		fprintf(stderr, "Need at least one of -a|-f|-r|-R|-d options\n");
+		fprintf(stderr, "Need at least one of -s|-a|-f|-r|-R|-d options\n");
 		usage();
 	}
 
@@ -501,6 +509,9 @@ int main(int argc, char **argv)
 		res = runSoapyClose();
 		break;
 #endif
+    case 7:
+        runStdInSample();
+        break;
 	default:
 		res = -1;
 	}

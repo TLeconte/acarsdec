@@ -149,6 +149,8 @@ extern int initOutput(char*,char *);
 #ifdef HAVE_LIBACARS
 extern int skip_reassembly;
 #endif
+extern int initStdIn(char **argv,int optind);
+extern int runStdInSample(void);
 #ifdef WITH_ALSA
 extern int initAlsa(char **argv,int optind);
 extern int runAlsaSample(void);

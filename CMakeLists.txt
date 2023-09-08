@@ -3,7 +3,7 @@ project (acarsdec C)
 
 add_compile_options(-Ofast -march=native)
 
-add_executable(acarsdec acars.c  acarsdec.c  cJSON.c  label.c  msk.c  output.c netout.c fileout.c )
+add_executable(acarsdec acars.c  acarsdec.c  cJSON.c  label.c  msk.c  output.c netout.c fileout.c stdin.c )
 
 find_package(PkgConfig)
 if(PKG_CONFIG_FOUND)
