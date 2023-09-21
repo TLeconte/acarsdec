@@ -162,7 +162,7 @@ static void usage(void)
 #endif
 	fprintf(stderr, "\n");
 	fprintf(stderr,
-        " -s\t\t\t: decode from a raw audio stream on STDIN (sample rate: %d; sample format: F32)\n",INTRATE);
+		" -s\t\t\t: decode from a raw audio stream on STDIN (sample rate: %d; sample format: F32)\n",INTRATE);
 
 #ifdef WITH_ALSA
 	fprintf(stderr,
