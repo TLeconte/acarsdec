@@ -98,7 +98,7 @@ static void usage(void)
 	fprintf(stderr, " [--skip-reassembly] ");
 #endif
 	fprintf(stderr,
-            "-s |");
+		"-s |");
 #ifdef WITH_MQTT
 	fprintf(stderr, " [ -M mqtt_url");
 	fprintf(stderr, " [-T mqtt_topic] |");
