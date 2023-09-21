@@ -20,35 +20,28 @@
 #include "acarsdec.h"
 #include <unistd.h>
 #include <malloc.h>
-#include <math.h>
 
 #define MAX_SAMPLES 1024
 
 int initStdIn(char **argv,int optind) {
     nbch = 1;
-    channel[0].dm_buffer=malloc(sizeof(float)*MAX_SAMPLES);
+    channel[0].dm_buffer=malloc(sizeof(sample_t)*MAX_SAMPLES);
     return 0;
 }
 
 int runStdInSample(void) {
     ssize_t nbi;
-    int i, samples;
-    sample_t buffer[MAX_SAMPLES * 2];
 
     do {
-        nbi = read(STDIN_FILENO, buffer, sizeof(sample_t) * MAX_SAMPLES * 2);
+        nbi = read(STDIN_FILENO, channel[0].dm_buffer, sizeof(sample_t) * MAX_SAMPLES);
 
         if (nbi <= 0) {
             return -1;
         }
 
-        samples = nbi / (sizeof(sample_t) * 2);
-
-        for (i = 0; i < samples; i++)
-            channel[0].dm_buffer[i]=hypotf(buffer[i * 2], buffer[i * 2 + 1]);
-
-        demodMSK(&(channel[0]),samples);
+        demodMSK(&(channel[0]), nbi / sizeof(sample_t));
 
     } while (1);
+
     return 0;
 }
