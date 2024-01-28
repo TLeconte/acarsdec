@@ -4,7 +4,7 @@ Since 3.0, It comes with a database backend : acarsserv to store received acars 
 
 ## Features :
 
- * up to 8 channels decoded simultaneously
+ * up to 16 channels decoded simultaneously
  * error detection AND correction
  * input via [rtl_sdr](https://sdr.osmocom.org/trac/wiki/rtl-sdr),
    or [airspy](https://airspy.com/) or [sdrplay](https://www.sdrplay.com) software defined radios (SDR)
@@ -13,7 +13,7 @@ Since 3.0, It comes with a database backend : acarsserv to store received acars 
 
 Multi-channel decoding is particularly useful with broadband devices such
 as the RTLSDR dongle, the AIRspy and the SDRplay device.
-It allows the user to directly monitor to up to 8 different frequencies simultaneously with very low cost hardware.
+It allows the user to directly monitor to up to 16 different frequencies simultaneously with very low cost hardware.
 
 ## Usage
 
