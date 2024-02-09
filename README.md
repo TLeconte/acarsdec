@@ -58,6 +58,8 @@ for the RTLSDR device
  
  -p ppm :		set rtl ppm frequency correction
 
+ -B bias : 		Enable (1) or Disable (0) the bias tee (default is 0)
+
 for the AirSpy device
  -g gain :              set airspy gain (0..21)
 
