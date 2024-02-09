@@ -112,7 +112,7 @@ static void usage(void)
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
-		" [-g gain] [-p ppm] [-b bias] -r rtldevicenumber  f1 [f2] ... [fN]");
+		" [-g gain] [-p ppm] [-B bias] -r rtldevicenumber  f1 [f2] ... [fN]");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
@@ -174,6 +174,7 @@ static void usage(void)
 		" -g gain\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n");
 	fprintf(stderr, " -p ppm\t\t\t: set rtl ppm frequency correction\n");
 	fprintf(stderr, " -m rtlMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
+	fprintf(stderr, " -B bias\t\t\t: Enable (1) or Disable (0) the bias tee (default is 0)\n");
 	fprintf(stderr,
 		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
