@@ -308,6 +308,13 @@ int initRtl(char **argv, int optind)
 		return 1;
 	}
 
+	r = rtlsdr_set_bias_tee(dev, bias);
+	if (verbose) 
+		fprintf(stderr, "Set Bias Tee to %d\n", bias);
+	if(r < 0){
+		fprintf(stderr, "WARNING: Failed to set bias tee\n");
+		return 1;
+	}
 	return 0;
 }
 
