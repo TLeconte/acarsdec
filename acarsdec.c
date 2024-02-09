@@ -55,6 +55,7 @@ int skip_reassembly = 0;
 int gain = -100;
 int ppm = 0;
 int rtlMult = 160;
+int bias = 0;
 #endif
 
 #ifdef WITH_AIR
@@ -111,7 +112,7 @@ static void usage(void)
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
-		" [-g gain] [-p ppm] -r rtldevicenumber  f1 [f2] ... [fN]");
+		" [-g gain] [-p ppm] [-b bias] -r rtldevicenumber  f1 [f2] ... [fN]");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
@@ -242,7 +243,7 @@ int main(int argc, char **argv)
 	idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt_long(argc, argv, "HDvarfdsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:", long_opts, NULL)) != EOF) {
+	while ((c = getopt_long(argc, argv, "HDvarfdsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:B:", long_opts, NULL)) != EOF) {
 
 		switch (c) {
 		case 'v':
@@ -287,6 +288,9 @@ int main(int argc, char **argv)
 			break;
 		case 'm':
 			rtlMult = atoi(optarg);
+			break;
+		case 'B':
+			bias = atoi(optarg);
 			break;
 #endif
 #ifdef	WITH_SDRPLAY

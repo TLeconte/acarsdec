@@ -142,6 +142,7 @@ extern int mdly;
 extern int hourly, daily;
 
 extern int ppm;
+extern int bias;
 extern	int	lnaState;
 extern	int	GRdB;
 extern int initOutput(char*,char *);
