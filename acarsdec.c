@@ -25,6 +25,7 @@
 #include <sched.h>
 #include <unistd.h>
 #include <limits.h>
+#include <err.h>
 #ifdef HAVE_LIBACARS
 #include <libacars/version.h>
 #endif
@@ -51,27 +52,19 @@ int signalExit = 0;
 int skip_reassembly = 0;
 #endif
 
-#ifdef WITH_RTL
-int gain = -100;
+float gain = 0;
 int ppm = 0;
-int rtlMult = 160;
+int rateMult = 160;
+#ifdef WITH_RTL
 int bias = 0;
-#endif
-
-#ifdef WITH_AIR
-int gain = 18;
 #endif
 
 #ifdef	WITH_SDRPLAY
 int	lnaState	= 2;
 int	GRdB		= 20;
-int	ppm		= 0;
 #endif
 #ifdef WITH_SOAPY
 char *antenna=NULL;
-double gain = -10.0;
-int ppm = 0;
-int rateMult = 160;
 int freq = 0;
 #endif
 
@@ -112,18 +105,19 @@ static void usage(void)
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
-		" [-g gain] [-p ppm] [-B bias] -r rtldevicenumber  f1 [f2] ... [fN]");
+		" -r rtldevicenumber [rtlopts] |");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
-		"[-g linearity_gain] -s airspydevicenumber f1 [f2] ... [fN]");
+		" -s airspydevicenumber [airspyopts] |");
 #endif
 #ifdef	WITH_SDRPLAY
-	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
+	fprintf (stderr, " -s [sdrplayopts] |");
 #endif
 #ifdef	WITH_SOAPY
-	fprintf (stderr, " [--antenna antenna] [-g gain] [-p ppm] [-c freq] -d devicestring f1 [f2] .. [fN]");
+	fprintf (stderr, " -d devicestring [soapyopts]");
 #endif
+	fprintf (stderr, " f1 [f2] .. [fN]");
 	fprintf(stderr, "\n\n");
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " --skip-reassembly\t: disable reassembling fragmented ACARS messages\n");
@@ -170,40 +164,44 @@ static void usage(void)
 		" -f inputwavfile\t: decode from a wav file at %d sampling rate\n",INTRATE);
 #endif
 #ifdef WITH_RTL
+	fprintf(stderr, "\n rtlopts:\n");
 	fprintf(stderr,
 		" -g gain\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n");
 	fprintf(stderr, " -p ppm\t\t\t: set rtl ppm frequency correction\n");
-	fprintf(stderr, " -m rtlMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
+	fprintf(stderr, " -m rateMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
 	fprintf(stderr, " -B bias\t\t\t: Enable (1) or Disable (0) the bias tee (default is 0)\n");
 	fprintf(stderr,
 		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef WITH_AIR
+	fprintf(stderr, "\n airspyopts:\n");
 	fprintf(stderr,
 		" -g linearity_gain\t: set linearity gain [0-21] default : 18\n");
 	fprintf(stderr,
 		" -s airspydevice f1 [f2]...[f%d]\t: decode from airspy dongle number or hex serial number receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef	WITH_SDRPLAY
+	fprintf(stderr, "\n sdrplayopts:\n");
 	fprintf (stderr,
 	          "-L lnaState: set the lnaState (depends on the device)\n"\
 	          "-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"\
 	          " -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef	WITH_SOAPY
-	fprintf(stderr, 
+	fprintf(stderr, "\n soapyopts:\n");
+	fprintf(stderr,
 		" --antenna antenna\t: set antenna port to use\n");
 	fprintf(stderr,
 		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n");
 	fprintf(stderr, " -p ppm\t\t\t: set ppm frequency correction\n");
-	fprintf(stderr, " c freq\t\t\t: set center frequency to tune to\n");
+	fprintf(stderr, " -c freq\t\t: set center frequency to tune to\n");
 	fprintf(stderr, " -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
 	fprintf (stderr,
 		" -d devicestring f1 [f2] .. [f%d]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 
 	fprintf(stderr,
-		" Up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
+		"\n Up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
 	exit(1);
 }
 
@@ -266,29 +264,35 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_ALSA
 		case 'a':
+			if (inmode)
+				errx(-1, "Only 1 input allowed");
 			res = initAlsa(argv, optind);
 			inmode = 1;
 			break;
 #endif
 #ifdef WITH_SNDFILE
 		case 'f':
+			if (inmode)
+				errx(-1, "Only 1 input allowed");
 			res = initSoundfile(argv, optind);
 			inmode = 2;
 			break;
 #endif
-#ifdef WITH_RTL
-		case 'r':
-			res = initRtl(argv, optind);
-			inmode = 3;
+		case 'g':
+			gain = atof(optarg);
 			break;
 		case 'p':
 			ppm = atoi(optarg);
 			break;
-		case 'g':
-			gain = 10 * atof(optarg);
-			break;
 		case 'm':
-			rtlMult = atoi(optarg);
+			rateMult = atoi(optarg);
+			break;
+#ifdef WITH_RTL
+		case 'r':
+			if (inmode)
+				errx(-1, "Only 1 input allowed");
+			res = initRtl(argv, optind);
+			inmode = 3;
 			break;
 		case 'B':
 			bias = atoi(optarg);
@@ -296,11 +300,10 @@ int main(int argc, char **argv)
 #endif
 #ifdef	WITH_SDRPLAY
 		case 's':
+			if (inmode)
+				errx(-1, "Only 1 input allowed");
 			res = initSdrplay (argv, optind);
 			inmode = 5;
-			break;
-		case 'p':
-			ppm = atoi(optarg);
 			break;
     case 'L':
 			lnaState = atoi(optarg);
@@ -314,29 +317,21 @@ int main(int argc, char **argv)
 			antenna = optarg;
 			break;
 		case 'd':
+			if (inmode)
+				errx(-1, "Only 1 input allowed");
 			res = initSoapy(argv, optind);
 			inmode = 6;
-			break;
-		case 'p':
-			ppm = atoi(optarg);
 			break;
 		case 'c':
 			freq = atoi(optarg);
 			break;
-		case 'g':
-			gain = atof(optarg);
-			break;
-		case 'm':
-			rateMult = atoi(optarg);
-			break;
 #endif
 #ifdef WITH_AIR
 		case 's':
+			if (inmode)
+				errx(-1, "Only 1 input allowed");
 			res = initAirspy(argv, optind);
 			inmode = 4;
-			break;
-    		case 'g':
-			gain = atoi(optarg);
 			break;
 #endif
 #ifdef WITH_MQTT
@@ -486,12 +481,16 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_RTL
 	case 3:
+		if (!gain)
+			gain = -10;
 		runRtlSample();
 		res = runRtlClose();
 		break;
 #endif
 #ifdef WITH_AIR
 	case 4:
+		if (!gain)
+			gain = 18;
 		res = runAirspySample();
 		break;
 #endif
@@ -502,6 +501,8 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_SOAPY
 	case 6:
+		if (!gain)
+			gain = -10;
 		runSoapySample();
 		res = runSoapyClose();
 		break;

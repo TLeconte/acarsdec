@@ -90,7 +90,7 @@ int initSoapy(char **argv, int optind)
 
 	soapyInBuf = malloc(sizeof(int16_t) * soapyInBufSize);
 
-	if (gain == -10.0) {
+	if (gain <= -10.0) {
 		if (verbose)
 			fprintf(stderr, "Tuner gain: AGC\n");
 		r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 1);

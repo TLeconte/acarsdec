@@ -245,7 +245,7 @@ int initAirspy(char **argv, int optind)
        /* enable packed samples */
         airspy_set_packing(device, 1);
 
-	result = airspy_set_linearity_gain(device, gain);
+	result = airspy_set_linearity_gain(device, (int)gain);
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_set_vga_gain() failed: %s (%d)\n", airspy_error_name(result), result);
 	}
@@ -282,7 +282,7 @@ int initAirspy(char **argv, int optind)
 		}
 		ch->D=0;
 
-		AMFreq = 2.0*M_PI*(double)(Fc-ch->Fr+AIRINRATE/4)/(double)(AIRINRATE);
+		AMFreq = 2.0*M_PI*(Fc-ch->Fr+(double)AIRINRATE/4)/(double)(AIRINRATE);
 		for (i = 0, Ph=0; i < AIRMULT; i++) {
 			ch->wf[i]=cexpf(Ph*-I)/AIRMULT;
 			Ph+=AMFreq;

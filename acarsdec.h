@@ -64,13 +64,9 @@ typedef struct {
 	int chn;
 
 #if defined(WITH_RTL) || defined(WITH_AIR)
-	int Fr;
 	float complex *wf;
 #endif
-#if defined(WITH_AIR)
-	float complex D;
-#endif
-#if defined(WITH_SDRPLAY) || defined(WITH_SOAPY)
+#if defined(WITH_RTL) || defined(WITH_SDRPLAY) || defined(WITH_SOAPY) || defined(WITH_AIR)
 	float	Fr;
         float	complex *oscillator;
         float	complex D;
@@ -145,8 +141,10 @@ extern int emptymsg;
 extern int mdly;
 extern int hourly, daily;
 
+extern float gain;
 extern int ppm;
 extern int bias;
+extern int rateMult;
 extern	int	lnaState;
 extern	int	GRdB;
 extern int initOutput(char*,char *);
@@ -167,7 +165,6 @@ extern int initRtl(char **argv,int optind);
 extern int runRtlSample(void);
 extern int runRtlCancel(void);
 extern int runRtlClose(void);
-extern int rtlMult;
 #endif
 #ifdef WITH_AIR
 extern int initAirspy(char **argv,int optind);
@@ -178,11 +175,7 @@ extern int initSoapy(char **argv,int optind);
 extern int soapySetAntenna(const char *antenna);
 extern int runSoapySample(void);
 extern int runSoapyClose(void);
-extern int rateMult;
 extern int freq;
-extern double gain;
-#else
-extern int gain;
 #endif
 #ifdef WITH_MQTT
 extern int MQTTinit(char **urls, char * client_id, char *topic, char *user,char *passwd);

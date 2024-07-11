@@ -32,9 +32,9 @@
 // set the sameple rate by changing RTMULT
 // 2.5Ms/s is the best but could be over limit for some hardware
 // 2.0Ms/s is safer
-// rtlMult 160	// 2.0000 Ms/s
-// rtlMult 192	// 2.4000 Ms/s
-// rtlMult 200   // 2.5000 Ms/s
+// rateMult 160	// 2.0000 Ms/s
+// rateMult 192	// 2.4000 Ms/s
+// rateMult 200   // 2.5000 Ms/s
 
 #define RTLMULTMAX 320 // this is well beyond the rtl-sdr capabilities
 
@@ -209,13 +209,13 @@ int initRtl(char **argv, int optind)
 	dev_index = verbose_device_search(argv[optind]);
 	optind++;
 
-	if (rtlMult > RTLMULTMAX) {
-		fprintf(stderr, "rtlMult can't be larger than 360\n");
+	if (rateMult > RTLMULTMAX) {
+		fprintf(stderr, "rateMult can't be larger than 360\n");
 		return 1;
 	}
 
-    rtlInBufSize = RTLOUTBUFSZ * rtlMult * 2;
-    rtlInRate = INTRATE * rtlMult;
+    rtlInBufSize = RTLOUTBUFSZ * rateMult * 2;
+    rtlInRate = INTRATE * rateMult;
 
 	r = rtlsdr_open(&dev, dev_index);
 	if (r < 0) {
@@ -223,16 +223,17 @@ int initRtl(char **argv, int optind)
 		return r;
 	}
 
-	if (gain > 520 || gain == -100) {
+	if (gain > 52.0F || gain <= 10.0F) {
 		if (verbose)
 			fprintf(stderr, "Tuner gain: AGC\n");
 		r = rtlsdr_set_tuner_gain_mode(dev, 0);
 	} else {
 		rtlsdr_set_tuner_gain_mode(dev, 1);
-        gain = nearest_gain(gain);
+        gain = nearest_gain((int)(gain*10.0F));
+	gain /= 10.0F;
         if (verbose)
-            fprintf(stderr, "Tuner gain: %f\n", (float)gain / 10.0);
-		r = rtlsdr_set_tuner_gain(dev, gain);
+            fprintf(stderr, "Tuner gain: %.1f\n", gain);
+		r = rtlsdr_set_tuner_gain(dev, (int)(gain*10.0F));
 	}
 	if (r < 0)
 		fprintf(stderr, "WARNING: Failed to set gain.\n");
@@ -278,15 +279,15 @@ int initRtl(char **argv, int optind)
 		int ind;
 		float AMFreq;
 
-		ch->wf = malloc(rtlMult * sizeof(float complex));
+		ch->wf = malloc(rateMult * sizeof(float complex));
 		ch->dm_buffer=malloc(RTLOUTBUFSZ*sizeof(float));
 		if( ch->wf == NULL || ch->dm_buffer == NULL) {
 			fprintf(stderr, "ERROR : malloc\n");
 			return 1;
 		}
 		AMFreq = (ch->Fr - (float)Fc) / (float)(rtlInRate) * 2.0 * M_PI;
-		for (ind = 0; ind < rtlMult; ind++) {
-			ch->wf[ind]=cexpf(AMFreq*ind*-I)/rtlMult/127.5;
+		for (ind = 0; ind < rateMult; ind++) {
+			ch->wf[ind]=cexpf(AMFreq*ind*-I)/rateMult/127.5;
 		}
 	}
 
@@ -338,12 +339,12 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	status=0;
 
 	// code requires this relationship set in initRtl:
-	// rtlInBufSize = RTLOUTBUFSZ * rtlMult * 2;
+	// rtlInBufSize = RTLOUTBUFSZ * rateMult * 2;
 
 	float complex vb[RTLMULTMAX];
 	int i = 0;
 	for (int m = 0; m < RTLOUTBUFSZ; m++) {
-		for (int ind = 0; ind < rtlMult; ind++) {
+		for (int ind = 0; ind < rateMult; ind++) {
 			float r, g;
 
 			r = (float)rtlinbuff[i] - 127.37f; i++;
@@ -358,7 +359,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 
 			wf = ch->wf;
 			D = 0;
-			for (int ind = 0; ind < rtlMult; ind++) {
+			for (int ind = 0; ind < rateMult; ind++) {
 				D += vb[ind] * wf[ind];
 			}
 			ch->dm_buffer[m]=cabsf(D);
