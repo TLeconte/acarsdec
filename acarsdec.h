@@ -27,6 +27,10 @@
 
 #define ACARSDEC_VERSION "3.7"
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 255
+#endif
+
 #define MAXNBCHANNELS 16
 #define INTRATE 12500
 
