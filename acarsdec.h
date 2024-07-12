@@ -130,8 +130,6 @@ extern unsigned long wrkmask;
 extern pthread_mutex_t datamtx;
 extern pthread_cond_t datawcd;
 
-extern int signalExit;
-
 extern int inpmode;
 extern int verbose;
 extern int outtype;

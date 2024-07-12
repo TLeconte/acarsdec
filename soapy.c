@@ -4,7 +4,6 @@
 
 #include <complex.h>
 #include <math.h>
-#include <pthread.h>
 #include <signal.h>
 #include <SoapySDR/Device.h>
 #include <SoapySDR/Formats.h>
@@ -21,9 +20,7 @@ static SoapySDRStream *stream = NULL;
 static int16_t* soapyInBuf = NULL;
 static int soapyInBufSize = 0;
 static int soapyInRate = 0;
-static int watchdogCounter = 50;
-static int current_index = 0;
-static pthread_mutex_t cbMutex = PTHREAD_MUTEX_INITIALIZER;
+static int soapyExit = 0;
 
 #define SOAPYOUTBUFSZ 1024
 
@@ -80,7 +77,7 @@ int initSoapy(char **argv, int optind)
 
 	dev = SoapySDRDevice_makeStrArgs(argv[optind]);
 	if(dev == NULL) {
-		fprintf(stderr, "Error opening SoapySDR device using string \"%s\": %s", argv[optind], SoapySDRDevice_lastError());
+		fprintf(stderr, "Error opening SoapySDR device using string \"%s\": %s\n", argv[optind], SoapySDRDevice_lastError());
 		return -1;
 	}
 	optind++;
@@ -179,6 +176,10 @@ int initSoapy(char **argv, int optind)
 		fprintf(stderr, "WARNING: Failed to set sample rate: %s\n", SoapySDRDevice_lastError());
 
 	stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL);
+	if (!stream) {
+		fprintf(stderr, "WARNING: Failed to setup SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+		return 1;
+	}
 
 	return 0;
 }
@@ -202,35 +203,39 @@ int soapySetAntenna(const char *antenna) {
 	return 0;
 }
 
-static void *readThreadEntryPoint(void *arg) {
-	int n;
+int runSoapySample(void)
+{
+	int current_index = 0;
+	int n, i, local_ind;
 	int res = 0;
 	int flags = 0;
 	long long timens = 0;
 	void* bufs[] = { soapyInBuf };
 
-	SoapySDRDevice_activateStream(dev, stream, 0, 0, 0);
+	if (SoapySDRDevice_activateStream(dev, stream, 0, 0, 0)) {
+		fprintf(stderr, "WARNING: Failed to activate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+		return 1;
+	}
 
-	while(!signalExit) {
-		pthread_mutex_lock(&cbMutex);
-		watchdogCounter = 50;
-		pthread_mutex_unlock(&cbMutex);
-
+	while(!soapyExit) {
 		flags = 0;
 		res = SoapySDRDevice_readStream(dev, stream, bufs, soapyInBufSize/2, &flags, &timens, 10000000);
-		if(res <= 0) {
-			fprintf(stderr, "WARNING: Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
-			pthread_mutex_lock(&cbMutex);
-			signalExit = 1;
-			pthread_mutex_unlock(&cbMutex);
-			return NULL;
+		if (res == 0) {
+			usleep(500);
+			continue;	// retry
+		}
+		if (res < 0) {
+			if (res == SOAPY_SDR_OVERFLOW)
+				continue;
+			if (!soapyExit) {
+				fprintf(stderr, "WARNING: Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
+				return 1;
+			}
+			break;
 		}
 
-		int n, i;
-		int	local_ind;
-
 		for (n = 0; n < nbch; n++) {
-	   		local_ind = current_index;
+			local_ind = current_index;
 			channel_t *ch = &(channel[n]);
 			float complex D = ch->D;
 
@@ -253,52 +258,13 @@ static void *readThreadEntryPoint(void *arg) {
 		}
 		current_index = (current_index + res) % rateMult;
 	}
-
-	pthread_mutex_lock(&cbMutex);
-	signalExit = 1;
-	pthread_mutex_unlock(&cbMutex);
-	return NULL;
-}
-
-int runSoapySample(void)
-{
-	pthread_t readThread;
-	pthread_create(&readThread, NULL, readThreadEntryPoint, NULL);
-
-	pthread_mutex_lock(&cbMutex);
-
-	while (!signalExit) {
-		if (--watchdogCounter <= 0) {
-			fprintf(stderr, "No data from SoapySDR for 5 seconds, exiting ...\n");
-			break;
-		}
-		pthread_mutex_unlock(&cbMutex);
-		usleep(100 * 1000); // 0.1 seconds
-		pthread_mutex_lock(&cbMutex);
-	}
-
-	pthread_mutex_unlock(&cbMutex);
-
-	int count = 100; // 10 seconds
-	int err = 0;
-	// Wait on reader thread exit
-	while (count-- > 0 && (err = pthread_tryjoin_np(readThread, NULL))) {
-		usleep(100 * 1000); // 0.1 seconds
-	}
-	if (err) {
-		fprintf(stderr, "Receive thread termination failed, will raise SIGKILL to ensure we die!\n");
-		raise(SIGKILL);
-		return 1;
-	}
 	return 0;
 }
 
 int runSoapyClose(void) {
 	int res = 0;
-	if (soapyInBuf) {
-		free(soapyInBuf);
-		soapyInBuf = NULL;
-	}
+	soapyExit = 1;
+
 	if (stream) {
 		res = SoapySDRDevice_closeStream(dev, stream);
 		stream = NULL;
@@ -315,6 +281,11 @@ int runSoapyClose(void) {
 		dev = NULL;
 		if (res != 0)
 			fprintf(stderr, "WARNING: Failed to close SoapySDR device: %s\n", SoapySDRDevice_lastError());
+	}
+
+	if (soapyInBuf) {
+		free(soapyInBuf);
+		soapyInBuf = NULL;
 	}
 
 	return res;

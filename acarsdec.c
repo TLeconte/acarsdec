@@ -46,8 +46,6 @@ int mdly=600;
 int hourly = 0;
 int daily = 0;
 
-int signalExit = 0;
-
 #ifdef HAVE_LIBACARS
 int skip_reassembly = 0;
 #endif
@@ -214,7 +212,7 @@ static void sigintHandler(int signum)
 #ifdef WITH_RTL
 	runRtlCancel();
 #elif WITH_SOAPY
-	signalExit = 1;
+	runSoapyClose();
 #else
 	exit(0);
 #endif
@@ -502,8 +500,7 @@ int main(int argc, char **argv)
 	case 6:
 		if (!gain)
 			gain = -10;
-		runSoapySample();
-		res = runSoapyClose();
+		res = runSoapySample();
 		break;
 #endif
 	default:
