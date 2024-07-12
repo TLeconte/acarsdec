@@ -18,10 +18,6 @@
 #include <math.h>
 #include "acarsdec.h"
 
-pthread_mutex_t chmtx;
-pthread_cond_t chprcd,chcscd;
-int chmsk,tmsk;
-
 #define FLEN ((INTRATE/1200)+1)
 #define MFLTOVER 12
 #define FLENO (FLEN*MFLTOVER+1)

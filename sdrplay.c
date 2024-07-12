@@ -27,7 +27,6 @@
 #include	<stdint.h>
 #include <unistd.h>
 #include <string.h>
-#include <pthread.h>
 #include <math.h>
 #include "acarsdec.h"
 #include <mirsdrapi-rsp.h>

@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
 #include <alsa/asoundlib.h>
 #include "acarsdec.h"
 
