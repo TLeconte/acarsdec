@@ -212,7 +212,6 @@ static void sigintHandler(int signum)
 	SndWriteClose();
 #endif
 #ifdef WITH_RTL
-	signalExit = 1;
 	runRtlCancel();
 #elif WITH_SOAPY
 	signalExit = 1;

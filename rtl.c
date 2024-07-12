@@ -22,12 +22,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
 #include <math.h>
 #include <rtl-sdr.h>
 #include "acarsdec.h"
-#include <signal.h>
-#include <unistd.h>
 
 // set the sameple rate by changing RTMULT
 // 2.5Ms/s is the best but could be over limit for some hardware
@@ -42,9 +39,6 @@ static rtlsdr_dev_t *dev = NULL;
 static int status = 0;
 static int rtlInBufSize = 0;
 static int rtlInRate = 0;
-
-static int watchdogCounter = 50;
-static pthread_mutex_t cbMutex = PTHREAD_MUTEX_INITIALIZER;
 
 #define RTLOUTBUFSZ 1024
 
@@ -327,10 +321,6 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
 	int n;
 
-	pthread_mutex_lock(&cbMutex);
-	watchdogCounter = 50;
-	pthread_mutex_unlock(&cbMutex);
-
 	if (nread != rtlInBufSize) {
 		fprintf(stderr, "warning: partial read\n");
 		return;
@@ -372,46 +362,9 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	}
 }
 
-static void *readThreadEntryPoint(void *arg) {
-	rtlsdr_read_async(dev, in_callback, NULL, 4, rtlInBufSize);
-	pthread_mutex_lock(&cbMutex);
-	signalExit = 1;
-	pthread_mutex_unlock(&cbMutex);
-	return NULL;
-}
-
 int runRtlSample(void)
 {
-	pthread_t readThread;
-	pthread_create(&readThread, NULL, readThreadEntryPoint, NULL);
-
-	pthread_mutex_lock(&cbMutex);
-
-	while (!signalExit) {
-		if (--watchdogCounter <= 0) {
-			fprintf(stderr, "No data from the SDR for 5 seconds, exiting ...\n");
-			runRtlCancel(); // watchdog triggered after 5 seconds of no data from SDR
-			break;
-		}
-		pthread_mutex_unlock(&cbMutex);
-		usleep(100 * 1000); // 0.1 seconds
-		pthread_mutex_lock(&cbMutex);
-	}
-
-	pthread_mutex_unlock(&cbMutex);
-
-	int count = 100; // 10 seconds
-	int err = 0;
-	// Wait on reader thread exit
-	while (count-- > 0 && (err = pthread_tryjoin_np(readThread, NULL))) {
-		usleep(100 * 1000); // 0.1 seconds
-	}
-	if (err) {
-		fprintf(stderr, "Receive thread termination failed, will raise SIGKILL to ensure we die!\n");
-		raise(SIGKILL);
-		return 1;
-	}
-
+	rtlsdr_read_async(dev, in_callback, NULL, 4, rtlInBufSize);
 	return 0;
 }
 
