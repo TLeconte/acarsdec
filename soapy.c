@@ -25,50 +25,11 @@ static int soapyExit = 0;
 
 #define SOAPYOUTBUFSZ 1024
 
-static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
-{
-	int n;
-	int ne;
-	int Fc;
-	do {
-		ne = 0;
-		for (n = 0; n < nbch - 1; n++) {
-			if (Fd[n] > Fd[n + 1]) {
-				unsigned int t;
-				t = Fd[n + 1];
-				Fd[n + 1] = Fd[n];
-				Fd[n] = t;
-				ne = 1;
-			}
-		}
-	} while (ne);
-
-	if ((Fd[nbch - 1] - Fd[0]) > soapyInRate - 4 * INTRATE) {
-		fprintf(stderr, "Frequencies too far apart\n");
-		return 0;
-	}
-
-	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
-		for (n = 0; n < nbch; n++) {
-			if (abs(Fc - Fd[n]) > soapyInRate / 2 - 2 * INTRATE)
-				break;
-			if (abs(Fc - Fd[n]) < 2 * INTRATE)
-				break;
-			if (n > 0 && Fc - Fd[n - 1] == Fd[n] - Fc)
-				break;
-		}
-		if (n == nbch)
-			break;
-	}
-
-	return Fc;
-}
-
 int initSoapy(char **argv, int optind)
 {
 	int r, n;
 	char *argF;
-	unsigned int Fc;
+	unsigned int Fc, minFc, maxFc;
 	unsigned int Fd[MAXNBCHANNELS];
 
 	if (argv[optind] == NULL) {
@@ -111,7 +72,7 @@ int initSoapy(char **argv, int optind)
 			fprintf(stderr, "WARNING: Failed to set freq correction: %s\n", SoapySDRDevice_lastError());
 	}
 
-	r = parse_freqs(argv, optind, NULL, NULL);
+	r = parse_freqs(argv, optind, &minFc, &maxFc);
 	if (r)
 		return r;
 
@@ -119,7 +80,7 @@ int initSoapy(char **argv, int optind)
 		Fd[n] = (int)R.channel[n].Fr;	// XXX
 
 	if(R.freq == 0)
-		R.freq = chooseFc(Fd, R.nbch);
+		R.freq = find_centerfreq(minFc, maxFc, soapyInRate);
 
 	if(R.freq == 0)
 		return 1;

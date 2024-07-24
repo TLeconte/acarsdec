@@ -74,7 +74,7 @@ int initAirspy(char **argv, int optind)
 {
 	int n;
 	char *argF;
-	int Fc,minFc=140000000,maxFc=0;
+	unsigned int Fc,minFc=140000000,maxFc=0;
 	int result;
 	uint32_t i,count;
 	uint32_t * supported_samplerates;

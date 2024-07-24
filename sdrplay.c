@@ -38,45 +38,6 @@
 extern void *compute_thread (void *arg);
 
 static	int	hwVersion;
-static
-unsigned int chooseFc (uint32_t *Fd, uint32_t nbch) {
-int n;
-int ne;
-int Fc;
-	do {
-	   ne = 0;
-	   for (n = 0; n < nbch - 1; n++) {
-	      if (Fd [n] > Fd [n + 1]) {
-	         uint32_t t;
-	         t = Fd [n + 1];
-	         Fd [n + 1] = Fd [n];
-	         Fd [n] = t;
-	         ne = 1;
-	      }
-	   }
-	} while (ne != 0);
-
-	if ((Fd [nbch - 1] - Fd [0]) > SDRPLAY_INRATE - 4 * INTRATE) {
-	   fprintf(stderr, "Frequencies too far apart\n");
-	   return -1;
-	}
-
-	for (Fc = Fd [nbch - 1] + 2 * INTRATE;
-	     Fc > Fd [0] - 2 * INTRATE; Fc --) {
-	   for (n = 0; n < nbch; n++) {
-	      if (abs (Fc - Fd [n]) > SDRPLAY_INRATE / 2 - 2 * INTRATE)
-	         break;
-	      if (abs (Fc - Fd [n]) < 2 * INTRATE)
-	         break;
-	      if (n > 0 && Fc - Fd[n - 1] == Fd[n] - Fc)
-	         break;
-	   }
-	   if (n == nbch)
-	      break;
-	}
-
-	return Fc;
-}
 
 static
 int     RSP1_Table [] = {0, 24, 19, 43};
@@ -108,21 +69,20 @@ unsigned int Fc;
 int initSdrplay (char **argv, int optind) {
 int r, n;
 char *argF;
-unsigned int Fd [MAXNBCHANNELS];
+	unsigned int minFc, maxFc;
 int result;
 uint32_t i;
 uint	deviceIndex, numofDevs;
 mir_sdr_DeviceT devDesc [4];
 mir_sdr_ErrT err;
 
-	r = parse_freqs(argv, optind, NULL, NULL);
+	r = parse_freqs(argv, optind, &minFc, &maxFc);
 	if (r)
 		return r;
 
-	for (n = 0; n < R.nbch; n++)
-		Fd[n] = (int)R.channel[n].Fr;	// XXX
-
-	Fc	= chooseFc (Fd, R.nbch);
+	Fc = find_centerfreq(minFc, maxFc, SDRPLAY_INRATE);
+	if (Fc == 0)
+		return 1;
 
 	for (n = 0; n < R.nbch; n++) {
 	   channel_t *ch = &(R.channel[n]);

@@ -23,12 +23,17 @@
 #include "acarsdec.h"
 #include "lib.h"
 
-int parse_freqs(char **argv, int optind, int *minFc, int *maxFc)
+int parse_freqs(char **argv, int optind, unsigned int *minFc, unsigned int *maxFc)
 {
 	char *argF;
 	int freq;
 
 	// XXX TODO sanitization
+
+	if (minFc && maxFc) {
+		*minFc = 140000000;
+		*maxFc = 0;
+	}
 
 	/* parse args */
 	R.nbch = 0;
@@ -63,4 +68,33 @@ int parse_freqs(char **argv, int optind, int *minFc, int *maxFc)
 	}
 
 	return 0;
+}
+
+unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned int inrate)
+{
+	if ((maxFc - minFc) > inrate - 4 * INTRATE) {
+		fprintf(stderr, "Frequencies too far apart\n");
+		return 0;
+	}
+
+	// the original tried to pin the center frequency to one of the provided ACARS freqs
+	// there is no reason to do this, so keep this simple:
+	return (maxFc + minFc) / 2;
+
+#if 0
+	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
+		for (n = 0; n < nbch; n++) {
+			if (abs(Fc - Fd[n]) > rtlInRate / 2 - 2 * INTRATE)
+				break;
+			if (abs(Fc - Fd[n]) < 2 * INTRATE)
+				break;
+			if (n > 0 && Fc - Fd[n - 1] == Fd[n] - Fc)
+				break;
+		}
+		if (n == nbch)
+			break;
+	}
+
+	return Fc;
+#endif
 }

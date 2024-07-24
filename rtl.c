@@ -127,45 +127,6 @@ find_serial:
 	return -1;
 }
 
-static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
-{
-	int n;
-	int ne;
-	int Fc;
-	do {
-		ne = 0;
-		for (n = 0; n < nbch - 1; n++) {
-			if (Fd[n] > Fd[n + 1]) {
-				unsigned int t;
-				t = Fd[n + 1];
-				Fd[n + 1] = Fd[n];
-				Fd[n] = t;
-				ne = 1;
-			}
-		}
-	} while (ne);
-
-	if ((Fd[nbch - 1] - Fd[0]) > rtlInRate - 4 * INTRATE) {
-		fprintf(stderr, "Frequencies too far apart\n");
-		return 0;
-	}
-
-	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
-		for (n = 0; n < nbch; n++) {
-			if (abs(Fc - Fd[n]) > rtlInRate / 2 - 2 * INTRATE)
-				break;
-			if (abs(Fc - Fd[n]) < 2 * INTRATE)
-				break;
-			if (n > 0 && Fc - Fd[n - 1] == Fd[n] - Fc)
-				break;
-		}
-		if (n == nbch)
-			break;
-	}
-
-	return Fc;
-}
-
 int nearest_gain(int target_gain)
 {
 	int i, err1, err2, count, close_gain;
@@ -193,8 +154,7 @@ int initRtl(char **argv, int optind)
 {
 	int r, n;
 	int dev_index;
-	unsigned int Fc;
-	unsigned int Fd[MAXNBCHANNELS];
+	unsigned int Fc, minFc, maxFc;
 
 	if (argv[optind] == NULL) {
 		fprintf(stderr, "Need device name or index (ex: 0) after -r\n");
@@ -239,14 +199,11 @@ int initRtl(char **argv, int optind)
 				"WARNING: Failed to set freq. correction\n");
 	}
 
-	r = parse_freqs(argv, optind, NULL, NULL);
+	r = parse_freqs(argv, optind, &minFc, &maxFc);
 	if (r)
 		return r;
 
-	for (n = 0; n < R.nbch; n++)
-		Fd[n] = (int)R.channel[n].Fr;	// XXX
-
-	Fc = chooseFc(Fd, R.nbch);
+	Fc = find_centerfreq(minFc, maxFc, rtlInRate);
 	if (Fc == 0)
 		return 1;
 
