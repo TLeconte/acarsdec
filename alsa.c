@@ -76,12 +76,12 @@ int initAlsa(char **argv, int optind)
 			snd_strerror(err));
 		return 1;
 	}
-	if (snd_pcm_hw_params_get_channels(hw_params, &nbch) != 0) {
+	if (snd_pcm_hw_params_get_channels(hw_params, &R.nbch) != 0) {
 		fprintf(stderr, "Alsa cannot get number of channels\n");
 		return 1;
 	}
-	if (nbch > 1) {
-		fprintf(stderr, "Alsa too much channels : %d\n", nbch);
+	if (R.nbch > 1) {
+		fprintf(stderr, "Alsa too much channels : %d\n", R.nbch);
 		return 1;
 
 	}
@@ -99,8 +99,8 @@ int initAlsa(char **argv, int optind)
 		return 1;
 	}
 
-        channel[0].chn = 0;
-	channel[0].dm_buffer=malloc(MAXNBFRAMES*sizeof(float));
+        R.channel[0].chn = 0;
+	R.channel[0].dm_buffer=malloc(MAXNBFRAMES*sizeof(float));
 
 	return (0);
 }
@@ -110,7 +110,7 @@ int runAlsaSample(void)
 	int r, n, i;
 
 	do {
-		r = snd_pcm_readi(capture_handle, channel[0].dm_buffer,MAXNBFRAMES);
+		r = snd_pcm_readi(capture_handle, R.channel[0].dm_buffer,MAXNBFRAMES);
 		if (r <= 0) {
 			fprintf(stderr,
 				"Alsa cannot read from interface (%s)\n",
@@ -118,7 +118,7 @@ int runAlsaSample(void)
 			return -1;
 		}
 
-		demodMSK(&(channel[0]),r);
+		demodMSK(&(R.channel[0]),r);
 
 
 	} while (1);

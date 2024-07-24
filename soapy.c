@@ -82,13 +82,13 @@ int initSoapy(char **argv, int optind)
 	}
 	optind++;
 
-    soapyInBufSize = SOAPYOUTBUFSZ * rateMult * 2;
-    soapyInRate = INTRATE * rateMult;
+    soapyInBufSize = SOAPYOUTBUFSZ * R.rateMult * 2;
+    soapyInRate = INTRATE * R.rateMult;
 
 	soapyInBuf = malloc(sizeof(int16_t) * soapyInBufSize);
 
-	if (gain <= -10.0) {
-		if (verbose)
+	if (R.gain <= -10.0) {
+		if (R.verbose)
 			fprintf(stderr, "Tuner gain: AGC\n");
 		r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 1);
 		if (r != 0)
@@ -97,79 +97,79 @@ int initSoapy(char **argv, int optind)
 		r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 0);
 		if (r != 0)
 			fprintf(stderr, "WARNING: Failed to turn off AGC: %s\n", SoapySDRDevice_lastError());
-        if (verbose)
-            fprintf(stderr, "Setting gain to: %f\n", gain);
-		r = SoapySDRDevice_setGain(dev, SOAPY_SDR_RX, 0, gain);
+        if (R.verbose)
+            fprintf(stderr, "Setting gain to: %f\n", R.gain);
+		r = SoapySDRDevice_setGain(dev, SOAPY_SDR_RX, 0, R.gain);
 		if (r != 0)
 			fprintf(stderr, "WARNING: Failed to set gain: %s\n", SoapySDRDevice_lastError());
 	}
 
-	if (ppm != 0) {
-		r = SoapySDRDevice_setFrequencyCorrection(dev, SOAPY_SDR_RX, 0, ppm);
+	if (R.ppm != 0) {
+		r = SoapySDRDevice_setFrequencyCorrection(dev, SOAPY_SDR_RX, 0, R.ppm);
 		if (r != 0)
 			fprintf(stderr, "WARNING: Failed to set freq correction: %s\n", SoapySDRDevice_lastError());
 	}
 
-	nbch = 0;
-	while ((argF = argv[optind]) && nbch < MAXNBCHANNELS) {
-		Fd[nbch] = ((int)(1000000 * atof(argF) + INTRATE / 2) / INTRATE) * INTRATE;
+	R.nbch = 0;
+	while ((argF = argv[optind]) && R.nbch < MAXNBCHANNELS) {
+		Fd[R.nbch] = ((int)(1000000 * atof(argF) + INTRATE / 2) / INTRATE) * INTRATE;
 		optind++;
-		if (Fd[nbch] < 118000000 || Fd[nbch] > 138000000) {
+		if (Fd[R.nbch] < 118000000 || Fd[R.nbch] > 138000000) {
 			fprintf(stderr, "WARNING: frequency not in range 118-138 MHz: %d\n",
-				Fd[nbch]);
+				Fd[R.nbch]);
 			continue;
 		}
-		channel[nbch].chn = nbch;
-		channel[nbch].Fr = (float)Fd[nbch];
-		nbch++;
+		R.channel[R.nbch].chn = R.nbch;
+		R.channel[R.nbch].Fr = (float)Fd[R.nbch];
+		R.nbch++;
 	};
-	if (nbch > MAXNBCHANNELS)
+	if (R.nbch > MAXNBCHANNELS)
 		fprintf(stderr,
 			"WARNING: too many frequencies, using only the first %d\n",
 			MAXNBCHANNELS);
 
-	if (nbch == 0) {
+	if (R.nbch == 0) {
  		fprintf(stderr, "Need a least one frequency\n");
 		return 1;
 	}
 
-	if(freq == 0)
-		freq = chooseFc(Fd, nbch);
+	if(R.freq == 0)
+		R.freq = chooseFc(Fd, R.nbch);
 
-	if(freq == 0)
+	if(R.freq == 0)
 		return 1;
 
-	for (n = 0; n < nbch; n++) {
-		if (Fd[n] < freq - soapyInRate/2 || Fd[n] > freq + soapyInRate/2) {
+	for (n = 0; n < R.nbch; n++) {
+		if (Fd[n] < R.freq - soapyInRate/2 || Fd[n] > R.freq + soapyInRate/2) {
 			fprintf(stderr, "WARNING: frequency not in tuned range %d-%d: %d\n",
-				freq - soapyInRate/2, freq + soapyInRate/2, Fd[n]);
+				R.freq - soapyInRate/2, R.freq + soapyInRate/2, Fd[n]);
 			continue;
 		}
 	}
 
-	for (n = 0; n < nbch; n++) {
-		channel_t *ch = &(channel[n]);
+	for (n = 0; n < R.nbch; n++) {
+		channel_t *ch = &(R.channel[n]);
 		int ind;
 		float AMFreq;
 
 		ch->counter = 0;
 		ch->D = 0;
-		ch->oscillator = malloc(rateMult * sizeof(float complex));
+		ch->oscillator = malloc(R.rateMult * sizeof(float complex));
 		ch->dm_buffer = malloc(SOAPYOUTBUFSZ*sizeof(float));
 
-		AMFreq = (ch->Fr - (float)freq) / (float)(soapyInRate) * 2.0 * M_PI;
-		for (ind = 0; ind < rateMult; ind++) {
-			ch->oscillator[ind] = cexpf(AMFreq*ind*-I)/rateMult;
+		AMFreq = (ch->Fr - (float)R.freq) / (float)(soapyInRate) * 2.0 * M_PI;
+		for (ind = 0; ind < R.rateMult; ind++) {
+			ch->oscillator[ind] = cexpf(AMFreq*ind*-I)/R.rateMult;
 		}
 	}
 
-	if (verbose)
-		fprintf(stderr, "Set center freq. to %dHz\n", (int)freq);
-	r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, 0, freq, NULL);
+	if (R.verbose)
+		fprintf(stderr, "Set center freq. to %dHz\n", (int)R.freq);
+	r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, 0, R.freq, NULL);
 	if (r != 0)
 		fprintf(stderr, "WARNING: Failed to set frequency: %s\n", SoapySDRDevice_lastError());
 
-	if (verbose)
+	if (R.verbose)
 		fprintf(stderr, "Setting sample rate: %.4f MS/s\n", soapyInRate / 1e6);
 	r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, 0, soapyInRate);
 	if (r != 0)
@@ -234,9 +234,9 @@ int runSoapySample(void)
 			break;
 		}
 
-		for (n = 0; n < nbch; n++) {
+		for (n = 0; n < R.nbch; n++) {
 			local_ind = current_index;
-			channel_t *ch = &(channel[n]);
+			channel_t *ch = &(R.channel[n]);
 			float complex D = ch->D;
 
 			for (i = 0; i < res*2; i+=2) {
@@ -244,7 +244,7 @@ int runSoapySample(void)
 				float g = (float)soapyInBuf[i+1];
 				float complex v = r + g*I;
 				D += v * ch->oscillator[local_ind++] / 32768.0;
-				if (local_ind >= rateMult) {
+				if (local_ind >= R.rateMult) {
 					ch->dm_buffer[ch->counter++] = cabsf(D);
 					local_ind = 0;
 					D = 0;
@@ -256,7 +256,7 @@ int runSoapySample(void)
 			}
 			ch->D = D;
 		}
-		current_index = (current_index + res) % rateMult;
+		current_index = (current_index + res) % R.rateMult;
 	}
 	return 0;
 }

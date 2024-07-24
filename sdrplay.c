@@ -115,40 +115,40 @@ uint	deviceIndex, numofDevs;
 mir_sdr_DeviceT devDesc [4];
 mir_sdr_ErrT err;
 
-	nbch = 0;
-	while ((argF = argv [optind]) && nbch < MAXNBCHANNELS) {
-	   Fd [nbch] =
+	R.nbch = 0;
+	while ((argF = argv [optind]) && R.nbch < MAXNBCHANNELS) {
+	   Fd [R.nbch] =
 		    ((int)(1000000 * atof (argF) + INTRATE / 2) / INTRATE) *
 		    INTRATE;
 	   optind++;
-	   if (Fd [nbch] < 118000000 || Fd [nbch] > 138000000) {
-	      fprintf (stderr, "WARNING: Invalid frequency %d\n", Fd [nbch]);
+	   if (Fd [R.nbch] < 118000000 || Fd [R.nbch] > 138000000) {
+	      fprintf (stderr, "WARNING: Invalid frequency %d\n", Fd [R.nbch]);
 	      continue;
 	   }
 
-	   channel [nbch]. chn = nbch;
-	   channel [nbch]. Fr = (float)Fd [nbch];
-	   if (Fd [nbch] < minFc)
-	      minFc =  Fd[nbch];
-	   if (Fd [nbch] > maxFc)
-	      maxFc = Fd[nbch];
-		nbch++;
+	   R.channel [R.nbch]. chn = R.nbch;
+	   R.channel [R.nbch]. Fr = (float)Fd [R.nbch];
+	   if (Fd [R.nbch] < minFc)
+	      minFc =  Fd[R.nbch];
+	   if (Fd [R.nbch] > maxFc)
+	      maxFc = Fd[R.nbch];
+		R.nbch++;
 	}
 
-	if (nbch > MAXNBCHANNELS)
+	if (R.nbch > MAXNBCHANNELS)
 	   fprintf (stderr,
 	        "WARNING: too much frequencies, taking only the %d firsts\n",
 	        MAXNBCHANNELS);
 
-	if (nbch == 0) {
+	if (R.nbch == 0) {
 	   fprintf(stderr, "Need a least one  frequencies\n");
 	   return 1;
 	}
 
-	Fc	= chooseFc (Fd, nbch);
+	Fc	= chooseFc (Fd, R.nbch);
 
-	for (n = 0; n < nbch; n++) {
-	   channel_t *ch = &(channel[n]);
+	for (n = 0; n < R.nbch; n++) {
+	   channel_t *ch = &(R.channel[n]);
 	   ch	-> counter	= 0;
 	   int ind;
 	   double correctionPhase;
@@ -186,11 +186,11 @@ mir_sdr_ErrT err;
 	   return 1;
 	}
 
-	if (GRdB == -100)
+	if (R.GRdB == -100)
 	   fprintf (stderr, "SDRplay device selects freq %d and sets autogain\n", Fc);
 	else
 	   fprintf (stderr, "SDRplay device selects freq %d and sets %d as gain reduction\n",
-	         Fc, get_lnaGRdB (hwVersion, lnaState) + GRdB);
+	         Fc, get_lnaGRdB (hwVersion, R.lnaState) + R.GRdB);
 	
 	return 0;
 }
@@ -211,9 +211,9 @@ void myStreamCallback (int16_t		*xi,
 int n, i;
 int	local_ind;
 
-	for (n = 0; n < nbch; n ++) {
+	for (n = 0; n < R.nbch; n ++) {
 	   local_ind = current_index;
-	   channel_t *ch = &(channel [n]);
+	   channel_t *ch = &(R.channel [n]);
 	   float complex D	= ch -> D;
 	   for (i = 0; i < numSamples; i ++) {
 	      float r = ((float)(xi [i]));
@@ -249,14 +249,14 @@ int result ;
 int gRdBSystem	= 0;
 int samplesPerPacket;
 int MHz_1		= 1000000;
-int	localGRdB	= (20 <= GRdB) && (GRdB <= 59) ? GRdB : 20;
+int	localGRdB	= (20 <= R.GRdB) && (R.GRdB <= 59) ? R.GRdB : 20;
 
 	result	= mir_sdr_StreamInit (&localGRdB,
 	                              ((double) (SDRPLAY_INRATE)) / MHz_1,
 	                              ((double) Fc) / MHz_1,
 	                              mir_sdr_BW_1_536,
 	                              mir_sdr_IF_Zero,
-	                              lnaState,
+	                              R.lnaState,
 	                              &gRdBSystem,
 	                              mir_sdr_USE_RSP_SET_GR,
 	                              &samplesPerPacket,
@@ -268,14 +268,14 @@ int	localGRdB	= (20 <= GRdB) && (GRdB <= 59) ? GRdB : 20;
 	   fprintf (stderr, "Error %d on streamInit\n", result);
 	   return -1;
 	}
-	if (GRdB == -100) {
+	if (R.GRdB == -100) {
            result  = mir_sdr_AgcControl (mir_sdr_AGC_100HZ,
-                                         -30, 0, 0, 0, 0, lnaState);
+                                         -30, 0, 0, 0, 0, R.lnaState);
 	   if (result != mir_sdr_Success) 
 	      fprintf (stderr, "Error %d on AgcControl\n", result);
 	}
 
-	mir_sdr_SetPpm       ((float)ppm);
+	mir_sdr_SetPpm       ((float)R.ppm);
 	mir_sdr_SetDcMode (4, 1);
 	mir_sdr_SetDcTrackTime (63);
 //

@@ -41,7 +41,7 @@ int Netoutinit(char *Rawaddr)
 		port++;
 	}
 
-        if (verbose) {
+        if (R.verbose) {
             fprintf(stderr, "Attempting to resolve '%s:%s'.\n", addr, port);
         }
 
@@ -76,7 +76,7 @@ static void Netwrite(const void *buf, size_t count) {
 
     if (!netOutputAddrLen) {
         /* The destination address hasn't yet been succesfully resolved. */
-        if (verbose) {
+        if (R.verbose) {
             fprintf(stderr, "retrying DNS resolution.\n");
         }
         res = Netoutinit(NULL);
@@ -87,7 +87,7 @@ static void Netwrite(const void *buf, size_t count) {
     }
 
     res = sendto(sockfd, buf, count, 0, netOutputAddr, netOutputAddrLen);
-    if (verbose && res < 0)
+    if (R.verbose && res < 0)
 	    fprintf(stderr, "error on sendto(): %s, ignoring.\n", strerror(errno));
 }
 

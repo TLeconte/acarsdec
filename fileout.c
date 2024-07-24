@@ -8,7 +8,7 @@
 #include <time.h>
 #include <errno.h>
 
-extern int hourly,daily;
+#include "acarsdec.h"
 
 static char *filename_prefix = NULL;
 static char *extension = NULL;
@@ -21,11 +21,11 @@ static FILE *open_outfile() {
 	size_t tlen = 0;
 	FILE *fd;
 
-	if(hourly || daily) {
+	if(R.hourly || R.daily) {
 		time_t t = time(NULL);
 		gmtime_r(&t, &current_tm);
 		char suffix[16];
-		if(hourly) {
+		if(R.hourly) {
 			fmt = "_%Y%m%d_%H";
 		} else {	// daily
 			fmt = "_%Y%m%d";
@@ -60,7 +60,7 @@ FILE* Fileoutinit(char* logfilename)
 
         filename_prefix = logfilename;
         prefix_len = strlen(filename_prefix);
-        if(hourly || daily) {
+        if(R.hourly || R.daily) {
               char *basename = strrchr(filename_prefix, '/');
               if(basename != NULL) {
                        basename++;
@@ -89,8 +89,8 @@ FILE* Fileoutrotate(FILE *fd)
 	struct tm new_tm;
 	time_t t = time(NULL);
 	gmtime_r(&t, &new_tm);
-	if((hourly && new_tm.tm_hour != current_tm.tm_hour) ||
-	   (daily && new_tm.tm_mday != current_tm.tm_mday)) {
+	if((R.hourly && new_tm.tm_hour != current_tm.tm_hour) ||
+	   (R.daily && new_tm.tm_mday != current_tm.tm_mday)) {
 		fclose(fd);
 		return open_outfile();
 	}

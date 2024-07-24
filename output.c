@@ -20,9 +20,6 @@
 
 extern int label_filter(char *lbl);
 
-extern int inmode;
-extern char *idstation;
-
 static FILE *fdout;
 
 static char *jsonbuf=NULL;
@@ -107,7 +104,7 @@ static inline void cls(void)
 
 int initOutput(char *logfilename, char *Rawaddr)
 {
-	if (outtype != OUTTYPE_NONE && logfilename) {
+	if (R.outtype != OUTTYPE_NONE && logfilename) {
 		if((fdout=Fileoutinit(logfilename)) == NULL)
 			return -1;
 	} else {
@@ -118,19 +115,19 @@ int initOutput(char *logfilename, char *Rawaddr)
 		if(Netoutinit(Rawaddr))
 			return -1;
 
-	if (outtype == OUTTYPE_MONITOR ) {
-		verbose=0;
+	if (R.outtype == OUTTYPE_MONITOR ) {
+		R.verbose=0;
 		cls();
 		fflush(stdout);
 	}
 
-	if (outtype == OUTTYPE_JSON || outtype == OUTTYPE_ROUTEJSON || netout==NETLOG_JSON || netout==NETLOG_MQTT ) {
+	if (R.outtype == OUTTYPE_JSON || R.outtype == OUTTYPE_ROUTEJSON || R.netout==NETLOG_JSON || R.netout==NETLOG_MQTT ) {
 		jsonbuf = malloc(JSONBUFLEN+1);
 		if(jsonbuf == NULL) 
 			return -1;
 	}
 #ifdef HAVE_LIBACARS
-	reasm_ctx = skip_reassembly ? NULL : la_reasm_ctx_new();
+	reasm_ctx = R.skip_reassembly ? NULL : la_reasm_ctx_new();
 #endif
 	return 0;
 }
@@ -164,14 +161,14 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 	oooi_t oooi;
 
 #if defined (WITH_RTL) || defined (WITH_AIR) || defined (WITH_SOAPY)
-	if (inmode >= 3)
+	if (R.inmode >= 3)
 		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+5.1f E:%1d) ", chn + 1,
-			channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
+			R.channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
 		fprintf(fdout, "\n[#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
-	if (inmode != 2)
+	if (R.inmode != 2)
 		printdate(tv);
 
 	fprintf(fdout, " --------------------------------\n");
@@ -193,7 +190,7 @@ static void printmsg(acarsmsg_t * msg, int chn, struct timeval tv)
 			}
 		}
 #ifdef HAVE_LIBACARS
-		if (!skip_reassembly) {
+		if (!R.skip_reassembly) {
 			fprintf(fdout, "\nReassembly: %s", la_reasm_status_name_get(msg->reasm_status));
 		}
 #endif
@@ -229,7 +226,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 
 	oooi_t oooi;
 #if defined (WITH_RTL) || defined (WITH_AIR) || defined (WITH_SOAPY)
-	float freq = channel[chn].Fr / 1000000.0;
+	float freq = R.channel[chn].Fr / 1000000.0;
 #else
 	float freq = 0;
 #endif
@@ -243,7 +240,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 
 	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 	cJSON_AddNumberToObject(json_obj, "timestamp", t);
-	if(idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", idstation);
+	if(R.idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", R.idstation);
 	cJSON_AddNumberToObject(json_obj, "channel", chn);
 	snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
 	cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
@@ -301,7 +298,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 		}
 	}
 #ifdef HAVE_LIBACARS
-	if (!skip_reassembly) {
+	if (!R.skip_reassembly) {
 		cJSON_AddStringToObject(json_obj, "assstat", la_reasm_status_name_get(msg->reasm_status));
 	}
 	if(msg->decoded_tree != NULL) {
@@ -337,7 +334,7 @@ static void printoneline(acarsmsg_t * msg, int chn, struct timeval tv)
 
 	fprintf(fdout, "#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
-	if (inmode != 2)
+	if (R.inmode != 2)
 		printdate(tv);
 	fprintf(fdout, " %7s %6s %1c %2s %4s ", msg->addr, msg->fid, msg->mode, msg->label, msg->no);
 	fprintf(fdout, "%s", txt);
@@ -406,7 +403,7 @@ static  flight_t *addFlight(acarsmsg_t * msg, int chn, struct timeval tv)
 
 	flp=NULL;fld=fl;
 	while(fld) {
-		if(fld->tl.tv_sec<(tv.tv_sec-mdly)) {
+		if(fld->tl.tv_sec<(tv.tv_sec-R.mdly)) {
 			if(flp) {
 				flp->next=fld->next;
 				free(fld);
@@ -441,7 +438,7 @@ static int routejson(flight_t *fl,struct timeval tv)
 
 	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 	cJSON_AddNumberToObject(json_obj, "timestamp", t);
-	if(idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", idstation);
+	if(R.idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", R.idstation);
 	cJSON_AddStringToObject(json_obj, "flight", fl->fid);
 	cJSON_AddStringToObject(json_obj, "depa", fl->oooi.sa);
 	cJSON_AddStringToObject(json_obj, "dsta", fl->oooi.da);
@@ -469,7 +466,7 @@ static void printmonitor(acarsmsg_t * msg, int chn, struct timeval tv)
 		int i;
 
 		printf(" %-8s %-7s %3d ", fl->addr, fl->fid,fl->nbm);
-		for(i=0;i<nbch;i++) printf("%c",(fl->chm&(1<<i))?'x':'.');
+		for(i=0;i<R.nbch;i++) printf("%c",(fl->chm&(1<<i))?'x':'.');
 		for(;i<MAXNBCHANNELS;i++) printf(" ");
 		printf(" "); printtime(fl->ts);
         	if(fl->oooi.sa[0]) printf(" %4s ",fl->oooi.sa); else printf("      ");
@@ -534,7 +531,7 @@ void outputmsg(const msgblk_t * blk)
 	msg.bs = blk->txt[k];
 	k++;
 
-	if (airflt && !down)
+	if (R.airflt && !down)
 		return;
 	if(label_filter(msg.label)==0)
 		return;
@@ -647,11 +644,11 @@ void outputmsg(const msgblk_t * blk)
 	if(outflg)
 		fl=addFlight(&msg,blk->chn,blk->tv);
 
-	if(emptymsg && ( msg.txt == NULL || msg.txt[0] == '\0'))
+	if(R.emptymsg && ( msg.txt == NULL || msg.txt[0] == '\0'))
 			return;
 
 	if(jsonbuf) {
-		if(outtype == OUTTYPE_ROUTEJSON ) {
+		if(R.outtype == OUTTYPE_ROUTEJSON ) {
 			if(fl)
 			       	jok=routejson(fl,blk->tv);
 		} else {
@@ -659,10 +656,10 @@ void outputmsg(const msgblk_t * blk)
 		}
 	}
 
-	if((hourly || daily) && outtype != OUTTYPE_NONE && (fdout=Fileoutrotate(fdout))==NULL) {
+	if((R.hourly || R.daily) && R.outtype != OUTTYPE_NONE && (fdout=Fileoutrotate(fdout))==NULL) {
 		_exit(1);
 	}
-	switch (outtype) {
+	switch (R.outtype) {
 	case OUTTYPE_NONE:
 		break;
 	case OUTTYPE_ONELINE:
@@ -683,12 +680,12 @@ void outputmsg(const msgblk_t * blk)
 		break;
 	}
 
-	switch (netout) {
+	switch (R.netout) {
 		case NETLOG_PLANEPLOTTER:
 			Netoutpp(&msg);
 			break;
 		case NETLOG_NATIVE:
-			Netoutsv(&msg, idstation, blk->chn, blk->tv);
+			Netoutsv(&msg, R.idstation, blk->chn, blk->tv);
 			break;
 		case NETLOG_JSON:
 			if(jok) Netoutjson(jsonbuf);

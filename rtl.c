@@ -56,15 +56,15 @@ int verbose_device_search(char *s)
 		fprintf(stderr, "No supported devices found.\n");
 		return -1;
 	}
-	if (verbose)
+	if (R.verbose)
 		fprintf(stderr, "Found %d device(s):\n", device_count);
 	for (i = 0; i < device_count; i++) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		if (verbose)
+		if (R.verbose)
 			fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor,
 				product, serial);
 	}
-	if (verbose)
+	if (R.verbose)
 		fprintf(stderr, "\n");
 	/* does string look like an exact serial number */
 	if (strlen(s) == 8)
@@ -72,7 +72,7 @@ int verbose_device_search(char *s)
 	/* does string look like raw id number */
 	device = (int)strtol(s, &s2, 0);
 	if (s2[0] == '\0' && device >= 0 && device < device_count) {
-		if (verbose)
+		if (R.verbose)
 			fprintf(stderr, "Using device %d: %s\n",
 				device,
 				rtlsdr_get_device_name((uint32_t) device));
@@ -86,7 +86,7 @@ find_serial:
 			continue;
 		}
 		device = i;
-		if (verbose)
+		if (R.verbose)
 			fprintf(stderr, "Using device %d: %s\n",
 				device,
 				rtlsdr_get_device_name((uint32_t) device));
@@ -99,7 +99,7 @@ find_serial:
 			continue;
 		}
 		device = i;
-		if (verbose)
+		if (R.verbose)
 			fprintf(stderr, "Using device %d: %s\n",
 				device,
 				rtlsdr_get_device_name((uint32_t) device));
@@ -116,7 +116,7 @@ find_serial:
 			continue;
 		}
 		device = i;
-		if (verbose)
+		if (R.verbose)
 			fprintf(stderr, "Using device %d: %s\n",
 				device,
 				rtlsdr_get_device_name((uint32_t) device));
@@ -203,13 +203,13 @@ int initRtl(char **argv, int optind)
 	dev_index = verbose_device_search(argv[optind]);
 	optind++;
 
-	if (rateMult > RTLMULTMAX) {
+	if (R.rateMult > RTLMULTMAX) {
 		fprintf(stderr, "rateMult can't be larger than 360\n");
 		return 1;
 	}
 
-    rtlInBufSize = RTLOUTBUFSZ * rateMult * 2;
-    rtlInRate = INTRATE * rateMult;
+    rtlInBufSize = RTLOUTBUFSZ * R.rateMult * 2;
+    rtlInRate = INTRATE * R.rateMult;
 
 	r = rtlsdr_open(&dev, dev_index);
 	if (r < 0) {
@@ -217,75 +217,75 @@ int initRtl(char **argv, int optind)
 		return r;
 	}
 
-	if (gain > 52.0F || gain <= 10.0F) {
-		if (verbose)
+	if (R.gain > 52.0F || R.gain <= 10.0F) {
+		if (R.verbose)
 			fprintf(stderr, "Tuner gain: AGC\n");
 		r = rtlsdr_set_tuner_gain_mode(dev, 0);
 	} else {
 		rtlsdr_set_tuner_gain_mode(dev, 1);
-        gain = nearest_gain((int)(gain*10.0F));
-	gain /= 10.0F;
-        if (verbose)
-            fprintf(stderr, "Tuner gain: %.1f\n", gain);
-		r = rtlsdr_set_tuner_gain(dev, (int)(gain*10.0F));
+        R.gain = nearest_gain((int)(R.gain*10.0F));
+	R.gain /= 10.0F;
+        if (R.verbose)
+            fprintf(stderr, "Tuner gain: %.1f\n", R.gain);
+		r = rtlsdr_set_tuner_gain(dev, (int)(R.gain*10.0F));
 	}
 	if (r < 0)
 		fprintf(stderr, "WARNING: Failed to set gain.\n");
 
-	if (ppm != 0) {
-		r = rtlsdr_set_freq_correction(dev, ppm);
+	if (R.ppm != 0) {
+		r = rtlsdr_set_freq_correction(dev, R.ppm);
 		if (r < 0)
 			fprintf(stderr,
 				"WARNING: Failed to set freq. correction\n");
 	}
 
-	nbch = 0;
-	while ((argF = argv[optind]) && nbch < MAXNBCHANNELS) {
-		Fd[nbch] =
+	R.nbch = 0;
+	while ((argF = argv[optind]) && R.nbch < MAXNBCHANNELS) {
+		Fd[R.nbch] =
 		    ((int)(1000000 * atof(argF) + INTRATE / 2) / INTRATE) *
 		    INTRATE;
 		optind++;
-		if (Fd[nbch] < 118000000 || Fd[nbch] > 138000000) {
+		if (Fd[R.nbch] < 118000000 || Fd[R.nbch] > 138000000) {
 			fprintf(stderr, "WARNING: Invalid frequency %d\n",
-				Fd[nbch]);
+				Fd[R.nbch]);
 			continue;
 		}
-		channel[nbch].chn = nbch;
-		channel[nbch].Fr = (float)Fd[nbch];
-		nbch++;
+		R.channel[R.nbch].chn = R.nbch;
+		R.channel[R.nbch].Fr = (float)Fd[R.nbch];
+		R.nbch++;
 	};
-	if (nbch > MAXNBCHANNELS)
+	if (R.nbch > MAXNBCHANNELS)
 		fprintf(stderr,
 			"WARNING: too many frequencies, using only the first %d\n",
 			MAXNBCHANNELS);
 
-	if (nbch == 0) {
+	if (R.nbch == 0) {
 		fprintf(stderr, "Need a least one frequency\n");
 		return 1;
 	}
 
-	Fc = chooseFc(Fd, nbch);
+	Fc = chooseFc(Fd, R.nbch);
 	if (Fc == 0)
 		return 1;
 
-	for (n = 0; n < nbch; n++) {
-		channel_t *ch = &(channel[n]);
+	for (n = 0; n < R.nbch; n++) {
+		channel_t *ch = &(R.channel[n]);
 		int ind;
 		float AMFreq;
 
-		ch->wf = malloc(rateMult * sizeof(float complex));
+		ch->wf = malloc(R.rateMult * sizeof(float complex));
 		ch->dm_buffer=malloc(RTLOUTBUFSZ*sizeof(float));
 		if( ch->wf == NULL || ch->dm_buffer == NULL) {
 			fprintf(stderr, "ERROR : malloc\n");
 			return 1;
 		}
 		AMFreq = (ch->Fr - (float)Fc) / (float)(rtlInRate) * 2.0 * M_PI;
-		for (ind = 0; ind < rateMult; ind++) {
-			ch->wf[ind]=cexpf(AMFreq*ind*-I)/rateMult/127.5;
+		for (ind = 0; ind < R.rateMult; ind++) {
+			ch->wf[ind]=cexpf(AMFreq*ind*-I)/R.rateMult/127.5;
 		}
 	}
 
-	if (verbose)
+	if (R.verbose)
 		fprintf(stderr, "Set center freq. to %dHz\n", (int)Fc);
 
 	r = rtlsdr_set_center_freq(dev, Fc);
@@ -307,9 +307,9 @@ int initRtl(char **argv, int optind)
 		return 1;
 	}
 
-	r = rtlsdr_set_bias_tee(dev, bias);
-	if (verbose) 
-		fprintf(stderr, "Set Bias Tee to %d\n", bias);
+	r = rtlsdr_set_bias_tee(dev, R.bias);
+	if (R.verbose) 
+		fprintf(stderr, "Set Bias Tee to %d\n", R.bias);
 	if(r < 0){
 		fprintf(stderr, "WARNING: Failed to set bias tee\n");
 		return 1;
@@ -334,7 +334,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	float complex vb[RTLMULTMAX];
 	int i = 0;
 	for (int m = 0; m < RTLOUTBUFSZ; m++) {
-		for (int ind = 0; ind < rateMult; ind++) {
+		for (int ind = 0; ind < R.rateMult; ind++) {
 			float r, g;
 
 			r = (float)rtlinbuff[i] - 127.37f; i++;
@@ -343,21 +343,21 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 			vb[ind]=r+g*I;
 		}
 
-		for (n = 0; n < nbch; n++) {
-			channel_t *ch = &(channel[n]);
+		for (n = 0; n < R.nbch; n++) {
+			channel_t *ch = &(R.channel[n]);
 			float complex D,*wf;
 
 			wf = ch->wf;
 			D = 0;
-			for (int ind = 0; ind < rateMult; ind++) {
+			for (int ind = 0; ind < R.rateMult; ind++) {
 				D += vb[ind] * wf[ind];
 			}
 			ch->dm_buffer[m]=cabsf(D);
 		}
 	}
 
-	for (n = 0; n < nbch; n++) {
-		channel_t *ch = &(channel[n]);
+	for (n = 0; n < R.nbch; n++) {
+		channel_t *ch = &(R.channel[n]);
 		demodMSK(ch,RTLOUTBUFSZ);
 	}
 }

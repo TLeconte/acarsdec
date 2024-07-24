@@ -98,7 +98,7 @@ static void *blk_thread(void *arg)
 		unsigned short crc;
 		int pr[MAXPERR];
 
-		if (verbose)
+		if (R.verbose)
 			fprintf(stderr, "blk_starting\n");
 
 		/* get a message */
@@ -117,12 +117,12 @@ static void *blk_thread(void *arg)
 			blkq_s = NULL;
 		pthread_mutex_unlock(&blkq_mtx);
 
-		if (verbose)
+		if (R.verbose)
 			fprintf(stderr, "get message #%d\n", blk->chn + 1);
 
 		/* handle message */
 		if (blk->len < 13) {
-			if (verbose)
+			if (R.verbose)
 				fprintf(stderr, "#%d too short\n", blk->chn + 1);
 			free(blk);
 			continue;
@@ -143,14 +143,14 @@ static void *blk_thread(void *arg)
 			}
 		}
 		if (pn > MAXPERR) {
-			if (verbose)
+			if (R.verbose)
 				fprintf(stderr,
 					"#%d too many parity errors: %d\n",
 					blk->chn + 1, pn);
 			free(blk);
 			continue;
 		}
-		if (pn > 0 && verbose)
+		if (pn > 0 && R.verbose)
 			fprintf(stderr, "#%d parity error(s): %d\n",
 				blk->chn + 1, pn);
 		blk->err = pn;
@@ -163,30 +163,30 @@ static void *blk_thread(void *arg)
 		}
 		update_crc(crc, blk->crc[0]);
 		update_crc(crc, blk->crc[1]);
-		if (crc && verbose)
+		if (crc && R.verbose)
 			fprintf(stderr, "#%d crc error\n", blk->chn + 1);
 
 		/* try to fix error */
 		if(pn) {
 		  if (fixprerr(blk, crc, pr, pn) == 0) {
-			if (verbose)
+			if (R.verbose)
 				fprintf(stderr, "#%d not able to fix errors\n", blk->chn + 1);
 			free(blk);
 			continue;
 		  }
-			if (verbose)
+			if (R.verbose)
 				fprintf(stderr, "#%d errors fixed\n", blk->chn + 1);
 		} else {
 		
 
 		  if (crc) {
 			 if(fixdberr(blk, crc) == 0) {
-				if (verbose)
+				if (R.verbose)
 					fprintf(stderr, "#%d not able to fix errors\n", blk->chn + 1);
 				free(blk);
 				continue;
 		  	}
-		  	if (verbose)
+		  	if (R.verbose)
 				fprintf(stderr, "#%d errors fixed\n", blk->chn + 1);
 		  }
 		}
@@ -308,7 +308,7 @@ void decodeAcars(channel_t * ch)
 			ch->blk->err++;
 
 			if (ch->blk->err > MAXPERR + 1) {
-				if (verbose)
+				if (R.verbose)
 					fprintf(stderr,
 						"#%d too many parity errors\n",
 						ch->chn + 1);
@@ -322,7 +322,7 @@ void decodeAcars(channel_t * ch)
 			return;
 		}
 		if (ch->blk->len > 20 && r == DLE) {
-			if (verbose)
+			if (R.verbose)
 				fprintf(stderr, "#%d miss txt end\n",
 					ch->chn + 1);
 			ch->blk->len -= 3;
@@ -332,7 +332,7 @@ void decodeAcars(channel_t * ch)
 			goto putmsg_lbl;
 		}
 		if (ch->blk->len > 240) {
-			if (verbose)
+			if (R.verbose)
 				fprintf(stderr, "#%d too long\n", ch->chn + 1);
 			resetAcars(ch);
 			return;
@@ -350,7 +350,7 @@ void decodeAcars(channel_t * ch)
  putmsg_lbl:
 		ch->blk->lvl = 10*log10(ch->MskLvlSum / ch->MskBitCount);
 
-		if (verbose)
+		if (R.verbose)
 			fprintf(stderr, "put message #%d\n", ch->chn + 1);
 
 		pthread_mutex_lock(&blkq_mtx);

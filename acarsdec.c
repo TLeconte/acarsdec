@@ -32,50 +32,30 @@
 #include "acarsdec.h"
 extern void build_label_filter(char *arg);
 
-channel_t channel[MAXNBCHANNELS];
-unsigned int nbch;
+runtime_t R = {
+	.inmode = 0,
+	.verbose = 0,
+	.outtype = OUTTYPE_STD,
+	.netout = NETLOG_NONE,
+	.airflt = 0,
+	.emptymsg = 0,
+	.mdly=600,
+	.hourly = 0,
+	.daily = 0,
 
-char *idstation = NULL;
-int inmode = 0;
-int verbose = 0;
-int outtype = OUTTYPE_STD;
-int netout = NETLOG_NONE;
-int airflt = 0;
-int emptymsg = 0;
-int mdly=600;
-int hourly = 0;
-int daily = 0;
+	.gain = 0,
+	.ppm = 0,
+	.rateMult = 160,
+	.bias = 0,
+	.lnaState = 2,
+	.GRdB = 20,
+
+	.idstation = NULL,
 
 #ifdef HAVE_LIBACARS
-int skip_reassembly = 0;
+	.skip_reassembly = 0,
 #endif
-
-float gain = 0;
-int ppm = 0;
-int rateMult = 160;
-#ifdef WITH_RTL
-int bias = 0;
-#endif
-
-#ifdef	WITH_SDRPLAY
-int	lnaState	= 2;
-int	GRdB		= 20;
-#endif
-#ifdef WITH_SOAPY
-char *antenna=NULL;
-int freq = 0;
-#endif
-
-#ifdef WITH_MQTT
-char *mqtt_urls[16];
-int mqtt_nburls=0;
-char *mqtt_topic=NULL;
-char *mqtt_user=NULL;
-char *mqtt_passwd=NULL;
-#endif
-
-char *Rawaddr = NULL;
-char *logfilename = NULL;
+};
 
 static void usage(void)
 {
@@ -236,150 +216,150 @@ int main(int argc, char **argv)
 
 	gethostname(sys_hostname, HOST_NAME_MAX);
 	sys_hostname[HOST_NAME_MAX]=0;
-	idstation = strdup(sys_hostname);
+	R.idstation = strdup(sys_hostname);
 
 	res = 0;
 	while ((c = getopt_long(argc, argv, "HDvarfdsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:B:", long_opts, NULL)) != EOF) {
 
 		switch (c) {
 		case 'v':
-			verbose = 1;
+			R.verbose = 1;
 			break;
 		case 'o':
-			outtype = atoi(optarg);
+			R.outtype = atoi(optarg);
 			break;
 		case 't':
-			mdly = atoi(optarg);
+			R.mdly = atoi(optarg);
 			break;
 		case 'b':
 			lblf=optarg;
 			break;
 #ifdef HAVE_LIBACARS
 		case 1:
-			skip_reassembly = 1;
+			R.skip_reassembly = 1;
 			break;
 #endif
 #ifdef WITH_ALSA
 		case 'a':
-			if (inmode)
+			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initAlsa(argv, optind);
-			inmode = 1;
+			R.inmode = 1;
 			break;
 #endif
 #ifdef WITH_SNDFILE
 		case 'f':
-			if (inmode)
+			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initSoundfile(argv, optind);
-			inmode = 2;
+			R.inmode = 2;
 			break;
 #endif
 		case 'g':
-			gain = atof(optarg);
+			R.gain = atof(optarg);
 			break;
 		case 'p':
-			ppm = atoi(optarg);
+			R.ppm = atoi(optarg);
 			break;
 		case 'm':
-			rateMult = atoi(optarg);
+			R.rateMult = atoi(optarg);
 			break;
 #ifdef WITH_RTL
 		case 'r':
-			if (inmode)
+			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initRtl(argv, optind);
-			inmode = 3;
+			R.inmode = 3;
 			break;
 		case 'B':
-			bias = atoi(optarg);
+			R.bias = atoi(optarg);
 			break;
 #endif
 #ifdef	WITH_SDRPLAY
 		case 's':
-			if (inmode)
+			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initSdrplay (argv, optind);
-			inmode = 5;
+			R.inmode = 5;
 			break;
     case 'L':
-			lnaState = atoi(optarg);
+			R.lnaState = atoi(optarg);
 			break;
     		case 'G':
-			GRdB = atoi(optarg);
+			R.GRdB = atoi(optarg);
 			break;
 #endif
 #ifdef WITH_SOAPY
 		case 2:
-			antenna = optarg;
+			R.antenna = optarg;
 			break;
 		case 'd':
-			if (inmode)
+			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initSoapy(argv, optind);
-			inmode = 6;
+			R.inmode = 6;
 			break;
 		case 'c':
-			freq = atoi(optarg);
+			R.freq = atoi(optarg);
 			break;
 #endif
 #ifdef WITH_AIR
 		case 's':
-			if (inmode)
+			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initAirspy(argv, optind);
-			inmode = 4;
+			R.inmode = 4;
 			break;
 #endif
 #ifdef WITH_MQTT
 		case 'M':
-			if(mqtt_nburls<15) {
-				mqtt_urls[mqtt_nburls]=strdup(optarg);
-				mqtt_nburls++;
-				mqtt_urls[mqtt_nburls]=NULL;
-				netout = NETLOG_MQTT;
+			if(R.mqtt_nburls<15) {
+				R.mqtt_urls[R.mqtt_nburls]=strdup(optarg);
+				R.mqtt_nburls++;
+				R.mqtt_urls[R.mqtt_nburls]=NULL;
+				R.netout = NETLOG_MQTT;
 			}
 			break;
     		case 'U':
-			mqtt_user = strdup(optarg);
+			R.mqtt_user = strdup(optarg);
 			break;
     		case 'P':
-			mqtt_passwd = strdup(optarg);
+			R.mqtt_passwd = strdup(optarg);
 			break;
     		case 'T':
-			mqtt_topic = strdup(optarg);
+			R.mqtt_topic = strdup(optarg);
 			break;
 #endif
 		case 'n':
-			Rawaddr = optarg;
-			netout = NETLOG_PLANEPLOTTER;
+			R.Rawaddr = optarg;
+			R.netout = NETLOG_PLANEPLOTTER;
 			break;
 		case 'N':
-			Rawaddr = optarg;
-			netout = NETLOG_NATIVE;
+			R.Rawaddr = optarg;
+			R.netout = NETLOG_NATIVE;
 			break;
 		case 'j':
-			Rawaddr = optarg;
-			netout = NETLOG_JSON;
+			R.Rawaddr = optarg;
+			R.netout = NETLOG_JSON;
 			break;
 		case 'A':
-			airflt = 1;
+			R.airflt = 1;
 			break;
 		case 'e':
-			emptymsg = 1;
+			R.emptymsg = 1;
 			break;
 		case 'l':
-			logfilename = optarg;
+			R.logfilename = optarg;
 			break;
 		case 'H':
-			hourly = 1;
+			R.hourly = 1;
 			break;
 		case 'D':
-			daily = 1;
+			R.daily = 1;
 			break;
 		case 'i':
-			free(idstation);
-			idstation = strdup(optarg);
+			free(R.idstation);
+			R.idstation = strdup(optarg);
 			break;
 
 		default:
@@ -387,7 +367,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (inmode == 0) {
+	if (R.inmode == 0) {
 		fprintf(stderr, "Need at least one of -a|-f|-r|-R|-d options\n");
 		usage();
 	}
@@ -398,22 +378,22 @@ int main(int argc, char **argv)
 		exit(res);
 	}
 
-	if(hourly && daily) {
+	if(R.hourly && R.daily) {
 		fprintf(stderr, "Options: -H and -D are exclusive\n");
 		exit(1);
 	}
 
 	build_label_filter(lblf);
 
-	res = initOutput(logfilename, Rawaddr);
+	res = initOutput(R.logfilename, R.Rawaddr);
 	if (res) {
 		fprintf(stderr, "Unable to init output\n");
 		exit(res);
 	}
 
 #ifdef WITH_MQTT
-	if (netout == NETLOG_MQTT) {
-		res = MQTTinit(mqtt_urls,idstation,mqtt_topic,mqtt_user,mqtt_passwd);
+	if (R.netout == NETLOG_MQTT) {
+		res = MQTTinit(R.mqtt_urls,R.idstation,R.mqtt_topic,R.mqtt_user,R.mqtt_passwd);
 		if (res) {
 			fprintf(stderr, "Unable to init MQTT\n");
 			exit(res);
@@ -422,9 +402,9 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef WITH_SOAPY
-	if (antenna) {
-		if (verbose) fprintf(stderr, "Setting soapy antenna to %s\n", antenna);
-		res = soapySetAntenna(antenna);
+	if (R.antenna) {
+		if (R.verbose) fprintf(stderr, "Setting soapy antenna to %s\n", R.antenna);
+		res = soapySetAntenna(R.antenna);
 		if (res) {
 			fprintf(stderr, "Unable to set antenna for SoapySDR\n");
 			exit(res);
@@ -439,13 +419,13 @@ int main(int argc, char **argv)
 	sigaction(SIGTERM, &sigact, NULL);
 	sigaction(SIGQUIT, &sigact, NULL);
 
-	for (n = 0; n < nbch; n++) {
-		channel[n].chn = n;
+	for (n = 0; n < R.nbch; n++) {
+		R.channel[n].chn = n;
 
-		res = initMsk(&(channel[n]));
+		res = initMsk(&(R.channel[n]));
 		if (res)
 			break;
-		res = initAcars(&(channel[n]));
+		res = initAcars(&(R.channel[n]));
 		if (res)
 			break;
 	}
@@ -456,16 +436,16 @@ int main(int argc, char **argv)
 	}
 
 #ifdef DEBUG
-	if (inmode !=2 ) {
+	if (R.inmode !=2 ) {
 		initSndWrite();
 	}
 #endif
 
-	if (verbose)
-		fprintf(stderr, "Decoding %d channels\n", nbch);
+	if (R.verbose)
+		fprintf(stderr, "Decoding %d channels\n", R.nbch);
 
 	/* main decoding  */
-	switch (inmode) {
+	switch (R.inmode) {
 #ifdef WITH_ALSA
 	case 1:
 		res = runAlsaSample();
@@ -478,16 +458,16 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_RTL
 	case 3:
-		if (!gain)
-			gain = -10;
+		if (!R.gain)
+			R.gain = -10;
 		runRtlSample();
 		res = runRtlClose();
 		break;
 #endif
 #ifdef WITH_AIR
 	case 4:
-		if (!gain)
-			gain = 18;
+		if (!R.gain)
+			R.gain = 18;
 		res = runAirspySample();
 		break;
 #endif
@@ -498,8 +478,8 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_SOAPY
 	case 6:
-		if (!gain)
-			gain = -10;
+		if (!R.gain)
+			R.gain = -10;
 		res = runSoapySample();
 		break;
 #endif

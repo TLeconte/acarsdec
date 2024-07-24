@@ -123,33 +123,53 @@ typedef struct {
 #endif
 } acarsmsg_t;
 
-extern channel_t channel[MAXNBCHANNELS];
-extern unsigned int  nbch;
-extern unsigned long wrktot;
-extern unsigned long wrkmask;
-extern pthread_mutex_t datamtx;
-extern pthread_cond_t datawcd;
+typedef struct {
+	channel_t channel[MAXNBCHANNELS];
+	unsigned int nbch;
 
-extern int inpmode;
-extern int verbose;
-extern int outtype;
-extern int netout;
-extern int airflt;
-extern int emptymsg;
-extern int mdly;
-extern int hourly, daily;
+	int inmode;
+	int verbose;
+	int outtype;
+	int netout;
+	int airflt;
+	int emptymsg;
+	int mdly;
+	int hourly, daily;
 
-extern float gain;
-extern int ppm;
-extern int bias;
-extern int rateMult;
-extern	int	lnaState;
-extern	int	GRdB;
-extern int initOutput(char*,char *);
+	float gain;
+	int ppm;
+	int bias;
+	int rateMult;
+	int lnaState;
+	int GRdB;
+
+	char *idstation;
 
 #ifdef HAVE_LIBACARS
-extern int skip_reassembly;
+	int skip_reassembly;
 #endif
+
+#ifdef WITH_SOAPY
+	char *antenna;
+	int freq;
+#endif
+
+#ifdef WITH_MQTT
+	char *mqtt_urls[16];
+	int mqtt_nburls;
+	char *mqtt_topic;
+	char *mqtt_user;
+	char *mqtt_passwd;
+#endif
+
+	char *Rawaddr;
+	char *logfilename;
+} runtime_t;
+
+extern runtime_t R;
+
+extern int initOutput(char*,char *);
+
 #ifdef WITH_ALSA
 extern int initAlsa(char **argv,int optind);
 extern int runAlsaSample(void);
@@ -173,7 +193,6 @@ extern int initSoapy(char **argv,int optind);
 extern int soapySetAntenna(const char *antenna);
 extern int runSoapySample(void);
 extern int runSoapyClose(void);
-extern int freq;
 #endif
 #ifdef WITH_MQTT
 extern int MQTTinit(char **urls, char * client_id, char *topic, char *user,char *passwd);

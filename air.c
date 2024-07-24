@@ -125,7 +125,7 @@ int initAirspy(char **argv, int optind)
 
         if ( (argv[optind] != argF) && (errno == 0)) {
             if ( (airspy_serial < airspy_device_count) ) {
-                if(verbose) {
+                if(R.verbose) {
                     fprintf(stderr, "Attempting to open airspy device slot #%lu with serial %016lx.\n", airspy_serial, airspy_device_list[airspy_serial]);
                 }
                 result = airspy_open_sn(&device, airspy_device_list[airspy_serial]);
@@ -133,7 +133,7 @@ int initAirspy(char **argv, int optind)
                     optind++; // consume parameter
                 }
             } else {
-                if (verbose) {
+                if (R.verbose) {
                     fprintf(stderr, "Attempting to open airspy serial 0x%016lx\n", airspy_serial);
                 }
                 result = airspy_open_sn(&device, airspy_serial);
@@ -145,7 +145,7 @@ int initAirspy(char **argv, int optind)
 
         if (device == NULL) {
             for(n = 0; n < airspy_device_count; n++) {
-                if (verbose) {
+                if (R.verbose) {
                         fprintf(stderr, "Attempting to open airspy device #%d.\n", n);
                 }
                 result = airspy_open_sn(&device, airspy_device_list[n]);
@@ -167,29 +167,29 @@ int initAirspy(char **argv, int optind)
         }
 
 	/* parse args */
-	nbch = 0;
-	while ((argF = argv[optind]) && nbch < MAXNBCHANNELS) {
-		Fd[nbch] =
+	R.nbch = 0;
+	while ((argF = argv[optind]) && R.nbch < MAXNBCHANNELS) {
+		Fd[R.nbch] =
 		    ((int)(1000000 * atof(argF) + INTRATE / 2) / INTRATE) *
 		    INTRATE;
 		optind++;
-		if (Fd[nbch] < 118000000 || Fd[nbch] > 138000000) {
+		if (Fd[R.nbch] < 118000000 || Fd[R.nbch] > 138000000) {
 			fprintf(stderr, "WARNING: Invalid frequency %d\n",
-				Fd[nbch]);
+				Fd[R.nbch]);
 			continue;
 		}
-		channel[nbch].chn = nbch;
-		channel[nbch].Fr = Fd[nbch];
-		if(Fd[nbch]<minFc) minFc= Fd[nbch];
-		if(Fd[nbch]>maxFc) maxFc= Fd[nbch];
-		nbch++;
+		R.channel[R.nbch].chn = R.nbch;
+		R.channel[R.nbch].Fr = Fd[R.nbch];
+		if(Fd[R.nbch]<minFc) minFc= Fd[R.nbch];
+		if(Fd[R.nbch]>maxFc) maxFc= Fd[R.nbch];
+		R.nbch++;
 	};
-	if (nbch > MAXNBCHANNELS)
+	if (R.nbch > MAXNBCHANNELS)
 		fprintf(stderr,
 			"WARNING: too many frequencies, taking only the first %d\n",
 			MAXNBCHANNELS);
 
-	if (nbch == 0) {
+	if (R.nbch == 0) {
 		fprintf(stderr, "Need a least one frequency\n");
 		return 1;
 	}
@@ -229,7 +229,7 @@ int initAirspy(char **argv, int optind)
 
 	free(supported_samplerates);
 
-	if (verbose)
+	if (R.verbose)
 		fprintf(stderr,"Using %d sampling rate\n",AIRINRATE);
 
 
@@ -244,7 +244,7 @@ int initAirspy(char **argv, int optind)
        /* enable packed samples */
         airspy_set_packing(device, 1);
 
-	result = airspy_set_linearity_gain(device, (int)gain);
+	result = airspy_set_linearity_gain(device, (int)R.gain);
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_set_vga_gain() failed: %s (%d)\n", airspy_error_name(result), result);
 	}
@@ -262,12 +262,12 @@ int initAirspy(char **argv, int optind)
 		airspy_exit();
 		return -1;
 	}
-	if (verbose)
+	if (R.verbose)
 		fprintf(stderr, "Set freq. to %d hz\n", Fc);
 
 	/* computes mixers osc. */
-	for (n = 0; n < nbch; n++) {
-		channel_t *ch = &(channel[n]);
+	for (n = 0; n < R.nbch; n++) {
+		channel_t *ch = &(R.channel[n]);
 		int i;
 		double AMFreq,Ph;
 
@@ -307,8 +307,8 @@ static int rx_callback(airspy_transfer_t* transfer)
         be=nbk*AIRMULT+bo;
         ben=transfer->sample_count-be;
 
-        for(n=0;n<nbch;n++) {
-                channel_t *ch = &(channel[n]);
+        for(n=0;n<R.nbch;n++) {
+                channel_t *ch = &(R.channel[n]);
                 float S;
                 int k,bn,m;
                 float complex D;
