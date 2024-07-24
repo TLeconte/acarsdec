@@ -2,3 +2,4 @@ acarsdec
 acarsserv
 .*.swp
 *.o
+build/
