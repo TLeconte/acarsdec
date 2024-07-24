@@ -29,6 +29,7 @@
 #include <string.h>
 #include <math.h>
 #include "acarsdec.h"
+#include "lib.h"
 #include <mirsdrapi-rsp.h>
 
 #define SDRPLAY_MULT 160
@@ -107,7 +108,6 @@ unsigned int Fc;
 int initSdrplay (char **argv, int optind) {
 int r, n;
 char *argF;
-unsigned int F0, minFc = 140000000, maxFc = 0;
 unsigned int Fd [MAXNBCHANNELS];
 int result;
 uint32_t i;
@@ -115,35 +115,12 @@ uint	deviceIndex, numofDevs;
 mir_sdr_DeviceT devDesc [4];
 mir_sdr_ErrT err;
 
-	R.nbch = 0;
-	while ((argF = argv [optind]) && R.nbch < MAXNBCHANNELS) {
-	   Fd [R.nbch] =
-		    ((int)(1000000 * atof (argF) + INTRATE / 2) / INTRATE) *
-		    INTRATE;
-	   optind++;
-	   if (Fd [R.nbch] < 118000000 || Fd [R.nbch] > 138000000) {
-	      fprintf (stderr, "WARNING: Invalid frequency %d\n", Fd [R.nbch]);
-	      continue;
-	   }
+	r = parse_freqs(argv, optind, NULL, NULL);
+	if (r)
+		return r;
 
-	   R.channel [R.nbch]. chn = R.nbch;
-	   R.channel [R.nbch]. Fr = (float)Fd [R.nbch];
-	   if (Fd [R.nbch] < minFc)
-	      minFc =  Fd[R.nbch];
-	   if (Fd [R.nbch] > maxFc)
-	      maxFc = Fd[R.nbch];
-		R.nbch++;
-	}
-
-	if (R.nbch > MAXNBCHANNELS)
-	   fprintf (stderr,
-	        "WARNING: too much frequencies, taking only the %d firsts\n",
-	        MAXNBCHANNELS);
-
-	if (R.nbch == 0) {
-	   fprintf(stderr, "Need a least one  frequencies\n");
-	   return 1;
-	}
+	for (n = 0; n < R.nbch; n++)
+		Fd[n] = (int)R.channel[n].Fr;	// XXX
 
 	Fc	= chooseFc (Fd, R.nbch);
 

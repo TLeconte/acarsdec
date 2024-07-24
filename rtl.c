@@ -25,6 +25,7 @@
 #include <math.h>
 #include <rtl-sdr.h>
 #include "acarsdec.h"
+#include "lib.h"
 
 // set the sameple rate by changing RTMULT
 // 2.5Ms/s is the best but could be over limit for some hardware
@@ -192,7 +193,6 @@ int initRtl(char **argv, int optind)
 {
 	int r, n;
 	int dev_index;
-	char *argF;
 	unsigned int Fc;
 	unsigned int Fd[MAXNBCHANNELS];
 
@@ -239,30 +239,12 @@ int initRtl(char **argv, int optind)
 				"WARNING: Failed to set freq. correction\n");
 	}
 
-	R.nbch = 0;
-	while ((argF = argv[optind]) && R.nbch < MAXNBCHANNELS) {
-		Fd[R.nbch] =
-		    ((int)(1000000 * atof(argF) + INTRATE / 2) / INTRATE) *
-		    INTRATE;
-		optind++;
-		if (Fd[R.nbch] < 118000000 || Fd[R.nbch] > 138000000) {
-			fprintf(stderr, "WARNING: Invalid frequency %d\n",
-				Fd[R.nbch]);
-			continue;
-		}
-		R.channel[R.nbch].chn = R.nbch;
-		R.channel[R.nbch].Fr = (float)Fd[R.nbch];
-		R.nbch++;
-	};
-	if (R.nbch > MAXNBCHANNELS)
-		fprintf(stderr,
-			"WARNING: too many frequencies, using only the first %d\n",
-			MAXNBCHANNELS);
+	r = parse_freqs(argv, optind, NULL, NULL);
+	if (r)
+		return r;
 
-	if (R.nbch == 0) {
-		fprintf(stderr, "Need a least one frequency\n");
-		return 1;
-	}
+	for (n = 0; n < R.nbch; n++)
+		Fd[n] = (int)R.channel[n].Fr;	// XXX
 
 	Fc = chooseFc(Fd, R.nbch);
 	if (Fc == 0)

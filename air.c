@@ -27,6 +27,7 @@
 #include <math.h>
 #include <libairspy/airspy.h>
 #include "acarsdec.h"
+#include "lib.h"
 
 static unsigned int AIRMULT;
 static unsigned int AIRINRATE;
@@ -74,7 +75,6 @@ int initAirspy(char **argv, int optind)
 	int n;
 	char *argF;
 	int Fc,minFc=140000000,maxFc=0;
-	int Fd[MAXNBCHANNELS];
 	int result;
 	uint32_t i,count;
 	uint32_t * supported_samplerates;
@@ -166,33 +166,10 @@ int initAirspy(char **argv, int optind)
             }
         }
 
-	/* parse args */
-	R.nbch = 0;
-	while ((argF = argv[optind]) && R.nbch < MAXNBCHANNELS) {
-		Fd[R.nbch] =
-		    ((int)(1000000 * atof(argF) + INTRATE / 2) / INTRATE) *
-		    INTRATE;
-		optind++;
-		if (Fd[R.nbch] < 118000000 || Fd[R.nbch] > 138000000) {
-			fprintf(stderr, "WARNING: Invalid frequency %d\n",
-				Fd[R.nbch]);
-			continue;
-		}
-		R.channel[R.nbch].chn = R.nbch;
-		R.channel[R.nbch].Fr = Fd[R.nbch];
-		if(Fd[R.nbch]<minFc) minFc= Fd[R.nbch];
-		if(Fd[R.nbch]>maxFc) maxFc= Fd[R.nbch];
-		R.nbch++;
-	};
-	if (R.nbch > MAXNBCHANNELS)
-		fprintf(stderr,
-			"WARNING: too many frequencies, taking only the first %d\n",
-			MAXNBCHANNELS);
-
-	if (R.nbch == 0) {
-		fprintf(stderr, "Need a least one frequency\n");
-		return 1;
-	}
+	/* parse freqs */
+	result = parse_freqs(argv, optind, &minFc, &maxFc);
+	if (result)
+		return result;
 
 	/* init airspy */
 

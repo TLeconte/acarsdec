@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include "acarsdec.h"
+#include "lib.h"
 
 static SoapySDRDevice *dev = NULL;
 static SoapySDRStream *stream = NULL;
@@ -110,28 +111,12 @@ int initSoapy(char **argv, int optind)
 			fprintf(stderr, "WARNING: Failed to set freq correction: %s\n", SoapySDRDevice_lastError());
 	}
 
-	R.nbch = 0;
-	while ((argF = argv[optind]) && R.nbch < MAXNBCHANNELS) {
-		Fd[R.nbch] = ((int)(1000000 * atof(argF) + INTRATE / 2) / INTRATE) * INTRATE;
-		optind++;
-		if (Fd[R.nbch] < 118000000 || Fd[R.nbch] > 138000000) {
-			fprintf(stderr, "WARNING: frequency not in range 118-138 MHz: %d\n",
-				Fd[R.nbch]);
-			continue;
-		}
-		R.channel[R.nbch].chn = R.nbch;
-		R.channel[R.nbch].Fr = (float)Fd[R.nbch];
-		R.nbch++;
-	};
-	if (R.nbch > MAXNBCHANNELS)
-		fprintf(stderr,
-			"WARNING: too many frequencies, using only the first %d\n",
-			MAXNBCHANNELS);
+	r = parse_freqs(argv, optind, NULL, NULL);
+	if (r)
+		return r;
 
-	if (R.nbch == 0) {
- 		fprintf(stderr, "Need a least one frequency\n");
-		return 1;
-	}
+	for (n = 0; n < R.nbch; n++)
+		Fd[n] = (int)R.channel[n].Fr;	// XXX
 
 	if(R.freq == 0)
 		R.freq = chooseFc(Fd, R.nbch);
