@@ -83,7 +83,7 @@ int initSdrplay(char **argv, int optind)
 		return 1;
 
 	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channel[n]);
+		channel_t *ch = &(R.channels[n]);
 		ch->counter = 0;
 		int ind;
 		double correctionPhase;
@@ -146,7 +146,7 @@ static void myStreamCallback(int16_t *xi,
 
 	for (n = 0; n < R.nbch; n++) {
 		local_ind = current_index;
-		channel_t *ch = &(R.channel[n]);
+		channel_t *ch = &(R.channels[n]);
 		float complex D = ch->D;
 		for (i = 0; i < numSamples; i++) {
 			float r = ((float)(xi[i]));

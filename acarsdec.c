@@ -378,12 +378,12 @@ int main(int argc, char **argv)
 	sigaction(SIGQUIT, &sigact, NULL);
 
 	for (n = 0; n < R.nbch; n++) {
-		R.channel[n].chn = n;
+		R.channels[n].chn = n;
 
-		res = initMsk(&(R.channel[n]));
+		res = initMsk(&(R.channels[n]));
 		if (res)
 			break;
-		res = initAcars(&(R.channel[n]));
+		res = initAcars(&(R.channels[n]));
 		if (res)
 			break;
 	}

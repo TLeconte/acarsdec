@@ -77,7 +77,7 @@ int initSoapy(char **argv, int optind)
 		return r;
 
 	for (n = 0; n < R.nbch; n++)
-		Fd[n] = (int)R.channel[n].Fr; // XXX
+		Fd[n] = (int)R.channels[n].Fr; // XXX
 
 	if (R.freq == 0)
 		R.freq = find_centerfreq(minFc, maxFc, soapyInRate);
@@ -94,7 +94,7 @@ int initSoapy(char **argv, int optind)
 	}
 
 	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channel[n]);
+		channel_t *ch = &(R.channels[n]);
 		int ind;
 		float AMFreq;
 
@@ -182,7 +182,7 @@ int runSoapySample(void)
 
 		for (n = 0; n < R.nbch; n++) {
 			local_ind = current_index;
-			channel_t *ch = &(R.channel[n]);
+			channel_t *ch = &(R.channels[n]);
 			float complex D = ch->D;
 
 			for (i = 0; i < res * 2; i += 2) {

@@ -45,8 +45,8 @@ int parse_freqs(char **argv, int optind, unsigned int *minFc, unsigned int *maxF
 			continue;
 		}
 
-		R.channel[R.nbch].chn = R.nbch;
-		R.channel[R.nbch].Fr = freq;
+		R.channels[R.nbch].chn = R.nbch;
+		R.channels[R.nbch].Fr = freq;
 		R.nbch++;
 
 		if (minFc && maxFc) {

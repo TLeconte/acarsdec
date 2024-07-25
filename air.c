@@ -246,7 +246,7 @@ int initAirspy(char **argv, int optind)
 
 	/* computes mixers osc. */
 	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channel[n]);
+		channel_t *ch = &(R.channels[n]);
 		int i;
 		double AMFreq, Ph;
 
@@ -289,7 +289,7 @@ static int rx_callback(airspy_transfer_t *transfer)
 	ben = transfer->sample_count - be;
 
 	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channel[n]);
+		channel_t *ch = &(R.channels[n]);
 		float S;
 		int k, bn, m;
 		float complex D;

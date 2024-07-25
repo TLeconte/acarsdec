@@ -204,7 +204,7 @@ int initRtl(char **argv, int optind)
 		return 1;
 
 	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channel[n]);
+		channel_t *ch = &(R.channels[n]);
 		int ind;
 		float AMFreq;
 
@@ -279,7 +279,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 		}
 
 		for (n = 0; n < R.nbch; n++) {
-			channel_t *ch = &(R.channel[n]);
+			channel_t *ch = &(R.channels[n]);
 			float complex D, *wf;
 
 			wf = ch->wf;
@@ -292,7 +292,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	}
 
 	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channel[n]);
+		channel_t *ch = &(R.channels[n]);
 		demodMSK(ch, RTLOUTBUFSZ);
 	}
 }

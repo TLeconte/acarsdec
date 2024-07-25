@@ -168,7 +168,7 @@ static void printmsg(acarsmsg_t *msg, int chn, struct timeval tv)
 #if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
 	if (R.inmode >= 3)
 		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+5.1f E:%1d) ", chn + 1,
-			R.channel[chn].Fr / 1000000.0, msg->lvl, msg->err);
+			R.channels[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
 		fprintf(fdout, "\n[#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
@@ -241,7 +241,7 @@ static int buildjson(acarsmsg_t *msg, int chn, struct timeval tv)
 {
 	oooi_t oooi;
 #if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
-	float freq = R.channel[chn].Fr / 1000000.0;
+	float freq = R.channels[chn].Fr / 1000000.0;
 #else
 	float freq = 0;
 #endif

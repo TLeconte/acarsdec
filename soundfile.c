@@ -50,7 +50,7 @@ int initSoundfile(char **argv, int optind)
 	}
 
 	for (n = 0; n < R.nbch; n++)
-		R.channel[n].dm_buffer = malloc(sizeof(float) * MAXNBFRAMES);
+		R.channels[n].dm_buffer = malloc(sizeof(float) * MAXNBFRAMES);
 
 	return (0);
 }
@@ -70,9 +70,9 @@ int runSoundfileSample(void)
 		for (n = 0; n < R.nbch; n++) {
 			int len = nbi / R.nbch;
 			for (i = 0; i < len; i++)
-				R.channel[n].dm_buffer[i] = sndbuff[n + i * R.nbch];
+				R.channels[n].dm_buffer[i] = sndbuff[n + i * R.nbch];
 
-			demodMSK(&(R.channel[n]), len);
+			demodMSK(&(R.channels[n]), len);
 		}
 
 	} while (1);

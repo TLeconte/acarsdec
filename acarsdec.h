@@ -124,7 +124,7 @@ typedef struct {
 } acarsmsg_t;
 
 typedef struct {
-	channel_t channel[MAXNBCHANNELS];
+	channel_t channels[MAXNBCHANNELS];
 	unsigned int nbch;
 
 	int inmode;

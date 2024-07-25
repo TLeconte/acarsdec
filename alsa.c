@@ -96,8 +96,8 @@ int initAlsa(char **argv, int optind)
 		return 1;
 	}
 
-	R.channel[0].chn = 0;
-	R.channel[0].dm_buffer = malloc(MAXNBFRAMES * sizeof(float));
+	R.channels[0].chn = 0;
+	R.channels[0].dm_buffer = malloc(MAXNBFRAMES * sizeof(float));
 
 	return (0);
 }
@@ -107,7 +107,7 @@ int runAlsaSample(void)
 	int r, n, i;
 
 	do {
-		r = snd_pcm_readi(capture_handle, R.channel[0].dm_buffer, MAXNBFRAMES);
+		r = snd_pcm_readi(capture_handle, R.channels[0].dm_buffer, MAXNBFRAMES);
 		if (r <= 0) {
 			fprintf(stderr,
 				"Alsa cannot read from interface (%s)\n",
@@ -115,7 +115,7 @@ int runAlsaSample(void)
 			return -1;
 		}
 
-		demodMSK(&(R.channel[0]), r);
+		demodMSK(&(R.channels[0]), r);
 
 	} while (1);
 	return 0;
