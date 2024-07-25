@@ -33,28 +33,12 @@
 extern void build_label_filter(char *arg);
 
 runtime_t R = {
-	.inmode = 0,
-	.verbose = 0,
 	.outtype = OUTTYPE_STD,
 	.netout = NETLOG_NONE,
-	.airflt = 0,
-	.emptymsg = 0,
 	.mdly = 600,
-	.hourly = 0,
-	.daily = 0,
-
-	.gain = 0,
-	.ppm = 0,
 	.rateMult = 160,
-	.bias = 0,
 	.lnaState = 2,
 	.GRdB = 20,
-
-	.idstation = NULL,
-
-#ifdef HAVE_LIBACARS
-	.skip_reassembly = 0,
-#endif
 };
 
 static void usage(void)
@@ -64,16 +48,12 @@ static void usage(void)
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, "(libacars %s)\n", LA_VERSION);
 #endif
-	fprintf(stderr,
-		"\nUsage: acarsdec  [-o lv] [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
+	fprintf(stderr, "\nUsage: acarsdec  [-o lv] [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " [--skip-reassembly] ");
 #endif
 #ifdef WITH_MQTT
-	fprintf(stderr, " [ -M mqtt_url");
-	fprintf(stderr, " [-T mqtt_topic] |");
-	fprintf(stderr, " [-U mqtt_user |");
-	fprintf(stderr, " -P mqtt_passwd]]|");
+	fprintf(stderr, " [ -M mqtt_url [-T mqtt_topic] | [-U mqtt_user | -P mqtt_passwd]] |");
 #endif
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice  |");
@@ -82,12 +62,10 @@ static void usage(void)
 	fprintf(stderr, " -f inputwavfile  |");
 #endif
 #ifdef WITH_RTL
-	fprintf(stderr,
-		" -r rtldevicenumber [rtlopts] |");
+	fprintf(stderr, " -r rtldevicenumber [rtlopts] |");
 #endif
 #ifdef WITH_AIR
-	fprintf(stderr,
-		" -s airspydevicenumber [airspyopts] |");
+	fprintf(stderr, " -s airspydevicenumber [airspyopts] |");
 #endif
 #ifdef WITH_SDRPLAY
 	fprintf(stderr, " -s [sdrplayopts] |");
@@ -95,92 +73,74 @@ static void usage(void)
 #ifdef WITH_SOAPY
 	fprintf(stderr, " -d devicestring [soapyopts]");
 #endif
-	fprintf(stderr, " f1 [f2] .. [fN]");
-	fprintf(stderr, "\n\n");
+	fprintf(stderr, " f1 [f2] .. [fN]\n\n");
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " --skip-reassembly\t: disable reassembling fragmented ACARS messages\n");
 #endif
 	fprintf(stderr,
-		" -i stationid\t\t: station id used in acarsdec network format.\n");
-	fprintf(stderr,
-		" -A\t\t\t: don't output uplink messages (ie : only aircraft messages)\n");
-	fprintf(stderr,
-		" -e\t\t\t: don't output empty messages (ie : _d,Q0, etc ...)\n");
-	fprintf(stderr,
-		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n");
-	fprintf(stderr,
-		" -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor , 4 : msg JSON, 5 : route JSON\n");
-	fprintf(stderr,
-		" -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n");
-	fprintf(stderr,
-		" -l logfile\t\t: append log messages to logfile (Default : stdout).\n");
-	fprintf(stderr,
-		" -H\t\t\t: rotate log file once every hour\n");
-	fprintf(stderr,
-		" -D\t\t\t: rotate log file once every day\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr,
-		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n");
-	fprintf(stderr,
-		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec native format\n");
-	fprintf(stderr,
+		" -i stationid\t\t: station id used in acarsdec network format.\n"
+		" -A\t\t\t: don't output uplink messages (ie : only aircraft messages)\n"
+		" -e\t\t\t: don't output empty messages (ie : _d,Q0, etc ...)\n"
+		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n"
+		" -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor , 4 : msg JSON, 5 : route JSON\n"
+		" -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n"
+		" -l logfile\t\t: append log messages to logfile (Default : stdout).\n"
+		" -H\t\t\t: rotate log file once every hour\n"
+		" -D\t\t\t: rotate log file once every day\n"
+		"\n"
+		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n"
+		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec native format\n"
 		" -j ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec json format\n");
 #ifdef WITH_MQTT
-	fprintf(stderr, " -M mqtt_url\t\t: Url of MQTT broker\n");
-	fprintf(stderr, " -T mqtt_topic\t\t: Optionnal MQTT topic (default : acarsdec/${station_id})\n");
-	fprintf(stderr, " -U mqtt_user\t\t: Optional MQTT username\n");
-	fprintf(stderr, " -P mqtt_passwd\t\t: Optional MQTT password\n");
+	fprintf(stderr,
+		" -M mqtt_url\t\t: Url of MQTT broker\n"
+		" -T mqtt_topic\t\t: Optionnal MQTT topic (default : acarsdec/${station_id})\n"
+		" -U mqtt_user\t\t: Optional MQTT username\n"
+		" -P mqtt_passwd\t\t: Optional MQTT password\n"
 #endif
 	fprintf(stderr, "\n");
 
 #ifdef WITH_ALSA
-	fprintf(stderr,
-		" -a alsapcmdevice\t: decode from soundcard input alsapcmdevice (ie: hw:0,0)\n");
+	fprintf(stderr, " -a alsapcmdevice\t: decode from soundcard input alsapcmdevice (ie: hw:0,0)\n");
 #endif
 #ifdef WITH_SNDFILE
-	fprintf(stderr,
-		" -f inputwavfile\t: decode from a wav file at %d sampling rate\n", INTRATE);
+	fprintf(stderr, " -f inputwavfile\t: decode from a wav file at %d sampling rate\n", INTRATE);
 #endif
 #ifdef WITH_RTL
-	fprintf(stderr, "\n rtlopts:\n");
 	fprintf(stderr,
-		" -g gain\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n");
-	fprintf(stderr, " -p ppm\t\t\t: set rtl ppm frequency correction\n");
-	fprintf(stderr, " -m rateMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
-	fprintf(stderr, " -B bias\t\t\t: Enable (1) or Disable (0) the bias tee (default is 0)\n");
-	fprintf(stderr,
+		"\n rtlopts:\n"
+		" -g gain\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n"
+		" -p ppm\t\t\t: set rtl ppm frequency correction\n"
+		" -m rateMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
+		" -B bias\t\t\t: Enable (1) or Disable (0) the bias tee (default is 0)\n"
 		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef WITH_AIR
-	fprintf(stderr, "\n airspyopts:\n");
 	fprintf(stderr,
-		" -g linearity_gain\t: set linearity gain [0-21] default : 18\n");
-	fprintf(stderr,
+		"\n airspyopts:\n"
+		" -g linearity_gain\t: set linearity gain [0-21] default : 18\n"
 		" -s airspydevice f1 [f2]...[f%d]\t: decode from airspy dongle number or hex serial number receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef WITH_SDRPLAY
-	fprintf(stderr, "\n sdrplayopts:\n");
 	fprintf(stderr,
+		"\n sdrplayopts:\n"
 		"-L lnaState: set the lnaState (depends on the device)\n"
 		"-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"
 		" -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n",
 		MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 #ifdef WITH_SOAPY
-	fprintf(stderr, "\n soapyopts:\n");
 	fprintf(stderr,
-		" --antenna antenna\t: set antenna port to use\n");
-	fprintf(stderr,
-		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n");
-	fprintf(stderr, " -p ppm\t\t\t: set ppm frequency correction\n");
-	fprintf(stderr, " -c freq\t\t: set center frequency to tune to\n");
-	fprintf(stderr, " -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
-	fprintf(stderr,
+		"\n soapyopts:\n"
+		" --antenna antenna\t: set antenna port to use\n"
+		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n"
+		" -p ppm\t\t\t: set ppm frequency correction\n"
+		" -c freq\t\t: set center frequency to tune to\n"
+		" -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
 		" -d devicestring f1 [f2] .. [f%d]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 
-	fprintf(stderr,
-		"\n Up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
+	fprintf(stderr, "\n Up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
 	exit(1);
 }
 
@@ -207,9 +167,7 @@ int main(int argc, char **argv)
 	struct option long_opts[] = {
 		{ "verbose", no_argument, NULL, 'v' },
 		{ "skip-reassembly", no_argument, NULL, 1 },
-#ifdef WITH_SOAPY
 		{ "antenna", required_argument, NULL, 2 },
-#endif
 		{ NULL, 0, NULL, 0 }
 	};
 	char sys_hostname[HOST_NAME_MAX + 1];
