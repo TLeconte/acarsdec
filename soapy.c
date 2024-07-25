@@ -18,7 +18,7 @@
 
 static SoapySDRDevice *dev = NULL;
 static SoapySDRStream *stream = NULL;
-static int16_t* soapyInBuf = NULL;
+static int16_t *soapyInBuf = NULL;
 static int soapyInBufSize = 0;
 static int soapyInRate = 0;
 static int soapyExit = 0;
@@ -38,14 +38,14 @@ int initSoapy(char **argv, int optind)
 	}
 
 	dev = SoapySDRDevice_makeStrArgs(argv[optind]);
-	if(dev == NULL) {
+	if (dev == NULL) {
 		fprintf(stderr, "Error opening SoapySDR device using string \"%s\": %s\n", argv[optind], SoapySDRDevice_lastError());
 		return -1;
 	}
 	optind++;
 
-    soapyInBufSize = SOAPYOUTBUFSZ * R.rateMult * 2;
-    soapyInRate = INTRATE * R.rateMult;
+	soapyInBufSize = SOAPYOUTBUFSZ * R.rateMult * 2;
+	soapyInRate = INTRATE * R.rateMult;
 
 	soapyInBuf = malloc(sizeof(int16_t) * soapyInBufSize);
 
@@ -59,8 +59,8 @@ int initSoapy(char **argv, int optind)
 		r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 0);
 		if (r != 0)
 			fprintf(stderr, "WARNING: Failed to turn off AGC: %s\n", SoapySDRDevice_lastError());
-        if (R.verbose)
-            fprintf(stderr, "Setting gain to: %f\n", R.gain);
+		if (R.verbose)
+			fprintf(stderr, "Setting gain to: %f\n", R.gain);
 		r = SoapySDRDevice_setGain(dev, SOAPY_SDR_RX, 0, R.gain);
 		if (r != 0)
 			fprintf(stderr, "WARNING: Failed to set gain: %s\n", SoapySDRDevice_lastError());
@@ -77,18 +77,18 @@ int initSoapy(char **argv, int optind)
 		return r;
 
 	for (n = 0; n < R.nbch; n++)
-		Fd[n] = (int)R.channel[n].Fr;	// XXX
+		Fd[n] = (int)R.channel[n].Fr; // XXX
 
-	if(R.freq == 0)
+	if (R.freq == 0)
 		R.freq = find_centerfreq(minFc, maxFc, soapyInRate);
 
-	if(R.freq == 0)
+	if (R.freq == 0)
 		return 1;
 
 	for (n = 0; n < R.nbch; n++) {
-		if (Fd[n] < R.freq - soapyInRate/2 || Fd[n] > R.freq + soapyInRate/2) {
+		if (Fd[n] < R.freq - soapyInRate / 2 || Fd[n] > R.freq + soapyInRate / 2) {
 			fprintf(stderr, "WARNING: frequency not in tuned range %d-%d: %d\n",
-				R.freq - soapyInRate/2, R.freq + soapyInRate/2, Fd[n]);
+				R.freq - soapyInRate / 2, R.freq + soapyInRate / 2, Fd[n]);
 			continue;
 		}
 	}
@@ -101,12 +101,11 @@ int initSoapy(char **argv, int optind)
 		ch->counter = 0;
 		ch->D = 0;
 		ch->oscillator = malloc(R.rateMult * sizeof(float complex));
-		ch->dm_buffer = malloc(SOAPYOUTBUFSZ*sizeof(float));
+		ch->dm_buffer = malloc(SOAPYOUTBUFSZ * sizeof(float));
 
 		AMFreq = (ch->Fr - (float)R.freq) / (float)(soapyInRate) * 2.0 * M_PI;
-		for (ind = 0; ind < R.rateMult; ind++) {
-			ch->oscillator[ind] = cexpf(AMFreq*ind*-I)/R.rateMult;
-		}
+		for (ind = 0; ind < R.rateMult; ind++)
+			ch->oscillator[ind] = cexpf(AMFreq * ind * -I) / R.rateMult;
 	}
 
 	if (R.verbose)
@@ -130,12 +129,13 @@ int initSoapy(char **argv, int optind)
 	return 0;
 }
 
-int soapySetAntenna(const char *antenna) {
+int soapySetAntenna(const char *antenna)
+{
 	if (dev == NULL) {
 		fprintf(stderr, "soapySetAntenna: SoapySDR not init'd\n");
 		return 1;
 	}
-	
+
 	if (antenna == NULL) {
 		fprintf(stderr, "soapySetAntenna: antenna is NULL\n");
 		return 1;
@@ -145,7 +145,7 @@ int soapySetAntenna(const char *antenna) {
 		fprintf(stderr, "soapySetAntenna: SoapySDRDevice_setAntenna failed (check antenna validity)\n");
 		return 1;
 	}
-	
+
 	return 0;
 }
 
@@ -156,19 +156,19 @@ int runSoapySample(void)
 	int res = 0;
 	int flags = 0;
 	long long timens = 0;
-	void* bufs[] = { soapyInBuf };
+	void *bufs[] = { soapyInBuf };
 
 	if (SoapySDRDevice_activateStream(dev, stream, 0, 0, 0)) {
 		fprintf(stderr, "WARNING: Failed to activate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
 		return 1;
 	}
 
-	while(!soapyExit) {
+	while (!soapyExit) {
 		flags = 0;
-		res = SoapySDRDevice_readStream(dev, stream, bufs, soapyInBufSize/2, &flags, &timens, 10000000);
+		res = SoapySDRDevice_readStream(dev, stream, bufs, soapyInBufSize / 2, &flags, &timens, 10000000);
 		if (res == 0) {
 			usleep(500);
-			continue;	// retry
+			continue; // retry
 		}
 		if (res < 0) {
 			if (res == SOAPY_SDR_OVERFLOW)
@@ -185,10 +185,10 @@ int runSoapySample(void)
 			channel_t *ch = &(R.channel[n]);
 			float complex D = ch->D;
 
-			for (i = 0; i < res*2; i+=2) {
+			for (i = 0; i < res * 2; i += 2) {
 				float r = (float)soapyInBuf[i];
-				float g = (float)soapyInBuf[i+1];
-				float complex v = r + g*I;
+				float g = (float)soapyInBuf[i + 1];
+				float complex v = r + g * I;
 				D += v * ch->oscillator[local_ind++] / 32768.0;
 				if (local_ind >= R.rateMult) {
 					ch->dm_buffer[ch->counter++] = cabsf(D);
@@ -207,7 +207,8 @@ int runSoapySample(void)
 	return 0;
 }
 
-int runSoapyClose(void) {
+int runSoapyClose(void)
+{
 	int res = 0;
 	soapyExit = 1;
 

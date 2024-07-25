@@ -37,19 +37,20 @@ int initSoundfile(char **argv, int optind)
 		fprintf(stderr, "could not open %s\n", argv[optind]);
 		return (1);
 	}
+
 	R.nbch = infsnd.channels;
 	if (R.nbch > MAXNBCHANNELS) {
 		fprintf(stderr, "Too much input channels : %d\n", R.nbch);
 		return (1);
 	}
-	if(infsnd.samplerate!=INTRATE) {
-		fprintf(stderr, "unsupported sample rate : %d (must be %d)\n",infsnd.samplerate,INTRATE);
+
+	if (infsnd.samplerate != INTRATE) {
+		fprintf(stderr, "unsupported sample rate : %d (must be %d)\n", infsnd.samplerate, INTRATE);
 		return (1);
 	}
-	
-	for (n = 0; n < R.nbch; n++) {
-		R.channel[n].dm_buffer=malloc(sizeof(float)*MAXNBFRAMES);
-	}
+
+	for (n = 0; n < R.nbch; n++)
+		R.channel[n].dm_buffer = malloc(sizeof(float) * MAXNBFRAMES);
 
 	return (0);
 }
@@ -60,7 +61,6 @@ int runSoundfileSample(void)
 	sample_t sndbuff[MAXNBFRAMES * MAXNBCHANNELS];
 
 	do {
-
 		nbi = sf_read_float(insnd, sndbuff, MAXNBFRAMES * R.nbch);
 
 		if (nbi == 0) {
@@ -70,9 +70,9 @@ int runSoundfileSample(void)
 		for (n = 0; n < R.nbch; n++) {
 			int len = nbi / R.nbch;
 			for (i = 0; i < len; i++)
-				R.channel[n].dm_buffer[i]=sndbuff[n + i * R.nbch];
+				R.channel[n].dm_buffer[i] = sndbuff[n + i * R.nbch];
 
-			demodMSK(&(R.channel[n]),len);
+			demodMSK(&(R.channel[n]), len);
 		}
 
 	} while (1);
@@ -93,7 +93,6 @@ void initSndWrite(void)
 		fprintf(stderr, "could not open data\n ");
 		return;
 	}
-
 }
 
 void SndWrite(float *in)

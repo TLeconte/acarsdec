@@ -50,13 +50,13 @@ int parse_freqs(char **argv, int optind, unsigned int *minFc, unsigned int *maxF
 		R.nbch++;
 
 		if (minFc && maxFc) {
-			if(freq < *minFc)
-				*minFc= freq;
-			if(freq > *maxFc)
-				*maxFc= freq;
+			if (freq < *minFc)
+				*minFc = freq;
+			if (freq > *maxFc)
+				*maxFc = freq;
 		}
 	};
-	
+
 	if (R.nbch > MAXNBCHANNELS)
 		fprintf(stderr,
 			"WARNING: too many frequencies, taking only the first %d\n",

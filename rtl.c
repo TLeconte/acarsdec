@@ -43,7 +43,6 @@ static int rtlInRate = 0;
 
 #define RTLOUTBUFSZ 1024
 
-
 /* function verbose_device_search by Kyle Keen
  * from http://cgit.osmocom.org/rtl-sdr/tree/src/convenience/convenience.c
  */
@@ -52,6 +51,7 @@ int verbose_device_search(char *s)
 	int i, device_count, device, offset;
 	char *s2;
 	char vendor[256], product[256], serial[256];
+
 	device_count = rtlsdr_get_device_count();
 	if (!device_count) {
 		fprintf(stderr, "No supported devices found.\n");
@@ -59,14 +59,15 @@ int verbose_device_search(char *s)
 	}
 	if (R.verbose)
 		fprintf(stderr, "Found %d device(s):\n", device_count);
+
 	for (i = 0; i < device_count; i++) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
 		if (R.verbose)
-			fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor,
-				product, serial);
+			fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor, product, serial);
 	}
 	if (R.verbose)
 		fprintf(stderr, "\n");
+
 	/* does string look like an exact serial number */
 	if (strlen(s) == 8)
 		goto find_serial;
@@ -74,9 +75,7 @@ int verbose_device_search(char *s)
 	device = (int)strtol(s, &s2, 0);
 	if (s2[0] == '\0' && device >= 0 && device < device_count) {
 		if (R.verbose)
-			fprintf(stderr, "Using device %d: %s\n",
-				device,
-				rtlsdr_get_device_name((uint32_t) device));
+			fprintf(stderr, "Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 find_serial:
@@ -88,39 +87,33 @@ find_serial:
 		}
 		device = i;
 		if (R.verbose)
-			fprintf(stderr, "Using device %d: %s\n",
-				device,
-				rtlsdr_get_device_name((uint32_t) device));
+			fprintf(stderr, "Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	/* does string prefix match a serial */
 	for (i = 0; i < device_count; i++) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		if (strncmp(s, serial, strlen(s)) != 0) {
+		if (strncmp(s, serial, strlen(s)) != 0)
 			continue;
-		}
+
 		device = i;
 		if (R.verbose)
-			fprintf(stderr, "Using device %d: %s\n",
-				device,
-				rtlsdr_get_device_name((uint32_t) device));
+			fprintf(stderr, "Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	/* does string suffix match a serial */
 	for (i = 0; i < device_count; i++) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
 		offset = strlen(serial) - strlen(s);
-		if (offset < 0) {
+		if (offset < 0)
 			continue;
-		}
-		if (strncmp(s, serial + offset, strlen(s)) != 0) {
+
+		if (strncmp(s, serial + offset, strlen(s)) != 0)
 			continue;
-		}
+
 		device = i;
 		if (R.verbose)
-			fprintf(stderr, "Using device %d: %s\n",
-				device,
-				rtlsdr_get_device_name((uint32_t) device));
+			fprintf(stderr, "Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	fprintf(stderr, "No matching devices found.\n");
@@ -131,21 +124,25 @@ int nearest_gain(int target_gain)
 {
 	int i, err1, err2, count, close_gain;
 	int *gains;
+
 	count = rtlsdr_get_tuner_gains(dev, NULL);
-	if (count <= 0) 
+	if (count <= 0)
 		return 0;
+
 	gains = malloc(sizeof(int) * count);
-	if(gains == NULL) 
+	if (gains == NULL)
 		return 0;
+
 	count = rtlsdr_get_tuner_gains(dev, gains);
 	close_gain = gains[0];
+
 	for (i = 0; i < count; i++) {
 		err1 = abs(target_gain - close_gain);
 		err2 = abs(target_gain - gains[i]);
-		if (err2 < err1) {
+		if (err2 < err1)
 			close_gain = gains[i];
-		}
 	}
+
 	free(gains);
 	return close_gain;
 }
@@ -168,8 +165,8 @@ int initRtl(char **argv, int optind)
 		return 1;
 	}
 
-    rtlInBufSize = RTLOUTBUFSZ * R.rateMult * 2;
-    rtlInRate = INTRATE * R.rateMult;
+	rtlInBufSize = RTLOUTBUFSZ * R.rateMult * 2;
+	rtlInRate = INTRATE * R.rateMult;
 
 	r = rtlsdr_open(&dev, dev_index);
 	if (r < 0) {
@@ -183,11 +180,11 @@ int initRtl(char **argv, int optind)
 		r = rtlsdr_set_tuner_gain_mode(dev, 0);
 	} else {
 		rtlsdr_set_tuner_gain_mode(dev, 1);
-        R.gain = nearest_gain((int)(R.gain*10.0F));
-	R.gain /= 10.0F;
-        if (R.verbose)
-            fprintf(stderr, "Tuner gain: %.1f\n", R.gain);
-		r = rtlsdr_set_tuner_gain(dev, (int)(R.gain*10.0F));
+		R.gain = nearest_gain((int)(R.gain * 10.0F));
+		R.gain /= 10.0F;
+		if (R.verbose)
+			fprintf(stderr, "Tuner gain: %.1f\n", R.gain);
+		r = rtlsdr_set_tuner_gain(dev, (int)(R.gain * 10.0F));
 	}
 	if (r < 0)
 		fprintf(stderr, "WARNING: Failed to set gain.\n");
@@ -195,8 +192,7 @@ int initRtl(char **argv, int optind)
 	if (R.ppm != 0) {
 		r = rtlsdr_set_freq_correction(dev, R.ppm);
 		if (r < 0)
-			fprintf(stderr,
-				"WARNING: Failed to set freq. correction\n");
+			fprintf(stderr, "WARNING: Failed to set freq. correction\n");
 	}
 
 	r = parse_freqs(argv, optind, &minFc, &maxFc);
@@ -213,15 +209,14 @@ int initRtl(char **argv, int optind)
 		float AMFreq;
 
 		ch->wf = malloc(R.rateMult * sizeof(float complex));
-		ch->dm_buffer=malloc(RTLOUTBUFSZ*sizeof(float));
-		if( ch->wf == NULL || ch->dm_buffer == NULL) {
+		ch->dm_buffer = malloc(RTLOUTBUFSZ * sizeof(float));
+		if (ch->wf == NULL || ch->dm_buffer == NULL) {
 			fprintf(stderr, "ERROR : malloc\n");
 			return 1;
 		}
 		AMFreq = (ch->Fr - (float)Fc) / (float)(rtlInRate) * 2.0 * M_PI;
-		for (ind = 0; ind < R.rateMult; ind++) {
-			ch->wf[ind]=cexpf(AMFreq*ind*-I)/R.rateMult/127.5;
-		}
+		for (ind = 0; ind < R.rateMult; ind++)
+			ch->wf[ind] = cexpf(AMFreq * ind * -I) / R.rateMult / 127.5;
 	}
 
 	if (R.verbose)
@@ -233,8 +228,8 @@ int initRtl(char **argv, int optind)
 		return 1;
 	}
 
-    fprintf(stderr, "Setting sample rate: %.4f MS/s\n", rtlInRate / 1e6);
-	r = rtlsdr_set_sample_rate(dev, (unsigned) rtlInRate);
+	fprintf(stderr, "Setting sample rate: %.4f MS/s\n", rtlInRate / 1e6);
+	r = rtlsdr_set_sample_rate(dev, (unsigned)rtlInRate);
 	if (r < 0) {
 		fprintf(stderr, "WARNING: Failed to set sample rate.\n");
 		return 1;
@@ -247,9 +242,9 @@ int initRtl(char **argv, int optind)
 	}
 
 	r = rtlsdr_set_bias_tee(dev, R.bias);
-	if (R.verbose) 
+	if (R.verbose)
 		fprintf(stderr, "Set Bias Tee to %d\n", R.bias);
-	if(r < 0){
+	if (r < 0) {
 		fprintf(stderr, "WARNING: Failed to set bias tee\n");
 		return 1;
 	}
@@ -263,9 +258,8 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	if (nread != rtlInBufSize) {
 		fprintf(stderr, "warning: partial read\n");
 		return;
-
 	}
-	status=0;
+	status = 0;
 
 	// code requires this relationship set in initRtl:
 	// rtlInBufSize = RTLOUTBUFSZ * rateMult * 2;
@@ -276,28 +270,30 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 		for (int ind = 0; ind < R.rateMult; ind++) {
 			float r, g;
 
-			r = (float)rtlinbuff[i] - 127.37f; i++;
-			g = (float)rtlinbuff[i] - 127.37f; i++;
+			r = (float)rtlinbuff[i] - 127.37f;
+			i++;
+			g = (float)rtlinbuff[i] - 127.37f;
+			i++;
 
-			vb[ind]=r+g*I;
+			vb[ind] = r + g * I;
 		}
 
 		for (n = 0; n < R.nbch; n++) {
 			channel_t *ch = &(R.channel[n]);
-			float complex D,*wf;
+			float complex D, *wf;
 
 			wf = ch->wf;
 			D = 0;
 			for (int ind = 0; ind < R.rateMult; ind++) {
 				D += vb[ind] * wf[ind];
 			}
-			ch->dm_buffer[m]=cabsf(D);
+			ch->dm_buffer[m] = cabsf(D);
 		}
 	}
 
 	for (n = 0; n < R.nbch; n++) {
 		channel_t *ch = &(R.channel[n]);
-		demodMSK(ch,RTLOUTBUFSZ);
+		demodMSK(ch, RTLOUTBUFSZ);
 	}
 }
 
@@ -307,25 +303,26 @@ int runRtlSample(void)
 	return 0;
 }
 
-int runRtlCancel(void) {
-	if (dev) {
+int runRtlCancel(void)
+{
+	if (dev)
 		rtlsdr_cancel_async(dev); // interrupt read_async
-	}
+
 	return 0;
 }
 
-int runRtlClose(void) {
+int runRtlClose(void)
+{
 	int res = 0;
+
 	if (dev) {
 		res = rtlsdr_close(dev);
 		dev = NULL;
 	}
-	if (res) {
+	if (res)
 		fprintf(stderr, "rtlsdr_close: %d\n", res);
-	}
 
 	return res;
 }
-
 
 #endif

@@ -67,10 +67,10 @@ typedef struct {
 	float complex *wf;
 #endif
 #if defined(WITH_RTL) || defined(WITH_SDRPLAY) || defined(WITH_SOAPY) || defined(WITH_AIR)
-	float	Fr;
-        float	complex *oscillator;
-        float	complex D;
-	int	counter;
+	float Fr;
+	float complex *oscillator;
+	float complex D;
+	int counter;
 #endif
 
 	float *dm_buffer;
@@ -79,47 +79,47 @@ typedef struct {
 	float MskClk;
 	double MskLvlSum;
 	int MskBitCount;
-	unsigned int MskS,idx;
+	unsigned int MskS, idx;
 	float complex *inb;
 
 	unsigned char outbits;
-	int	nbits;
+	int nbits;
 
-	enum { WSYN, SYN2, SOH1, TXT, CRC1,CRC2, END } Acarsstate;
+	enum { WSYN, SYN2, SOH1, TXT, CRC1, CRC2, END } Acarsstate;
 	msgblk_t *blk;
 
 	pthread_t th;
 } channel_t;
 
 typedef struct {
-        char da[5];
-        char sa[5];
-        char eta[5];
-        char gout[5];
-        char gin[5];
-        char woff[5];
-        char won[5];
+	char da[5];
+	char sa[5];
+	char eta[5];
+	char gout[5];
+	char gin[5];
+	char woff[5];
+	char won[5];
 } oooi_t;
 
 typedef struct {
-        char mode;
-        char addr[8];
-        char ack;
-        char label[3];
-        char bid;
-        char no[5];
-        char fid[7];
-        char sublabel[3];
-        char mfi[3];
-        char bs, be;
-        char *txt;
-        int err;
-        float lvl;
+	char mode;
+	char addr[8];
+	char ack;
+	char label[3];
+	char bid;
+	char no[5];
+	char fid[7];
+	char sublabel[3];
+	char mfi[3];
+	char bs, be;
+	char *txt;
+	int err;
+	float lvl;
 #ifdef HAVE_LIBACARS
-        char msn[4];
-        char msn_seq;
-        la_proto_node *decoded_tree;
-        la_reasm_status reasm_status;
+	char msn[4];
+	char msn_seq;
+	la_proto_node *decoded_tree;
+	la_reasm_status reasm_status;
 #endif
 } acarsmsg_t;
 
@@ -168,48 +168,52 @@ typedef struct {
 
 extern runtime_t R;
 
-extern int initOutput(char*,char *);
+extern int initOutput(char *, char *);
 
 #ifdef WITH_ALSA
-extern int initAlsa(char **argv,int optind);
+extern int initAlsa(char **argv, int optind);
 extern int runAlsaSample(void);
 #endif
+
 #ifdef WITH_SNDFILE
-extern int initSoundfile(char **argv,int optind);
+extern int initSoundfile(char **argv, int optind);
 extern int runSoundfileSample(void);
 #endif
+
 #ifdef WITH_RTL
-extern int initRtl(char **argv,int optind);
+extern int initRtl(char **argv, int optind);
 extern int runRtlSample(void);
 extern int runRtlCancel(void);
 extern int runRtlClose(void);
 #endif
+
 #ifdef WITH_AIR
-extern int initAirspy(char **argv,int optind);
+extern int initAirspy(char **argv, int optind);
 extern int runAirspySample(void);
 #endif
+
 #ifdef WITH_SOAPY
-extern int initSoapy(char **argv,int optind);
+extern int initSoapy(char **argv, int optind);
 extern int soapySetAntenna(const char *antenna);
 extern int runSoapySample(void);
 extern int runSoapyClose(void);
 #endif
+
 #ifdef WITH_MQTT
-extern int MQTTinit(char **urls, char * client_id, char *topic, char *user,char *passwd);
+extern int MQTTinit(char **urls, char *client_id, char *topic, char *user, char *passwd);
 extern int MQTTsend(char *msgtxt);
 extern void MQTTend();
 #endif
 
-extern int initRaw(char **argv,int optind);
+extern int initRaw(char **argv, int optind);
 extern int runRawSample(void);
-extern int  initMsk(channel_t *);
-extern void demodMSK(channel_t *ch,int len);
+extern int initMsk(channel_t *);
+extern void demodMSK(channel_t *ch, int len);
 
-
-extern int  initAcars(channel_t *);
+extern int initAcars(channel_t *);
 extern void decodeAcars(channel_t *);
-extern int  deinitAcars(void);
+extern int deinitAcars(void);
 
-extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
+extern int DecodeLabel(acarsmsg_t *msg, oooi_t *oooi);
 
-extern void outputmsg(const msgblk_t*);
+extern void outputmsg(const msgblk_t *);

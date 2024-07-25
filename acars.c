@@ -29,14 +29,14 @@
 /* message queue */
 static pthread_mutex_t blkq_mtx;
 static pthread_cond_t blkq_wcd;
-static msgblk_t *blkq_s,*blkq_e;
+static msgblk_t *blkq_s, *blkq_e;
 static pthread_t blkth_id;
 
 static int acars_shutdown;
 
 #include "syndrom.h"
 
-static int fixprerr(msgblk_t * blk, const unsigned short crc, int *pr, int pn)
+static int fixprerr(msgblk_t *blk, const unsigned short crc, int *pr, int pn)
 {
 	int i;
 
@@ -63,9 +63,9 @@ static int fixprerr(msgblk_t * blk, const unsigned short crc, int *pr, int pn)
 	}
 }
 
-static int fixdberr(msgblk_t * blk, const unsigned short crc)
+static int fixdberr(msgblk_t *blk, const unsigned short crc)
 {
-	int i,j,k;
+	int i, j, k;
 
 	/* test remainding error in crc */
 	for (i = 0; i < 2 * 8; i++)
@@ -74,17 +74,18 @@ static int fixdberr(msgblk_t * blk, const unsigned short crc)
 		}
 
 	/* test double error in bytes */
-	for (k = 0; k < blk->len ; k++) {
-	  int bo=8*(blk->len-k+1);
-	  for (i = 0; i < 8; i++)
-	   for (j = 0; j < 8; j++) {
-		   if(i==j) continue;
-		   if((crc^syndrom[i+bo]^syndrom[j+bo])==0) {
-			   blk->txt[k] ^= (1 << i);
-			   blk->txt[k] ^= (1 << j);
-			   return 1;
-		   }
-	   }
+	for (k = 0; k < blk->len; k++) {
+		int bo = 8 * (blk->len - k + 1);
+		for (i = 0; i < 8; i++)
+			for (j = 0; j < 8; j++) {
+				if (i == j)
+					continue;
+				if ((crc ^ syndrom[i + bo] ^ syndrom[j + bo]) == 0) {
+					blk->txt[k] ^= (1 << i);
+					blk->txt[k] ^= (1 << j);
+					return 1;
+				}
+			}
 	}
 	return 0;
 }
@@ -157,46 +158,41 @@ static void *blk_thread(void *arg)
 
 		/* crc check */
 		crc = 0;
-		for (i = 0; i < blk->len; i++) {
+		for (i = 0; i < blk->len; i++)
 			update_crc(crc, blk->txt[i]);
-
-		}
 		update_crc(crc, blk->crc[0]);
 		update_crc(crc, blk->crc[1]);
 		if (crc && R.verbose)
 			fprintf(stderr, "#%d crc error\n", blk->chn + 1);
 
 		/* try to fix error */
-		if(pn) {
-		  if (fixprerr(blk, crc, pr, pn) == 0) {
-			if (R.verbose)
-				fprintf(stderr, "#%d not able to fix errors\n", blk->chn + 1);
-			free(blk);
-			continue;
-		  }
-			if (R.verbose)
-				fprintf(stderr, "#%d errors fixed\n", blk->chn + 1);
-		} else {
-		
-
-		  if (crc) {
-			 if(fixdberr(blk, crc) == 0) {
+		if (pn) {
+			if (fixprerr(blk, crc, pr, pn) == 0) {
 				if (R.verbose)
 					fprintf(stderr, "#%d not able to fix errors\n", blk->chn + 1);
 				free(blk);
 				continue;
-		  	}
-		  	if (R.verbose)
+			}
+			if (R.verbose)
 				fprintf(stderr, "#%d errors fixed\n", blk->chn + 1);
-		  }
+		} else {
+			if (crc) {
+				if (fixdberr(blk, crc) == 0) {
+					if (R.verbose)
+						fprintf(stderr, "#%d not able to fix errors\n", blk->chn + 1);
+					free(blk);
+					continue;
+				}
+				if (R.verbose)
+					fprintf(stderr, "#%d errors fixed\n", blk->chn + 1);
+			}
 		}
 
 		/* redo parity checking and removing */
 		pn = 0;
 		for (i = 0; i < blk->len; i++) {
-			if ((numbits[(unsigned char)(blk->txt[i])] & 1) == 0) {
+			if ((numbits[(unsigned char)(blk->txt[i])] & 1) == 0)
 				pn++;
-			}
 			blk->txt[i] &= 0x7f;
 		}
 		if (pn) {
@@ -214,15 +210,14 @@ static void *blk_thread(void *arg)
 	return NULL;
 }
 
-
-int initAcars(channel_t * ch)
+int initAcars(channel_t *ch)
 {
-	if(ch->chn==0) {
-        	/* init global message queue */
-        	pthread_mutex_init(&blkq_mtx, NULL);
-        	pthread_cond_init(&blkq_wcd, NULL);
-        	blkq_e=blkq_s=NULL;
-        	pthread_create(&blkth_id , NULL, blk_thread, NULL);
+	if (ch->chn == 0) {
+		/* init global message queue */
+		pthread_mutex_init(&blkq_mtx, NULL);
+		pthread_cond_init(&blkq_wcd, NULL);
+		blkq_e = blkq_s = NULL;
+		pthread_create(&blkth_id, NULL, blk_thread, NULL);
 
 		acars_shutdown = 0;
 	}
@@ -236,19 +231,18 @@ int initAcars(channel_t * ch)
 	return 0;
 }
 
-static void resetAcars(channel_t * ch)
+static void resetAcars(channel_t *ch)
 {
 	ch->Acarsstate = WSYN;
 	ch->MskDf = 0;
 	ch->nbits = 1;
 }
 
-void decodeAcars(channel_t * ch)
+void decodeAcars(channel_t *ch)
 {
 	unsigned char r = ch->outbits;
 
 	switch (ch->Acarsstate) {
-
 	case WSYN:
 		if (r == SYN) {
 			ch->Acarsstate = SYN2;
@@ -280,9 +274,9 @@ void decodeAcars(channel_t * ch)
 
 	case SOH1:
 		if (r == SOH) {
-			if(ch->blk == NULL) {
+			if (ch->blk == NULL) {
 				ch->blk = malloc(sizeof(msgblk_t));
-				if(ch->blk == NULL) {
+				if (ch->blk == NULL) {
 					resetAcars(ch);
 					return;
 				}
@@ -347,8 +341,8 @@ void decodeAcars(channel_t * ch)
 		return;
 	case CRC2:
 		ch->blk->crc[1] = r;
- putmsg_lbl:
-		ch->blk->lvl = 10*log10(ch->MskLvlSum / ch->MskBitCount);
+putmsg_lbl:
+		ch->blk->lvl = 10 * log10(ch->MskLvlSum / ch->MskBitCount);
 
 		if (R.verbose)
 			fprintf(stderr, "put message #%d\n", ch->chn + 1);
@@ -363,7 +357,7 @@ void decodeAcars(channel_t * ch)
 		pthread_cond_signal(&blkq_wcd);
 		pthread_mutex_unlock(&blkq_mtx);
 
-		ch->blk=NULL;
+		ch->blk = NULL;
 		ch->Acarsstate = END;
 		ch->nbits = 8;
 		return;
@@ -373,7 +367,6 @@ void decodeAcars(channel_t * ch)
 		return;
 	}
 }
-
 
 int deinitAcars(void)
 {

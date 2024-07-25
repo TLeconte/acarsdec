@@ -39,7 +39,7 @@ runtime_t R = {
 	.netout = NETLOG_NONE,
 	.airflt = 0,
 	.emptymsg = 0,
-	.mdly=600,
+	.mdly = 600,
 	.hourly = 0,
 	.daily = 0,
 
@@ -62,7 +62,7 @@ static void usage(void)
 	fprintf(stderr,
 		"Acarsdec/acarsserv %s Copyright (c) 2022 Thierry Leconte\n", ACARSDEC_VERSION);
 #ifdef HAVE_LIBACARS
-	fprintf(stderr,	"(libacars %s)\n", LA_VERSION);
+	fprintf(stderr, "(libacars %s)\n", LA_VERSION);
 #endif
 	fprintf(stderr,
 		"\nUsage: acarsdec  [-o lv] [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
@@ -89,13 +89,13 @@ static void usage(void)
 	fprintf(stderr,
 		" -s airspydevicenumber [airspyopts] |");
 #endif
-#ifdef	WITH_SDRPLAY
-	fprintf (stderr, " -s [sdrplayopts] |");
+#ifdef WITH_SDRPLAY
+	fprintf(stderr, " -s [sdrplayopts] |");
 #endif
-#ifdef	WITH_SOAPY
-	fprintf (stderr, " -d devicestring [soapyopts]");
+#ifdef WITH_SOAPY
+	fprintf(stderr, " -d devicestring [soapyopts]");
 #endif
-	fprintf (stderr, " f1 [f2] .. [fN]");
+	fprintf(stderr, " f1 [f2] .. [fN]");
 	fprintf(stderr, "\n\n");
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " --skip-reassembly\t: disable reassembling fragmented ACARS messages\n");
@@ -139,7 +139,7 @@ static void usage(void)
 #endif
 #ifdef WITH_SNDFILE
 	fprintf(stderr,
-		" -f inputwavfile\t: decode from a wav file at %d sampling rate\n",INTRATE);
+		" -f inputwavfile\t: decode from a wav file at %d sampling rate\n", INTRATE);
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr, "\n rtlopts:\n");
@@ -158,14 +158,15 @@ static void usage(void)
 	fprintf(stderr,
 		" -s airspydevice f1 [f2]...[f%d]\t: decode from airspy dongle number or hex serial number receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
-#ifdef	WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 	fprintf(stderr, "\n sdrplayopts:\n");
-	fprintf (stderr,
-	          "-L lnaState: set the lnaState (depends on the device)\n"\
-	          "-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"\
-	          " -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+	fprintf(stderr,
+		"-L lnaState: set the lnaState (depends on the device)\n"
+		"-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"
+		" -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n",
+		MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
-#ifdef	WITH_SOAPY
+#ifdef WITH_SOAPY
 	fprintf(stderr, "\n soapyopts:\n");
 	fprintf(stderr,
 		" --antenna antenna\t: set antenna port to use\n");
@@ -174,7 +175,7 @@ static void usage(void)
 	fprintf(stderr, " -p ppm\t\t\t: set ppm frequency correction\n");
 	fprintf(stderr, " -c freq\t\t: set center frequency to tune to\n");
 	fprintf(stderr, " -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
-	fprintf (stderr,
+	fprintf(stderr,
 		" -d devicestring f1 [f2] .. [f%d]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
 #endif
 
@@ -207,20 +208,19 @@ int main(int argc, char **argv)
 		{ "verbose", no_argument, NULL, 'v' },
 		{ "skip-reassembly", no_argument, NULL, 1 },
 #ifdef WITH_SOAPY
-		{ "antenna", required_argument, NULL, 2},
+		{ "antenna", required_argument, NULL, 2 },
 #endif
 		{ NULL, 0, NULL, 0 }
 	};
-	char sys_hostname[HOST_NAME_MAX+1];
-	char *lblf=NULL;
+	char sys_hostname[HOST_NAME_MAX + 1];
+	char *lblf = NULL;
 
 	gethostname(sys_hostname, HOST_NAME_MAX);
-	sys_hostname[HOST_NAME_MAX]=0;
+	sys_hostname[HOST_NAME_MAX] = 0;
 	R.idstation = strdup(sys_hostname);
 
 	res = 0;
 	while ((c = getopt_long(argc, argv, "HDvarfdsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:B:", long_opts, NULL)) != EOF) {
-
 		switch (c) {
 		case 'v':
 			R.verbose = 1;
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 			R.mdly = atoi(optarg);
 			break;
 		case 'b':
-			lblf=optarg;
+			lblf = optarg;
 			break;
 #ifdef HAVE_LIBACARS
 		case 1:
@@ -275,17 +275,17 @@ int main(int argc, char **argv)
 			R.bias = atoi(optarg);
 			break;
 #endif
-#ifdef	WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 		case 's':
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
-			res = initSdrplay (argv, optind);
+			res = initSdrplay(argv, optind);
 			R.inmode = 5;
 			break;
-    case 'L':
+		case 'L':
 			R.lnaState = atoi(optarg);
 			break;
-    		case 'G':
+		case 'G':
 			R.GRdB = atoi(optarg);
 			break;
 #endif
@@ -313,20 +313,20 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_MQTT
 		case 'M':
-			if(R.mqtt_nburls<15) {
-				R.mqtt_urls[R.mqtt_nburls]=strdup(optarg);
+			if (R.mqtt_nburls < 15) {
+				R.mqtt_urls[R.mqtt_nburls] = strdup(optarg);
 				R.mqtt_nburls++;
-				R.mqtt_urls[R.mqtt_nburls]=NULL;
+				R.mqtt_urls[R.mqtt_nburls] = NULL;
 				R.netout = NETLOG_MQTT;
 			}
 			break;
-    		case 'U':
+		case 'U':
 			R.mqtt_user = strdup(optarg);
 			break;
-    		case 'P':
+		case 'P':
 			R.mqtt_passwd = strdup(optarg);
 			break;
-    		case 'T':
+		case 'T':
 			R.mqtt_topic = strdup(optarg);
 			break;
 #endif
@@ -372,13 +372,12 @@ int main(int argc, char **argv)
 		usage();
 	}
 
-
 	if (res) {
 		fprintf(stderr, "Unable to init input\n");
 		exit(res);
 	}
 
-	if(R.hourly && R.daily) {
+	if (R.hourly && R.daily) {
 		fprintf(stderr, "Options: -H and -D are exclusive\n");
 		exit(1);
 	}
@@ -393,7 +392,7 @@ int main(int argc, char **argv)
 
 #ifdef WITH_MQTT
 	if (R.netout == NETLOG_MQTT) {
-		res = MQTTinit(R.mqtt_urls,R.idstation,R.mqtt_topic,R.mqtt_user,R.mqtt_passwd);
+		res = MQTTinit(R.mqtt_urls, R.idstation, R.mqtt_topic, R.mqtt_user, R.mqtt_passwd);
 		if (res) {
 			fprintf(stderr, "Unable to init MQTT\n");
 			exit(res);
@@ -403,7 +402,8 @@ int main(int argc, char **argv)
 
 #ifdef WITH_SOAPY
 	if (R.antenna) {
-		if (R.verbose) fprintf(stderr, "Setting soapy antenna to %s\n", R.antenna);
+		if (R.verbose)
+			fprintf(stderr, "Setting soapy antenna to %s\n", R.antenna);
 		res = soapySetAntenna(R.antenna);
 		if (res) {
 			fprintf(stderr, "Unable to set antenna for SoapySDR\n");
@@ -411,7 +411,7 @@ int main(int argc, char **argv)
 		}
 	}
 #endif
-	
+
 	sigact.sa_handler = sigintHandler;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;
@@ -436,7 +436,7 @@ int main(int argc, char **argv)
 	}
 
 #ifdef DEBUG
-	if (R.inmode !=2 ) {
+	if (R.inmode != 2) {
 		initSndWrite();
 	}
 #endif
@@ -473,8 +473,8 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_SDRPLAY
 	case 5:
-              res = runSdrplaySample ();
-              break;
+		res = runSdrplaySample();
+		break;
 #endif
 #ifdef WITH_SOAPY
 	case 6:
@@ -495,5 +495,4 @@ int main(int argc, char **argv)
 	MQTTend();
 #endif
 	exit(res);
-
 }

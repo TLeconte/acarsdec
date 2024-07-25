@@ -53,16 +53,14 @@ int initAlsa(char **argv, int optind)
 		return 1;
 	}
 
-	if ((err =
-	     snd_pcm_hw_params_set_access(capture_handle, hw_params,
-					  SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
+	if ((err = snd_pcm_hw_params_set_access(capture_handle, hw_params,
+						SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
 		fprintf(stderr, "Alsa cannot set access type (%s)\n",
 			snd_strerror(err));
 		return 1;
 	}
 
-	if ((err =
-	     snd_pcm_hw_params_set_format(capture_handle, hw_params, SND_PCM_FORMAT_FLOAT)) < 0) {
+	if ((err = snd_pcm_hw_params_set_format(capture_handle, hw_params, SND_PCM_FORMAT_FLOAT)) < 0) {
 		fprintf(stderr, "Alsa cannot set sample format (%s)\n",
 			snd_strerror(err));
 		return 1;
@@ -83,7 +81,6 @@ int initAlsa(char **argv, int optind)
 	if (R.nbch > 1) {
 		fprintf(stderr, "Alsa too much channels : %d\n", R.nbch);
 		return 1;
-
 	}
 	if ((err = snd_pcm_hw_params(capture_handle, hw_params)) < 0) {
 		fprintf(stderr, "Alsa cannot set parameters (%s)\n",
@@ -99,8 +96,8 @@ int initAlsa(char **argv, int optind)
 		return 1;
 	}
 
-        R.channel[0].chn = 0;
-	R.channel[0].dm_buffer=malloc(MAXNBFRAMES*sizeof(float));
+	R.channel[0].chn = 0;
+	R.channel[0].dm_buffer = malloc(MAXNBFRAMES * sizeof(float));
 
 	return (0);
 }
@@ -110,7 +107,7 @@ int runAlsaSample(void)
 	int r, n, i;
 
 	do {
-		r = snd_pcm_readi(capture_handle, R.channel[0].dm_buffer,MAXNBFRAMES);
+		r = snd_pcm_readi(capture_handle, R.channel[0].dm_buffer, MAXNBFRAMES);
 		if (r <= 0) {
 			fprintf(stderr,
 				"Alsa cannot read from interface (%s)\n",
@@ -118,8 +115,7 @@ int runAlsaSample(void)
 			return -1;
 		}
 
-		demodMSK(&(R.channel[0]),r);
-
+		demodMSK(&(R.channel[0]), r);
 
 	} while (1);
 	return 0;
