@@ -330,31 +330,23 @@ int main(int argc, char **argv)
 		usage();
 	}
 
-	if (res) {
-		fprintf(stderr, "Unable to init input\n");
-		exit(res);
-	}
+	if (res)
+		errx(res, "Unable to init input\n");
 
-	if (R.hourly && R.daily) {
-		fprintf(stderr, "Options: -H and -D are exclusive\n");
-		exit(1);
-	}
+	if (R.hourly && R.daily)
+		errx(1, "Options: -H and -D are exclusive\n");
 
 	build_label_filter(lblf);
 
 	res = initOutput(R.logfilename, R.Rawaddr);
-	if (res) {
-		fprintf(stderr, "Unable to init output\n");
-		exit(res);
-	}
+	if (res)
+		errx(res, "Unable to init output\n");
 
 #ifdef WITH_MQTT
 	if (R.netout == NETLOG_MQTT) {
 		res = MQTTinit(R.mqtt_urls, R.idstation, R.mqtt_topic, R.mqtt_user, R.mqtt_passwd);
-		if (res) {
-			fprintf(stderr, "Unable to init MQTT\n");
-			exit(res);
-		}
+		if (res)
+			errx(res, "Unable to init MQTT\n");
 	}
 #endif
 
@@ -363,10 +355,8 @@ int main(int argc, char **argv)
 		if (R.verbose)
 			fprintf(stderr, "Setting soapy antenna to %s\n", R.antenna);
 		res = soapySetAntenna(R.antenna);
-		if (res) {
-			fprintf(stderr, "Unable to set antenna for SoapySDR\n");
-			exit(res);
-		}
+		if (res)
+			errx(res, "Unable to set antenna for SoapySDR\n");
 	}
 #endif
 
@@ -388,10 +378,8 @@ int main(int argc, char **argv)
 			break;
 	}
 
-	if (res) {
-		fprintf(stderr, "Unable to init internal decoders\n");
-		exit(res);
-	}
+	if (res)
+		errx(res, "Unable to init internal decoders\n");
 
 #ifdef DEBUG
 	if (R.inmode != 2) {
