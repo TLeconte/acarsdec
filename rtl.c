@@ -129,7 +129,7 @@ int nearest_gain(int target_gain)
 	if (count <= 0)
 		return 0;
 
-	gains = malloc(sizeof(int) * count);
+	gains = malloc(sizeof(*gains) * count);
 	if (gains == NULL)
 		return 0;
 
@@ -208,8 +208,8 @@ int initRtl(char **argv, int optind)
 		int ind;
 		float AMFreq;
 
-		ch->wf = malloc(R.rateMult * sizeof(float complex));
-		ch->dm_buffer = malloc(RTLOUTBUFSZ * sizeof(float));
+		ch->wf = malloc(R.rateMult * sizeof(*ch->wf));
+		ch->dm_buffer = malloc(RTLOUTBUFSZ * sizeof(*ch->dm_buffer));
 		if (ch->wf == NULL || ch->dm_buffer == NULL) {
 			fprintf(stderr, "ERROR : malloc\n");
 			return 1;

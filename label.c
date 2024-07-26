@@ -389,7 +389,7 @@ int DecodeLabel(acarsmsg_t *msg, oooi_t *oooi)
 {
 	int ov = 0;
 
-	memset(oooi, 0, sizeof(oooi_t));
+	memset(oooi, 0, sizeof(*oooi));
 
 	switch (msg->label[0]) {
 	case '1':

@@ -28,7 +28,7 @@ int Netoutinit(char *Rawaddr)
 	else if (0 == tmpAddr[0])
 		return -1;
 
-	memset(&hints, 0, sizeof hints);
+	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_protocol = IPPROTO_UDP;

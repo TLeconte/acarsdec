@@ -71,7 +71,7 @@ static void acars_key_destroy(void *ptr)
 static void *acars_tmp_key_get(void const *msg)
 {
 	acarsmsg_t *amsg = (acarsmsg_t *)msg;
-	acars_key *key = calloc(1, sizeof(acars_key));
+	acars_key *key = calloc(1, sizeof(*key));
 	if (key == NULL)
 		return NULL;
 	key->addr = amsg->addr;
@@ -83,7 +83,7 @@ static void *acars_tmp_key_get(void const *msg)
 static void *acars_key_get(void const *msg)
 {
 	acarsmsg_t *amsg = (acarsmsg_t *)msg;
-	acars_key *key = calloc(1, sizeof(acars_key));
+	acars_key *key = calloc(1, sizeof(*key));
 	if (key == NULL)
 		return NULL;
 	key->addr = strdup(amsg->addr);
@@ -382,7 +382,7 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 	}
 
 	if (fl == NULL) {
-		fl = calloc(1, sizeof(flight_t));
+		fl = calloc(1, sizeof(*fl));
 		if (fl == NULL)
 			return (NULL);
 		strncpy(fl->addr, msg->addr, 8);

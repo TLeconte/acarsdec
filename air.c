@@ -96,7 +96,7 @@ int initAirspy(char **argv, int optind)
 		return -1;
 	}
 
-	airspy_device_list = (uint64_t *)malloc(sizeof(uint64_t) * airspy_device_count);
+	airspy_device_list = malloc(sizeof(*airspy_device_list) * airspy_device_count);
 	if (airspy_device_list == NULL)
 		return -1;
 	result = airspy_list_devices(airspy_device_list, airspy_device_count);
@@ -154,7 +154,7 @@ int initAirspy(char **argv, int optind)
 				break;
 		}
 	}
-	memset(airspy_device_list, 0, sizeof(uint64_t) * airspy_device_count);
+	memset(airspy_device_list, 0, sizeof(*airspy_device_list) * airspy_device_count);
 	free(airspy_device_list);
 	airspy_device_list = NULL;
 
@@ -183,7 +183,7 @@ int initAirspy(char **argv, int optind)
 	}
 
 	airspy_get_samplerates(device, &count, 0);
-	supported_samplerates = (uint32_t *)malloc(count * sizeof(uint32_t));
+	supported_samplerates = malloc(count * sizeof(*supported_samplerates));
 	if (supported_samplerates == NULL) {
 		fprintf(stderr, "malloc error\n");
 		airspy_close(device);
@@ -250,8 +250,8 @@ int initAirspy(char **argv, int optind)
 		int i;
 		double AMFreq, Ph;
 
-		ch->wf = malloc(AIRMULT * sizeof(float complex));
-		ch->dm_buffer = malloc(512 * sizeof(double));
+		ch->wf = malloc(AIRMULT * sizeof(*ch->wf));
+		ch->dm_buffer = malloc(512 * sizeof(*ch->dm_buffer));
 		if (ch->wf == NULL || ch->dm_buffer == NULL) {
 			fprintf(stderr, "malloc error\n");
 			airspy_close(device);

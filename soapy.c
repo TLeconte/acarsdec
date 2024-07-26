@@ -47,7 +47,7 @@ int initSoapy(char **argv, int optind)
 	soapyInBufSize = SOAPYOUTBUFSZ * R.rateMult * 2;
 	soapyInRate = INTRATE * R.rateMult;
 
-	soapyInBuf = malloc(sizeof(int16_t) * soapyInBufSize);
+	soapyInBuf = malloc(sizeof(*soapyInBuf) * soapyInBufSize);
 
 	if (R.gain <= -10.0) {
 		if (R.verbose)
@@ -100,8 +100,8 @@ int initSoapy(char **argv, int optind)
 
 		ch->counter = 0;
 		ch->D = 0;
-		ch->oscillator = malloc(R.rateMult * sizeof(float complex));
-		ch->dm_buffer = malloc(SOAPYOUTBUFSZ * sizeof(float));
+		ch->oscillator = malloc(R.rateMult * sizeof(*ch->oscillator));
+		ch->dm_buffer = malloc(SOAPYOUTBUFSZ * sizeof(*ch->dm_buffer));
 
 		AMFreq = ((signed)ch->Fr - R.freq) / (float)(soapyInRate) * 2.0 * M_PI;
 		for (ind = 0; ind < R.rateMult; ind++)

@@ -51,7 +51,7 @@ int initSoundfile(char **argv, int optind)
 	}
 
 	for (n = 0; n < R.nbch; n++)
-		R.channels[n].dm_buffer = malloc(sizeof(float) * MAXNBFRAMES);
+		R.channels[n].dm_buffer = malloc(sizeof(*R.channels[n].dm_buffer) * MAXNBFRAMES);
 
 	return (0);
 }

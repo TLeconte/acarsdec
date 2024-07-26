@@ -97,7 +97,7 @@ int initAlsa(char **argv, int optind)
 	}
 
 	R.channels[0].chn = 0;
-	R.channels[0].dm_buffer = malloc(MAXNBFRAMES * sizeof(float));
+	R.channels[0].dm_buffer = malloc(MAXNBFRAMES * sizeof(*R.channels[0].dm_buffer));
 
 	return (0);
 }

@@ -33,7 +33,7 @@ int initMsk(channel_t *ch)
 	ch->MskDf = 0;
 
 	ch->idx = 0;
-	ch->inb = calloc(FLEN, sizeof(float complex));
+	ch->inb = calloc(FLEN, sizeof(*ch->inb));
 	if (ch->inb == NULL)
 		return -1;
 

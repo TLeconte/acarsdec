@@ -275,7 +275,7 @@ void decodeAcars(channel_t *ch)
 	case SOH1:
 		if (r == SOH) {
 			if (ch->blk == NULL) {
-				ch->blk = malloc(sizeof(msgblk_t));
+				ch->blk = malloc(sizeof(*ch->blk));
 				if (ch->blk == NULL) {
 					resetAcars(ch);
 					return;
