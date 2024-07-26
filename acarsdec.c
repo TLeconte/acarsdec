@@ -113,21 +113,20 @@ static void usage(void)
 		" -p ppm\t\t\t: set rtl ppm frequency correction\n"
 		" -m rateMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
 		" -B bias\t\t\t: Enable (1) or Disable (0) the bias tee (default is 0)\n"
-		" -r rtldevice f1 [f2]...[f%d]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -r 0 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+		" -r rtldevice f1 [f2]...[fN]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
 		"\n airspyopts:\n"
 		" -g linearity_gain\t: set linearity gain [0-21] default : 18\n"
-		" -s airspydevice f1 [f2]...[f%d]\t: decode from airspy dongle number or hex serial number receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+		" -s airspydevice f1 [f2]...[fN]\t: decode from airspy dongle number or hex serial number receiving at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -s 131.525 131.725 131.825 )\n");
 #endif
 #ifdef WITH_SDRPLAY
 	fprintf(stderr,
 		"\n sdrplayopts:\n"
 		"-L lnaState: set the lnaState (depends on the device)\n"
 		"-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"
-		" -s f1 [f2]...[f%d]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -s 131.525 131.725 131.825 )\n",
-		MAXNBCHANNELS, MAXNBCHANNELS);
+		" -s f1 [f2]...[fN]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -s 131.525 131.725 131.825 )\n");
 #endif
 #ifdef WITH_SOAPY
 	fprintf(stderr,
@@ -137,10 +136,8 @@ static void usage(void)
 		" -p ppm\t\t\t: set ppm frequency correction\n"
 		" -c freq\t\t: set center frequency to tune to\n"
 		" -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
-		" -d devicestring f1 [f2] .. [f%d]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to f%d in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n", MAXNBCHANNELS, MAXNBCHANNELS);
+		" -d devicestring f1 [f2] .. [fN]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n");
 #endif
-
-	fprintf(stderr, "\n Up to %d channels may be simultaneously decoded\n", MAXNBCHANNELS);
 	exit(1);
 }
 
@@ -359,6 +356,9 @@ int main(int argc, char **argv)
 			errx(res, "Unable to set antenna for SoapySDR\n");
 	}
 #endif
+
+	if (!R.channels)
+		errx(-1, "No channel initialized!");
 
 	sigact.sa_handler = sigintHandler;
 	sigemptyset(&sigact.sa_mask);

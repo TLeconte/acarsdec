@@ -92,7 +92,7 @@ int initSdrplay(char **argv, int optind)
 		ch->oscillator = (float complex *)malloc(SDRPLAY_MULT * sizeof(float complex));
 		ch->dm_buffer = (float *)malloc(512 * sizeof(float));
 
-		correctionPhase = (ch->Fr - (float)Fc) / (float)(SDRPLAY_INRATE) * 2.0 * M_PI;
+		correctionPhase = (signed)(ch->Fr - Fc) / (float)(SDRPLAY_INRATE) * 2.0 * M_PI;
 		fprintf(stderr, "Fc = %d, phase = %f (%f)\n", Fc, correctionPhase, ch->Fr - (float)Fc);
 		for (ind = 0; ind < SDRPLAY_MULT; ind++)
 			ch->oscillator[ind] = cexpf(correctionPhase * ind * -I) / SDRPLAY_MULT;

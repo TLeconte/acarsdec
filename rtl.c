@@ -214,7 +214,7 @@ int initRtl(char **argv, int optind)
 			fprintf(stderr, "ERROR : malloc\n");
 			return 1;
 		}
-		AMFreq = (ch->Fr - (float)Fc) / (float)(rtlInRate) * 2.0 * M_PI;
+		AMFreq = (signed)(ch->Fr - Fc) / (float)(rtlInRate) * 2.0 * M_PI;
 		for (ind = 0; ind < R.rateMult; ind++)
 			ch->wf[ind] = cexpf(AMFreq * ind * -I) / R.rateMult / 127.5;
 	}

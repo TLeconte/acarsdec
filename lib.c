@@ -1,5 +1,6 @@
 /*
  *  Copyright (c) 2015 Thierry Leconte
+ *  Copyright (c) 2024 Thibaut VARENE
  *
  *
  *   This code is free software; you can redistribute it and/or modify
@@ -23,48 +24,63 @@
 #include "acarsdec.h"
 #include "lib.h"
 
-int parse_freqs(char **argv, int optind, unsigned int *minFc, unsigned int *maxFc)
+int parse_freqs(char **argv, const int argind, unsigned int *minFc, unsigned int *maxFc)
 {
+	unsigned int nb = 0;
+	unsigned int freq, minF, maxF;
+	int ind = argind;
 	char *argF;
-	int freq;
 
 	// XXX TODO sanitization
 
-	if (minFc && maxFc) {
-		*minFc = 140000000;
-		*maxFc = 0;
-	}
+	minF = 140000000U;
+	maxF = 0;
 
-	/* parse args */
-	R.nbch = 0;
-	while ((argF = argv[optind]) && R.nbch < MAXNBCHANNELS) {
-		freq = ((int)(1000000 * atof(argF) + INTRATE / 2) / INTRATE) * INTRATE;
-		optind++;
-		if (freq < 118000000 || freq > 138000000) {
-			fprintf(stderr, "WARNING: Invalid frequency %d\n", freq);
+	/* count frequency args */
+	while ((argF = argv[ind])) {
+		ind++;
+		freq = (1000U * (unsigned int)atof(argF));
+		if (freq < 118000U || freq > 138000U) {
+			fprintf(stderr, "WARNING: Ignoring invalid frequency %d\n", freq);
 			continue;
 		}
+		nb++;
+	}
 
-		R.channels[R.nbch].chn = R.nbch;
-		R.channels[R.nbch].Fr = freq;
-		R.nbch++;
+	if (!nb) {
+		fprintf(stderr, "ERROR: Need a least one frequency\n");
+		return 1;
+	}
 
-		if (minFc && maxFc) {
-			if (freq < *minFc)
-				*minFc = freq;
-			if (freq > *maxFc)
-				*maxFc = freq;
-		}
+	/* allocate channels */
+	R.channels = calloc(nb, sizeof(*R.channels));
+	if (!R.channels) {
+		fprintf(stderr, "ERROR: Out of memory\n");
+		return -1;
+	}
+
+	R.nbch = nb;
+
+	/* parse frequency args */
+	nb = 0;
+	ind = argind;
+	while ((argF = argv[ind])) {
+		ind++;
+		freq = (((unsigned int)(1000000 * atof(argF)) + INTRATE / 2) / INTRATE) * INTRATE;
+		if (freq < 118000000 || freq > 138000000)
+			continue;
+
+		R.channels[nb].chn = nb;
+		R.channels[nb].Fr = freq;
+
+		minF = freq < minF ? freq : minF;
+		maxF = freq > maxF ? freq : maxF;
+		nb++;
 	};
 
-	if (R.nbch > MAXNBCHANNELS)
-		fprintf(stderr,
-			"WARNING: too many frequencies, taking only the first %d\n",
-			MAXNBCHANNELS);
-
-	if (R.nbch == 0) {
-		fprintf(stderr, "Need a least one frequency\n");
-		return 1;
+	if (minFc && maxFc) {
+		*minFc = minF;
+		*maxFc = maxF;
 	}
 
 	return 0;

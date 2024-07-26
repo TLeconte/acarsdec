@@ -38,11 +38,12 @@ int initSoundfile(char **argv, int optind)
 		return (1);
 	}
 
-	R.nbch = infsnd.channels;
-	if (R.nbch > MAXNBCHANNELS) {
-		fprintf(stderr, "Too much input channels : %d\n", R.nbch);
-		return (1);
+	R.channels = calloc(infsnd.channels, sizeof(*R.channels));
+	if (!R.channels) {
+		fprintf(stderr, "ERROR: Out of memory\n");
+		return -1;
 	}
+	R.nbch = infsnd.channels;
 
 	if (infsnd.samplerate != INTRATE) {
 		fprintf(stderr, "unsupported sample rate : %d (must be %d)\n", infsnd.samplerate, INTRATE);
@@ -58,7 +59,7 @@ int initSoundfile(char **argv, int optind)
 int runSoundfileSample(void)
 {
 	int nbi, n, i;
-	sample_t sndbuff[MAXNBFRAMES * MAXNBCHANNELS];
+	sample_t sndbuff[MAXNBFRAMES * R.nbch];
 
 	do {
 		nbi = sf_read_float(insnd, sndbuff, MAXNBFRAMES * R.nbch);

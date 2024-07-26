@@ -30,7 +30,7 @@ int initSoapy(char **argv, int optind)
 	int r, n;
 	char *argF;
 	unsigned int Fc, minFc, maxFc;
-	unsigned int Fd[MAXNBCHANNELS];
+	unsigned int Fd[R.nbch];	// XXX
 
 	if (argv[optind] == NULL) {
 		fprintf(stderr, "Need device string (ex: driver=rtltcp,rtltcp=127.0.0.1) after -d\n");
@@ -103,7 +103,7 @@ int initSoapy(char **argv, int optind)
 		ch->oscillator = malloc(R.rateMult * sizeof(float complex));
 		ch->dm_buffer = malloc(SOAPYOUTBUFSZ * sizeof(float));
 
-		AMFreq = (ch->Fr - (float)R.freq) / (float)(soapyInRate) * 2.0 * M_PI;
+		AMFreq = ((signed)ch->Fr - R.freq) / (float)(soapyInRate) * 2.0 * M_PI;
 		for (ind = 0; ind < R.rateMult; ind++)
 			ch->oscillator[ind] = cexpf(AMFreq * ind * -I) / R.rateMult;
 	}

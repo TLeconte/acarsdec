@@ -25,13 +25,12 @@
 #include <libacars/reassembly.h>
 #endif
 
-#define ACARSDEC_VERSION "3.7"
+#define ACARSDEC_VERSION "3.X"
 
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 255
 #endif
 
-#define MAXNBCHANNELS 16
 #define INTRATE 12500
 
 #define NETLOG_NONE 0
@@ -67,7 +66,7 @@ typedef struct {
 	float complex *wf;
 #endif
 #if defined(WITH_RTL) || defined(WITH_SDRPLAY) || defined(WITH_SOAPY) || defined(WITH_AIR)
-	float Fr;
+	unsigned int Fr;
 	float complex *oscillator;
 	float complex D;
 	int counter;
@@ -124,7 +123,7 @@ typedef struct {
 } acarsmsg_t;
 
 typedef struct {
-	channel_t channels[MAXNBCHANNELS];
+	channel_t *channels;
 	unsigned int nbch;
 
 	int inmode;
