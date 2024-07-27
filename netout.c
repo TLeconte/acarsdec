@@ -93,6 +93,9 @@ void Netoutpp(acarsmsg_t *msg)
 	char *pstr;
 	int res;
 
+	if (!msg)
+		return;
+
 	char *txt = strdup(msg->txt);
 	for (pstr = txt; *pstr != 0; pstr++)
 		if (*pstr == '\n' || *pstr == '\r')
@@ -112,6 +115,9 @@ void Netoutsv(acarsmsg_t *msg, char *idstation, int chn, struct timeval tv)
 	struct tm tmp;
 	int res;
 
+	if (!msg)
+		return;
+
 	gmtime_r(&(tv.tv_sec), &tmp);
 
 	res = snprintf(pkt, sizeof(pkt),
@@ -126,5 +132,6 @@ void Netoutsv(acarsmsg_t *msg, char *idstation, int chn, struct timeval tv)
 
 void Netoutjson(char *jsonbuf)
 {
-	Netwrite(jsonbuf, strlen(jsonbuf));
+	if (jsonbuf)
+		Netwrite(jsonbuf, strlen(jsonbuf));
 }
