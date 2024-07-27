@@ -15,7 +15,7 @@
 #include <libacars/vstring.h>
 #endif
 #include "acarsdec.h"
-#include "cJSON.h"
+#include <cJSON.h>
 #include "output.h"
 
 extern int label_filter(char *lbl);
