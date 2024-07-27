@@ -82,7 +82,11 @@ static void usage(void)
 		" -A\t\t\t: don't output uplink messages (ie : only aircraft messages)\n"
 		" -e\t\t\t: don't output empty messages (ie : _d,Q0, etc ...)\n"
 		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n"
-		" -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor , 4 : msg JSON, 5 : route JSON\n"
+		" -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor"
+#ifdef HAVE_CJSON
+		", 4 : msg JSON, 5 : route JSON"
+#endif
+		"\n"
 		" -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n"
 		" -l logfile\t\t: append log messages to logfile (Default : stdout).\n"
 		" -H\t\t\t: rotate log file once every hour\n"
@@ -90,15 +94,16 @@ static void usage(void)
 		"\n"
 		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n"
 		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec native format\n"
-		" -j ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec json format\n");
+#ifdef HAVE_CJSON
+		" -j ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec json format\n"
 #ifdef WITH_MQTT
-	fprintf(stderr,
 		" -M mqtt_url\t\t: Url of MQTT broker\n"
 		" -T mqtt_topic\t\t: Optionnal MQTT topic (default : acarsdec/${station_id})\n"
 		" -U mqtt_user\t\t: Optional MQTT username\n"
 		" -P mqtt_passwd\t\t: Optional MQTT password\n"
-#endif
-	fprintf(stderr, "\n");
+#endif /* WITH_MQTT */
+#endif /* HAVE_CJSON */
+		"\n");
 
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice\t: decode from soundcard input alsapcmdevice (ie: hw:0,0)\n");
@@ -293,10 +298,12 @@ int main(int argc, char **argv)
 			R.Rawaddr = optarg;
 			R.netout = NETLOG_NATIVE;
 			break;
+#ifdef HAVE_CJSON
 		case 'j':
 			R.Rawaddr = optarg;
 			R.netout = NETLOG_JSON;
 			break;
+#endif
 		case 'A':
 			R.airflt = 1;
 			break;

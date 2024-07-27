@@ -14,8 +14,10 @@
 #include <libacars/reassembly.h>
 #include <libacars/vstring.h>
 #endif
-#include "acarsdec.h"
+#ifdef HAVE_CJSON
 #include <cJSON.h>
+#endif
+#include "acarsdec.h"
 #include "output.h"
 
 extern int label_filter(char *lbl);
@@ -125,12 +127,13 @@ int initOutput(char *logfilename, char *Rawaddr)
 		cls();
 		fflush(stdout);
 	}
-
+#ifdef HAVE_CJSON
 	if (R.outtype == OUTTYPE_JSON || R.outtype == OUTTYPE_ROUTEJSON || R.netout == NETLOG_JSON || R.netout == NETLOG_MQTT) {
 		jsonbuf = malloc(JSONBUFLEN + 1);
 		if (jsonbuf == NULL)
 			return -1;
 	}
+#endif
 #ifdef HAVE_LIBACARS
 	reasm_ctx = R.skip_reassembly ? NULL : la_reasm_ctx_new();
 #endif
@@ -237,6 +240,7 @@ static void printmsg(acarsmsg_t *msg, int chn, struct timeval tv)
 	fflush(fdout);
 }
 
+#ifdef HAVE_CJSON
 static int buildjson(acarsmsg_t *msg, int chn, struct timeval tv)
 {
 	oooi_t oooi;
@@ -332,6 +336,7 @@ static int buildjson(acarsmsg_t *msg, int chn, struct timeval tv)
 	cJSON_Delete(json_obj);
 	return ok;
 }
+#endif /* HAVE_CJSON */
 
 static void printoneline(acarsmsg_t *msg, int chn, struct timeval tv)
 {
@@ -443,6 +448,7 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 	return (fl);
 }
 
+#ifdef HAVE_CJSON
 static int routejson(flight_t *fl, struct timeval tv)
 {
 	if (fl == NULL)
@@ -472,6 +478,7 @@ static int routejson(flight_t *fl, struct timeval tv)
 	} else
 		return 0;
 }
+#endif /* HAVE_CJSON */
 
 static void printmonitor(acarsmsg_t *msg, int chn, struct timeval tv)
 {
@@ -679,6 +686,7 @@ void outputmsg(const msgblk_t *blk)
 	if (R.emptymsg && (msg.txt == NULL || msg.txt[0] == '\0'))
 		return;
 
+#ifdef HAVE_CJSON
 	if (jsonbuf) {
 		if (R.outtype == OUTTYPE_ROUTEJSON) {
 			if (fl)
@@ -687,6 +695,7 @@ void outputmsg(const msgblk_t *blk)
 			jok = buildjson(&msg, blk->chn, blk->tv);
 		}
 	}
+#endif /* HAVE_CJSON */
 
 	if ((R.hourly || R.daily) && R.outtype != OUTTYPE_NONE && (fdout = Fileoutrotate(fdout)) == NULL)
 		_exit(1);
@@ -703,6 +712,7 @@ void outputmsg(const msgblk_t *blk)
 	case OUTTYPE_MONITOR:
 		printmonitor(&msg, blk->chn, blk->tv);
 		break;
+#ifdef HAVE_CJSON
 	case OUTTYPE_ROUTEJSON:
 	case OUTTYPE_JSON:
 		if (jok) {
@@ -710,6 +720,7 @@ void outputmsg(const msgblk_t *blk)
 			fflush(fdout);
 		}
 		break;
+#endif /* HAVE_CJSON */
 	}
 
 	switch (R.netout) {
@@ -719,6 +730,7 @@ void outputmsg(const msgblk_t *blk)
 	case NETLOG_NATIVE:
 		Netoutsv(&msg, R.idstation, blk->chn, blk->tv);
 		break;
+#ifdef HAVE_CJSON
 	case NETLOG_JSON:
 		if (jok)
 			Netoutjson(jsonbuf);
@@ -727,7 +739,8 @@ void outputmsg(const msgblk_t *blk)
 	case NETLOG_MQTT:
 		MQTTsend(jsonbuf);
 		break;
-#endif
+#endif /* WITH_MQTT */
+#endif /* HAVE_CJSON */
 	}
 	free(msg.txt);
 #ifdef HAVE_LIBACARS
