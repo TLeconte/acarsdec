@@ -161,7 +161,7 @@ int initRtl(char **argv, int optind)
 	optind++;
 
 	if (R.rateMult > RTLMULTMAX) {
-		fprintf(stderr, "rateMult can't be larger than 360\n");
+		fprintf(stderr, "rateMult can't be larger than %d\n", RTLMULTMAX);
 		return 1;
 	}
 
