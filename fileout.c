@@ -28,6 +28,7 @@
 #include <time.h>
 #include <errno.h>
 #include <err.h>
+#include <libgen.h>
 
 #include "acarsdec.h"
 #include "fileout.h"
@@ -53,12 +54,12 @@ static FILE *open_outfile(fileout_t *fout)
 			fprintf(stderr, "*open_outfile(): strfime returned 0\n");
 			return NULL;
 		}
-		filename = calloc(fout->prefix_len + tlen + 2, sizeof(char));
+		filename = malloc(fout->prefix_len + tlen + 2);
 		if (filename == NULL) {
 			fprintf(stderr, "open_outfile(): failed to allocate memory\n");
 			return NULL;
 		}
-		sprintf(filename, "%s%s%s", fout->filename_prefix, suffix, fout->extension);
+		sprintf(filename, "%s%s%s", fout->filename_prefix, suffix, fout->extension ? fout->extension : "");
 	} else {
 		filename = strdup(fout->filename_prefix);
 	}
@@ -106,22 +107,16 @@ fileout_t *Fileoutinit(char *params)
 			fout->rotate = ROTATE_HOURLY;
 	}
 
+	if (ROTATE_NONE != fout->rotate) {
+		char *bname = basename(path);
+		char *ext = strrchr(bname, '.');
+		if (ext) {
+			fout->extension = strdup(ext);
+			path[strlen(path)-strlen(ext)] = '\0';
+		}
+	}
 	fout->filename_prefix = path;
 	fout->prefix_len = strlen(path);
-	if (ROTATE_NONE != fout->rotate) {
-		// XXX REVISIT
-		char *basename = strrchr(path, '/');
-		if (basename != NULL)
-			basename++;
-		else
-			basename = path;
-
-		char *ext = strrchr(path, '.');
-		if (ext != NULL && (ext <= basename || ext[1] == '\0'))
-			ext = NULL;
-
-		fout->extension = ext ? strdup(ext) : strdup("");
-	}
 
 	if ((open_outfile(fout)) == NULL) {
 		free(fout);
