@@ -16,7 +16,6 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
-#ifdef WITH_RTL
 
 #define _GNU_SOURCE
 #include <stdlib.h>
@@ -324,5 +323,3 @@ int runRtlClose(void)
 
 	return res;
 }
-
-#endif

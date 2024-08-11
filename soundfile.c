@@ -16,7 +16,7 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
-#ifdef WITH_SNDFILE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -105,6 +105,4 @@ void SndWriteClose(void)
 {
 	sf_close(outsnd);
 }
-#endif
-
 #endif

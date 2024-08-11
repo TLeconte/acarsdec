@@ -19,7 +19,6 @@
  *	sdrplay was created 
  *	J van Katwijk, Lazy Chair Computing (J.vanKatwijk@gmail.com)
  */
-#ifdef WITH_SDRPLAY
 
 #define _GNU_SOURCE
 #include <stdlib.h>
@@ -220,5 +219,3 @@ int runSdrplaySample(void)
 	mir_sdr_ReleaseDeviceIdx();
 	return 0;
 }
-
-#endif

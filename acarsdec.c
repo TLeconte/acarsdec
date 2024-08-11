@@ -148,7 +148,7 @@ static void usage(void)
 static void sigintHandler(int signum)
 {
 	fprintf(stderr, "Received signal %s, exiting.\n", strsignal(signum));
-#ifdef DEBUG
+#if defined(DEBUG) && defined(WITH_SNDFILE)
 	SndWriteClose();
 #endif
 #ifdef WITH_RTL
@@ -337,7 +337,7 @@ int main(int argc, char **argv)
 	if (res)
 		errx(res, "Unable to init internal decoders\n");
 
-#ifdef DEBUG
+#if defined(DEBUG) && defined(WITH_SNDFILE)
 	if (R.inmode != 2) {
 		initSndWrite();
 	}

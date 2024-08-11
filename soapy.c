@@ -1,4 +1,3 @@
-#ifdef WITH_SOAPY
 
 #define _GNU_SOURCE
 
@@ -236,5 +235,3 @@ int runSoapyClose(void)
 
 	return res;
 }
-
-#endif

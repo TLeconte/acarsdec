@@ -16,7 +16,6 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
-#ifdef WITH_AIR
 
 #define _GNU_SOURCE
 #include <stdlib.h>
@@ -346,5 +345,3 @@ int runAirspySample(void)
 
 	return 0;
 }
-
-#endif
