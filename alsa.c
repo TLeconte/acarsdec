@@ -16,7 +16,6 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
-#ifdef WITH_ALSA
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -120,5 +119,3 @@ int runAlsaSample(void)
 	} while (1);
 	return 0;
 }
-
-#endif
