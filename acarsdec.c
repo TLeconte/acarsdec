@@ -63,11 +63,11 @@ runtime_t R = {
 static void usage(void)
 {
 	fprintf(stderr,
-		"Acarsdec/acarsserv %s Copyright (c) 2022 Thierry Leconte\n", ACARSDEC_VERSION);
+		"Acarsdec/acarsserv %s Copyright (c) 2022 Thierry Leconte, (c) 2024 Thibaut VARENE\n", ACARSDEC_VERSION);
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, "(libacars %s)\n", LA_VERSION);
 #endif
-	fprintf(stderr, "\nUsage: acarsdec  [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id]");
+	fprintf(stderr, "\nUsage: acarsdec  [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id] --output FORMAT:DESTINATION:PARAMS");
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " [--skip-reassembly] ");
 #endif
@@ -116,21 +116,21 @@ static void usage(void)
 		" -m rateMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
 		" -B bias\t\t\t: Enable (1) or Disable (0) the bias tee (default is 0)\n"
 		" -c freq\t\t: set center frequency to tune to in MHz\n"
-		" -r rtldevice f1 [f2]...[fN]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
+		" -r rtldevice f1 [f2]...[fN]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to fN in MHz (ie : -r 0 131.525 131.725 131.825 )\n");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
 		"\n airspyopts:\n"
 		" -g linearity_gain\t: set linearity gain [0-21] default : 18\n"
-		" -s airspydevice f1 [f2]...[fN]\t: decode from airspy dongle number or hex serial number receiving at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -s 131.525 131.725 131.825 )\n");
+		" -s airspydevice f1 [f2]...[fN]\t: decode from airspy dongle number or hex serial number receiving at VHF frequencies f1 and optionally f2 to fN in MHz (ie : -s 131.525 131.725 131.825 )\n");
 #endif
 #ifdef WITH_SDRPLAY
 	fprintf(stderr,
 		"\n sdrplayopts:\n"
-		"-L lnaState: set the lnaState (depends on the device)\n"
-		"-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"
+		" -L lnaState\t: set the lnaState (depends on the device)\n"
+		" -G GRdB\t\t: gain reduction in dB's, range 20 .. 59 (-100 is autogain)\n"
 		" -c freq\t\t: set center frequency to tune to in MHz\n"
-		" -s f1 [f2]...[fN]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -s 131.525 131.725 131.825 )\n");
+		" -s f1 [f2]...[fN]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to fN in MHz (ie : -s 131.525 131.725 131.825 )\n");
 #endif
 #ifdef WITH_SOAPY
 	fprintf(stderr,
@@ -140,7 +140,7 @@ static void usage(void)
 		" -p ppm\t\t\t: set ppm frequency correction\n"
 		" -c freq\t\t: set center frequency to tune to in MHz\n"
 		" -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
-		" -d devicestring f1 [f2] .. [fN]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n");
+		" -d devicestring f1 [f2] .. [fN]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to fN in MHz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n");
 #endif
 	exit(1);
 }
