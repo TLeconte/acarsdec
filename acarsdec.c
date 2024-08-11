@@ -30,11 +30,11 @@
 #include <libacars/version.h>
 #endif
 #include "acarsdec.h"
+#include "output.h"
+
 extern void build_label_filter(char *arg);
 
 runtime_t R = {
-	.outtype = OUTTYPE_STD,
-	.netout = NETLOG_NONE,
 	.mdly = 600,
 	.rateMult = 160,
 	.lnaState = 2,
@@ -48,12 +48,9 @@ static void usage(void)
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, "(libacars %s)\n", LA_VERSION);
 #endif
-	fprintf(stderr, "\nUsage: acarsdec  [-o lv] [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id] [-n|-j|-N ipaddr:port] [-l logfile [-H|-D]]");
+	fprintf(stderr, "\nUsage: acarsdec  [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id]");
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " [--skip-reassembly] ");
-#endif
-#ifdef WITH_MQTT
-	fprintf(stderr, " [ -M mqtt_url [-T mqtt_topic] | [-U mqtt_user | -P mqtt_passwd]] |");
 #endif
 #ifdef WITH_ALSA
 	fprintf(stderr, " -a alsapcmdevice  |");
@@ -82,27 +79,10 @@ static void usage(void)
 		" -A\t\t\t: don't output uplink messages (ie : only aircraft messages)\n"
 		" -e\t\t\t: don't output empty messages (ie : _d,Q0, etc ...)\n"
 		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n"
-		" -o lv\t\t\t: output format : 0 : no log, 1 : one line by msg, 2 : full (default) , 3 : monitor"
-#ifdef HAVE_CJSON
-		", 4 : msg JSON, 5 : route JSON"
-#endif
 		"\n"
 		" -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n"
-		" -l logfile\t\t: append log messages to logfile (Default : stdout).\n"
 		" -H\t\t\t: rotate log file once every hour\n"
 		" -D\t\t\t: rotate log file once every day\n"
-		"\n"
-		" -n ipaddr:port\t\t: send acars messages to addr:port on UDP in planeplotter compatible format\n"
-		" -N ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec native format\n"
-#ifdef HAVE_CJSON
-		" -j ipaddr:port\t\t: send acars messages to addr:port on UDP in acarsdec json format\n"
-#ifdef WITH_MQTT
-		" -M mqtt_url\t\t: Url of MQTT broker\n"
-		" -T mqtt_topic\t\t: Optionnal MQTT topic (default : acarsdec/${station_id})\n"
-		" -U mqtt_user\t\t: Optional MQTT username\n"
-		" -P mqtt_passwd\t\t: Optional MQTT password\n"
-#endif /* WITH_MQTT */
-#endif /* HAVE_CJSON */
 		"\n");
 
 #ifdef WITH_ALSA
@@ -170,6 +150,7 @@ int main(int argc, char **argv)
 		{ "verbose", no_argument, NULL, 'v' },
 		{ "skip-reassembly", no_argument, NULL, 1 },
 		{ "antenna", required_argument, NULL, 2 },
+		{ "output", required_argument, NULL, 3 },
 		{ NULL, 0, NULL, 0 }
 	};
 	char sys_hostname[HOST_NAME_MAX + 1];
@@ -180,13 +161,13 @@ int main(int argc, char **argv)
 	R.idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt_long(argc, argv, "HDvarfdsRo:t:g:m:Aep:n:N:j:l:c:i:L:G:b:M:P:U:T:B:", long_opts, NULL)) != EOF) {
+	while ((c = getopt_long(argc, argv, "HDvarfdsRt:g:m:Aep:c:i:L:G:b:B:", long_opts, NULL)) != EOF) {
 		switch (c) {
+		case 3:
+			setup_output(optarg);
+			break;
 		case 'v':
 			R.verbose = 1;
-			break;
-		case 'o':
-			R.outtype = atoi(optarg);
 			break;
 		case 't':
 			R.mdly = atoi(optarg);
@@ -271,47 +252,11 @@ int main(int argc, char **argv)
 			R.inmode = 4;
 			break;
 #endif
-#ifdef WITH_MQTT
-		case 'M':
-			if (R.mqtt_nburls < 15) {
-				R.mqtt_urls[R.mqtt_nburls] = strdup(optarg);
-				R.mqtt_nburls++;
-				R.mqtt_urls[R.mqtt_nburls] = NULL;
-				R.netout = NETLOG_MQTT;
-			}
-			break;
-		case 'U':
-			R.mqtt_user = strdup(optarg);
-			break;
-		case 'P':
-			R.mqtt_passwd = strdup(optarg);
-			break;
-		case 'T':
-			R.mqtt_topic = strdup(optarg);
-			break;
-#endif
-		case 'n':
-			R.Rawaddr = optarg;
-			R.netout = NETLOG_PLANEPLOTTER;
-			break;
-		case 'N':
-			R.Rawaddr = optarg;
-			R.netout = NETLOG_NATIVE;
-			break;
-#ifdef HAVE_CJSON
-		case 'j':
-			R.Rawaddr = optarg;
-			R.netout = NETLOG_JSON;
-			break;
-#endif
 		case 'A':
 			R.airflt = 1;
 			break;
 		case 'e':
 			R.emptymsg = 1;
-			break;
-		case 'l':
-			R.logfilename = optarg;
 			break;
 		case 'H':
 			R.hourly = 1;
@@ -342,17 +287,9 @@ int main(int argc, char **argv)
 
 	build_label_filter(lblf);
 
-	res = initOutput(R.logfilename, R.Rawaddr);
+	res = initOutputs();
 	if (res)
 		errx(res, "Unable to init output\n");
-
-#ifdef WITH_MQTT
-	if (R.netout == NETLOG_MQTT) {
-		res = MQTTinit(R.mqtt_urls, R.idstation, R.mqtt_topic, R.mqtt_user, R.mqtt_passwd);
-		if (res)
-			errx(res, "Unable to init MQTT\n");
-	}
-#endif
 
 #ifdef WITH_SOAPY
 	if (R.antenna) {
@@ -444,8 +381,7 @@ int main(int argc, char **argv)
 
 	deinitAcars();
 
-#ifdef WITH_MQTT
-	MQTTend();
-#endif
+	exitOutputs();
+
 	exit(res);
 }

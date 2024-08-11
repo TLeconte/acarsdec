@@ -1,3 +1,23 @@
+/*
+ *  Copyright (c) 2015 Thierry Leconte
+ *  Copyright (c) 2024 Thibaut VARENE
+ *
+ *
+ *   This code is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU Library General Public License version 2
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Library General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Library General Public
+ *   License along with this library; if not, write to the Free Software
+ *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,13 +39,16 @@
 #endif
 #include "acarsdec.h"
 #include "output.h"
+#include "fileout.h"
+#include "netout.h"
+#ifdef WITH_MQTT
+#include "mqttout.h"
+#endif
 
 extern int label_filter(char *lbl);
 
-static FILE *fdout;
-
-static char *jsonbuf = NULL;
-#define JSONBUFLEN 30000
+#define FMTBUFLEN 30000
+static char fmtbuf[FMTBUFLEN+1];
 
 #define IS_DOWNLINK_BLK(bid) ((bid) >= '0' && (bid) <= '9')
 
@@ -104,144 +127,323 @@ static la_reasm_table_funcs acars_reasm_funcs = {
 
 #endif // HAVE_LIBACARS
 
-static inline void cls(void)
+static const struct {
+	const char *name;
+	int fmt;
+} out_fmts[] = {
+	{ "oneline",	FMT_ONELINE, },
+	{ "full",	FMT_FULL, },
+	{ "monitor",	FMT_MONITOR, },
+	{ "pp",		FMT_PP, },
+	{ "native",	FMT_NATIVE, },
+#ifdef HAVE_CJSON
+	{ "json",	FMT_JSON, },
+	{ "routejson",	FMT_ROUTEJSON, },
+#endif
+};
+
+static const struct {
+	const char *name;
+	int dst;
+} out_dsts[] = {
+	{ "file",	DST_FILE, },
+	{ "udp",	DST_UDP, },
+#ifdef WITH_MQTT
+	{ "mqtt",	DST_MQTT, },
+#endif
+};
+
+static bool validate_output(output_t *output)
 {
-	printf("\x1b[H\x1b[2J");
+	if (!output->fmt || !output->dst)
+		return false;
+
+	switch (output->dst) {
+		case DST_FILE:
+			// all formats valid
+			return true;
+		case DST_UDP:
+			// all but MONITOR valid
+			if (FMT_MONITOR == output->fmt)
+				return false;
+			else
+				return true;
+		case DST_MQTT:
+			// only JSON formats valid
+			switch (output->fmt) {
+			case FMT_JSON:
+			case FMT_ROUTEJSON:
+				return true;
+			default:
+				return false;
+			}
+		default:
+			return false;
+	}
 }
 
-int initOutput(char *logfilename, char *Rawaddr)
+// fmt:dst:param1=xxx,param2=yyy
+int setup_output(char *outarg)
 {
-	if (R.outtype != OUTTYPE_NONE && logfilename) {
-		if ((fdout = Fileoutinit(logfilename)) == NULL)
-			return -1;
-	} else {
-		fdout = stdout;
+	// NB: outarg is taken from program global argv: it exists throughout the execution of the program
+	char **ap, *argv[3] = {0};
+	output_t *output;
+	int i;
+
+	// parse first 2 separators, leave the rest of the string untouched as argv[2]
+	for (ap = argv; ap < &argv[2] && (*ap = strsep(&outarg, ":")); ap++);
+	argv[2] = outarg;
+
+	if (!argv[0] || '\0' == *argv[0] || !argv[1] || '\0' == *argv[1]) {
+		fprintf(stderr, "Not enough output arguments\n");
+		return -1;	// not enough arguments
 	}
 
-	if (Rawaddr)
-		if (Netoutinit(Rawaddr))
-			return -1;
+	output = calloc(1, sizeof(*output));
+	if (!output)
+		return -1;	// OOM
 
-	if (R.outtype == OUTTYPE_MONITOR) {
-		R.verbose = 0;
-		cls();
-		fflush(stdout);
+	for (i = 0; i < ARRAY_SIZE(out_fmts); i++) {
+		if (!strcmp(argv[0], out_fmts[i].name)) {
+			output->fmt = out_fmts[i].fmt;
+			break;
+		}
 	}
-#ifdef HAVE_CJSON
-	if (R.outtype == OUTTYPE_JSON || R.outtype == OUTTYPE_ROUTEJSON || R.netout == NETLOG_JSON || R.netout == NETLOG_MQTT) {
-		jsonbuf = malloc(JSONBUFLEN + 1);
-		if (jsonbuf == NULL)
-			return -1;
+
+	for (i = 0; i < ARRAY_SIZE(out_dsts); i++) {
+		if (!strcmp(argv[1], out_dsts[i].name)) {
+			output->dst = out_dsts[i].dst;
+			break;
+		}
 	}
+
+	if (!validate_output(output)) {
+		fprintf(stderr, "Invalid output configuration: %s:%s\n", argv[0], argv[1]);
+		return -1;	// invalid output config
+	}
+
+	if (argv[2] && '\0' != *argv[2])
+		output->params = argv[2];
+
+	output->next = R.outputs;
+	R.outputs = output;
+
+	return 0;
+
+fail:
+	free(output);
+	return -1;
+}
+
+int initOutputs(void)
+{
+	output_t *out;
+
+	if (!R.outputs)
+		return -1;
+
+	for (out = R.outputs; out; out = out->next) {
+		switch (out->dst) {
+		case DST_FILE:
+			out->priv = Fileoutinit(out->params);
+			if (!out->priv)
+				return -1;
+			break;
+		case DST_UDP:
+			out->priv = Netoutinit(out->params);
+			if (!out->priv)
+				return -1;
+			break;
+#ifdef WITH_MQTT
+		case DST_MQTT:
+			out->priv = MQTTinit(out->params);
+			if (!out->priv)
+				return -1;
+			break;
 #endif
+		default:
+			return -1;
+		}
+
+		if (out->fmt == FMT_MONITOR)
+			R.verbose = 0;
+	}
+
 #ifdef HAVE_LIBACARS
 	reasm_ctx = R.skip_reassembly ? NULL : la_reasm_ctx_new();
 #endif
 	return 0;
 }
 
-static void printtime(struct timeval tv)
+void exitOutputs(void)
 {
-	struct tm tmp;
+	output_t *out;
+	int ret;
 
-	gmtime_r(&(tv.tv_sec), &tmp);
-
-	fprintf(fdout, "%02d:%02d:%02d.%03ld",
-		tmp.tm_hour, tmp.tm_min, tmp.tm_sec, tv.tv_usec / 1000);
-}
-
-static void printdate(struct timeval tv)
-{
-	struct tm tmp;
-
-	if (tv.tv_sec + tv.tv_usec == 0)
+	if (!R.outputs)
 		return;
 
-	gmtime_r(&(tv.tv_sec), &tmp);
-
-	fprintf(fdout, "%02d/%02d/%04d ",
-		tmp.tm_mday, tmp.tm_mon + 1, tmp.tm_year + 1900);
-	printtime(tv);
+	for (out = R.outputs; out; out = out->next) {
+		switch (out->dst) {
+		default:
+		case DST_FILE:
+			Fileoutexit(out->priv);
+			break;
+		case DST_UDP:
+			Netexit(out->priv);
+			break;
+#ifdef WITH_MQTT
+		case DST_MQTT:
+			MQTTexit(out->priv);
+			break;
+#endif
+		}
+	}
 }
 
-static void printmsg(acarsmsg_t *msg, int chn, struct timeval tv)
+static int fmt_sv(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
+{
+	struct tm tmp;
+	int res;
+
+	if (!msg || !buf)
+		return -1;
+
+	gmtime_r(&(tv.tv_sec), &tmp);
+
+	return snprintf(buf, bufsz,
+		       "%8s %1d %02d/%02d/%04d %02d:%02d:%02d %1d %03d %1c %7s %1c %2s %1c %4s %6s %s",
+		       R.idstation, chn + 1, tmp.tm_mday, tmp.tm_mon + 1,
+		       tmp.tm_year + 1900, tmp.tm_hour, tmp.tm_min, tmp.tm_sec,
+		       msg->err, (int)(msg->lvl), msg->mode, msg->addr, msg->ack, msg->label,
+		       msg->bid ? msg->bid : '.', msg->no, msg->fid, msg->txt);
+}
+
+static int fmt_pp(acarsmsg_t *msg, char *buf, size_t bufsz)
+{
+	char *pstr;
+	int res;
+
+	if (!msg || !buf)
+		return -1;
+
+	char *txt = strdup(msg->txt);
+	for (pstr = txt; *pstr != 0; pstr++)
+		if (*pstr == '\n' || *pstr == '\r')
+			*pstr = ' ';
+
+	res = snprintf(buf, bufsz, "AC%1c %7s %1c %2s %1c %4s %6s %s",
+		       msg->mode, msg->addr, msg->ack, msg->label, msg->bid ? msg->bid : '.', msg->no,
+		       msg->fid, txt);
+
+	free(txt);
+	return res;
+}
+
+static int fmt_time(struct timeval tv, char *buf, size_t bufsz)
+{
+	struct tm tmp;
+
+	gmtime_r(&(tv.tv_sec), &tmp);
+
+	return snprintf(buf, bufsz, "%02d:%02d:%02d.%03ld",
+			tmp.tm_hour, tmp.tm_min, tmp.tm_sec, tv.tv_usec / 1000);
+}
+
+static int fmt_date(struct timeval tv, char *buf, size_t bufsz)
+{
+	struct tm tmp;
+	int len;
+
+	if (tv.tv_sec + tv.tv_usec == 0)
+		return 0;
+
+	gmtime_r(&(tv.tv_sec), &tmp);
+
+	len = snprintf(buf, bufsz, "%02d/%02d/%04d ",
+		       tmp.tm_mday, tmp.tm_mon + 1, tmp.tm_year + 1900);
+	return len + fmt_time(tv, buf + len, bufsz - len);
+}
+
+static int fmt_msg(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
 {
 	oooi_t oooi;
+	int len = 0;
 
 #if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
 	if (R.inmode >= 3)
-		fprintf(fdout, "\n[#%1d (F:%3.3f L:%+5.1f E:%1d) ", chn + 1,
+		len += snprintf(buf + len, bufsz - len, "[#%1d (F:%3.3f L:%+5.1f E:%1d) ", chn + 1,
 			R.channels[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
-		fprintf(fdout, "\n[#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
+		len += snprintf(buf + len, bufsz - len, "[#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (R.inmode != 2)
-		printdate(tv);
+		len += fmt_date(tv, buf + len, bufsz - len);
 
-	fprintf(fdout, " --------------------------------\n");
-	fprintf(fdout, "Mode : %1c ", msg->mode);
-	fprintf(fdout, "Label : %2s ", msg->label);
+	len += snprintf(buf + len, bufsz - len, " --------------------------------\n");
+	len += snprintf(buf + len, bufsz - len, "Mode : %1c ", msg->mode);
+	len += snprintf(buf + len, bufsz - len, "Label : %2s ", msg->label);
 
 	if (msg->bid) {
-		fprintf(fdout, "Id : %1c ", msg->bid);
+		len += snprintf(buf + len, bufsz - len, "Id : %1c ", msg->bid);
 		if (msg->ack == '!')
-			fprintf(fdout, "Nak\n");
+			len += snprintf(buf + len, bufsz - len, "Nak\n");
 		else
-			fprintf(fdout, "Ack : %1c\n", msg->ack);
-		fprintf(fdout, "Aircraft reg: %s ", msg->addr);
+			len += snprintf(buf + len, bufsz - len, "Ack : %1c\n", msg->ack);
+		len += snprintf(buf + len, bufsz - len, "Aircraft reg: %s ", msg->addr);
 		if (IS_DOWNLINK_BLK(msg->bid)) {
-			fprintf(fdout, "Flight id: %s\n", msg->fid);
-			fprintf(fdout, "No: %4s", msg->no);
+			len += snprintf(buf + len, bufsz - len, "Flight id: %s\n", msg->fid);
+			len += snprintf(buf + len, bufsz - len, "No: %4s", msg->no);
 		}
 		if (msg->sublabel[0] != '\0') {
-			fprintf(fdout, "\nSublabel: %s", msg->sublabel);
+			len += snprintf(buf + len, bufsz - len, "\nSublabel: %s", msg->sublabel);
 			if (msg->mfi[0] != '\0') {
-				fprintf(fdout, " MFI: %s", msg->mfi);
+				len += snprintf(buf + len, bufsz - len, " MFI: %s", msg->mfi);
 			}
 		}
 #ifdef HAVE_LIBACARS
 		if (!R.skip_reassembly) {
-			fprintf(fdout, "\nReassembly: %s", la_reasm_status_name_get(msg->reasm_status));
+			len += snprintf(buf + len, bufsz - len, "\nReassembly: %s", la_reasm_status_name_get(msg->reasm_status));
 		}
 #endif
 	}
 
-	fprintf(fdout, "\n");
+	len += snprintf(buf + len, bufsz - len, "\n");
 	if (msg->txt[0])
-		fprintf(fdout, "%s\n", msg->txt);
+		len += snprintf(buf + len, bufsz - len, "%s\n", msg->txt);
 	if (msg->be == 0x17)
-		fprintf(fdout, "ETB\n");
+		len += snprintf(buf + len, bufsz - len, "ETB\n");
 
 	if (DecodeLabel(msg, &oooi)) {
-		fprintf(fdout, "##########################\n");
+		len += snprintf(buf + len, bufsz - len, "##########################\n");
 		if (oooi.da[0])
-			fprintf(fdout, "Destination Airport : %s\n", oooi.da);
+			len += snprintf(buf + len, bufsz - len, "Destination Airport : %s\n", oooi.da);
 		if (oooi.sa[0])
-			fprintf(fdout, "Departure Airport : %s\n", oooi.sa);
+			len += snprintf(buf + len, bufsz - len, "Departure Airport : %s\n", oooi.sa);
 		if (oooi.eta[0])
-			fprintf(fdout, "Estimation Time of Arrival : %s\n", oooi.eta);
+			len += snprintf(buf + len, bufsz - len, "Estimation Time of Arrival : %s\n", oooi.eta);
 		if (oooi.gout[0])
-			fprintf(fdout, "Gate out Time : %s\n", oooi.gout);
+			len += snprintf(buf + len, bufsz - len, "Gate out Time : %s\n", oooi.gout);
 		if (oooi.gin[0])
-			fprintf(fdout, "Gate in Time : %s\n", oooi.gin);
+			len += snprintf(buf + len, bufsz - len, "Gate in Time : %s\n", oooi.gin);
 		if (oooi.woff[0])
-			fprintf(fdout, "Wheels off Tme : %s\n", oooi.woff);
+			len += snprintf(buf + len, bufsz - len, "Wheels off Tme : %s\n", oooi.woff);
 		if (oooi.won[0])
-			fprintf(fdout, "Wheels on Time : %s\n", oooi.won);
+			len += snprintf(buf + len, bufsz - len, "Wheels on Time : %s\n", oooi.won);
 	}
 #ifdef HAVE_LIBACARS
 	if (msg->decoded_tree != NULL) {
 		la_vstring *vstr = la_proto_tree_format_text(NULL, msg->decoded_tree);
-		fprintf(fdout, "%s\n", vstr->str);
+		len += snprintf(buf + len, bufsz - len, "%s\n", vstr->str);
 		la_vstring_destroy(vstr, true);
 	}
 #endif
-	fflush(fdout);
+	return len;
 }
 
 #ifdef HAVE_CJSON
-static int buildjson(acarsmsg_t *msg, int chn, struct timeval tv)
+static int fmt_json(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
 {
 	oooi_t oooi;
 #if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
@@ -332,16 +534,17 @@ static int buildjson(acarsmsg_t *msg, int chn, struct timeval tv)
 		cJSON_AddStringToObject(app_info, "ver", ACARSDEC_VERSION);
 	}
 
-	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
+	ok = cJSON_PrintPreallocated(json_obj, buf, bufsz, 0);
 	cJSON_Delete(json_obj);
-	return ok;
+	return ok ? strlen(buf) : -1;
 }
 #endif /* HAVE_CJSON */
 
-static void printoneline(acarsmsg_t *msg, int chn, struct timeval tv)
+static int fmt_oneline(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
 {
 	char txt[60];
 	char *pstr;
+	int len;
 
 	strncpy(txt, msg->txt, 59);
 	txt[59] = 0;
@@ -349,14 +552,14 @@ static void printoneline(acarsmsg_t *msg, int chn, struct timeval tv)
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
 
-	fprintf(fdout, "#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
+	len = snprintf(buf, bufsz, "#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (R.inmode != 2)
-		printdate(tv);
-	fprintf(fdout, " %7s %6s %1c %2s %4s ", msg->addr, msg->fid, msg->mode, msg->label, msg->no);
-	fprintf(fdout, "%s", txt);
-	fprintf(fdout, "\n");
-	fflush(fdout);
+		len += fmt_date(tv, buf + len, bufsz - len);
+
+	len += snprintf(buf + len, bufsz - len, " %7s %6s %1c %2s %4s %s", msg->addr, msg->fid, msg->mode, msg->label, msg->no, txt);
+
+	return len;
 }
 
 typedef struct flight_s flight_t;
@@ -449,7 +652,7 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 }
 
 #ifdef HAVE_CJSON
-static int routejson(flight_t *fl, struct timeval tv)
+static int fmt_routejson(flight_t *fl, struct timeval tv, char *buf, size_t bufsz)
 {
 	if (fl == NULL)
 		return 0;
@@ -470,64 +673,64 @@ static int routejson(flight_t *fl, struct timeval tv)
 		cJSON_AddStringToObject(json_obj, "depa", fl->oooi.sa);
 		cJSON_AddStringToObject(json_obj, "dsta", fl->oooi.da);
 
-		ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
+		ok = cJSON_PrintPreallocated(json_obj, buf, bufsz, 0);
 		cJSON_Delete(json_obj);
 
 		fl->rt = ok;
-		return ok;
+		return ok ? strlen(buf) : -1;
 	} else
 		return 0;
 }
 #endif /* HAVE_CJSON */
 
-static void printmonitor(acarsmsg_t *msg, int chn, struct timeval tv)
+static int fmt_monitor(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
 {
 	flight_t *fl;
+	int len = 0;
 
-	cls();
-
-	printf("             Acarsdec monitor ");
-	printtime(tv);
-	printf("\n Aircraft Flight   Nb Channels     First    DEP   ARR   ETA\n");
+	len += snprintf(buf + len, bufsz - len, "\x1b[H\x1b[2J");
+	len += snprintf(buf + len, bufsz - len, "             Acarsdec monitor ");
+	len += fmt_time(tv, buf + len, bufsz - len);
+	len += snprintf(buf + len, bufsz - len, "\n Aircraft Flight   Nb Channels     First    DEP   ARR   ETA\n");
 
 	fl = flight_head;
 	while (fl) {
 		int i;
 
-		printf(" %-8s %-7s %3d ", fl->addr, fl->fid, fl->nbm);
+		len += snprintf(buf + len, bufsz - len, " %-8s %-7s %3d ", fl->addr, fl->fid, fl->nbm);
 		for (i = 0; i < R.nbch; i++)
-			printf("%c", (fl->chm & (1 << i)) ? 'x' : '.');
+			len += snprintf(buf + len, bufsz - len, "%c", (fl->chm & (1 << i)) ? 'x' : '.');
 		for (; i < R.nbch; i++)
-			printf(" ");
-		printf(" ");
-		printtime(fl->ts);
+			len += snprintf(buf + len, bufsz - len, " ");
+		len += snprintf(buf + len, bufsz - len, " ");
+		len += fmt_time(fl->ts, buf + len, bufsz - len);
 		if (fl->oooi.sa[0])
-			printf(" %4s ", fl->oooi.sa);
+			len += snprintf(buf + len, bufsz - len, " %4s ", fl->oooi.sa);
 		else
-			printf("      ");
+			len += snprintf(buf + len, bufsz - len, "      ");
 		if (fl->oooi.da[0])
-			printf(" %4s ", fl->oooi.da);
+			len += snprintf(buf + len, bufsz - len, " %4s ", fl->oooi.da);
 		else
-			printf("      ");
+			len += snprintf(buf + len, bufsz - len, "      ");
 		if (fl->oooi.eta[0])
-			printf(" %4s ", fl->oooi.eta);
+			len += snprintf(buf + len, bufsz - len, " %4s ", fl->oooi.eta);
 		else
-			printf("      ");
-		printf("\n");
+			len += snprintf(buf + len, bufsz - len, "      ");
+		len += snprintf(buf + len, bufsz - len, "\n");
 
 		fl = fl->next;
 	}
 
-	fflush(stdout);
+	return len;
 }
 
 void outputmsg(const msgblk_t *blk)
 {
 	acarsmsg_t msg;
 	int i, j, k;
-	int jok = 0;
 	int outflg = 0;
 	flight_t *fl;
+	output_t *out;
 
 	/* fill msg struct */
 	memset(&msg, 0, sizeof(msg));
@@ -686,62 +889,55 @@ void outputmsg(const msgblk_t *blk)
 	if (R.emptymsg && (msg.txt == NULL || msg.txt[0] == '\0'))
 		return;
 
+	// for now and until we see contention, we don't bother using a separate thread per output. KISS.
+	for (out = R.outputs; out; out = out->next) {
+		int len = 0;
+		switch (out->fmt) {
+		case FMT_MONITOR:
+			len = fmt_monitor(&msg, blk->chn, blk->tv, fmtbuf, FMTBUFLEN);
+			break;
+		case FMT_ONELINE:
+			len = fmt_oneline(&msg, blk->chn, blk->tv, fmtbuf, FMTBUFLEN);
+			break;
+		case FMT_FULL:
+			len = fmt_msg(&msg, blk->chn, blk->tv, fmtbuf, FMTBUFLEN);
+			break;
+		case FMT_NATIVE:
+			len = fmt_sv(&msg, blk->chn, blk->tv, fmtbuf, FMTBUFLEN);
+			break;
+		case FMT_PP:
+			len = fmt_pp(&msg, fmtbuf, FMTBUFLEN);
+			break;
 #ifdef HAVE_CJSON
-	if (jsonbuf) {
-		if (R.outtype == OUTTYPE_ROUTEJSON) {
-			if (fl)
-				jok = routejson(fl, blk->tv);
-		} else {
-			jok = buildjson(&msg, blk->chn, blk->tv);
-		}
-	}
+		case FMT_ROUTEJSON:
+			len = fl ? fmt_routejson(fl, blk->tv, fmtbuf, FMTBUFLEN) : -1;
+			break;;
+		case FMT_JSON:
+			len = fmt_json(&msg, blk->chn, blk->tv, fmtbuf, FMTBUFLEN);
+			break;
 #endif /* HAVE_CJSON */
-
-	if ((R.hourly || R.daily) && R.outtype != OUTTYPE_NONE && (fdout = Fileoutrotate(fdout)) == NULL)
-		_exit(1);
-
-	switch (R.outtype) {
-	case OUTTYPE_NONE:
-		break;
-	case OUTTYPE_ONELINE:
-		printoneline(&msg, blk->chn, blk->tv);
-		break;
-	case OUTTYPE_STD:
-		printmsg(&msg, blk->chn, blk->tv);
-		break;
-	case OUTTYPE_MONITOR:
-		printmonitor(&msg, blk->chn, blk->tv);
-		break;
-#ifdef HAVE_CJSON
-	case OUTTYPE_ROUTEJSON:
-	case OUTTYPE_JSON:
-		if (jok) {
-			fprintf(fdout, "%s\n", jsonbuf);
-			fflush(fdout);
 		}
-		break;
-#endif /* HAVE_CJSON */
-	}
 
-	switch (R.netout) {
-	case NETLOG_PLANEPLOTTER:
-		Netoutpp(&msg);
-		break;
-	case NETLOG_NATIVE:
-		Netoutsv(&msg, R.idstation, blk->chn, blk->tv);
-		break;
-#ifdef HAVE_CJSON
-	case NETLOG_JSON:
-		if (jok)
-			Netoutjson(jsonbuf);
-		break;
+		// NB if the same format is used for multiple outputs, the buffer will be recomputed each time. Deemed acceptable
+
+		if (len <= 0)
+			continue;
+
+		switch (out->dst) {
+		case DST_FILE:
+			Filewrite(fmtbuf, len, out->priv);
+			break;
+		case DST_UDP:
+			Netwrite(fmtbuf, len, out->priv);
+			break;
 #ifdef WITH_MQTT
-	case NETLOG_MQTT:
-		MQTTsend(jsonbuf);
-		break;
-#endif /* WITH_MQTT */
-#endif /* HAVE_CJSON */
+		case DST_MQTT:
+			MQTTwrite(fmtbuf, len, out->priv);
+			break;
+#endif
+		}
 	}
+
 	free(msg.txt);
 #ifdef HAVE_LIBACARS
 	la_proto_tree_destroy(msg.decoded_tree);

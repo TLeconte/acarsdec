@@ -1,3 +1,23 @@
+/*
+ *  Copyright (c) 2015 Thierry Leconte
+ *  Copyright (c) 2024 Thibaut VARENE
+ *
+ *
+ *   This code is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU Library General Public License version 2
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Library General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Library General Public
+ *   License along with this library; if not, write to the Free Software
+ *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,128 +30,82 @@
 #include <errno.h>
 
 #include "acarsdec.h"
+#include "netout.h"
 
-static int sockfd = -1;
-static struct sockaddr *netOutputAddr = NULL;
-static int netOutputAddrLen = 0;
-
-int Netoutinit(char *Rawaddr)
+// params is "host=xxx,port=yyy"
+netout_t *Netoutinit(char *params)
 {
-	static char tmpAddr[256] = { 0 };
-	char *addr;
-	char *port;
+	char *param, *sep;
+	char *addr = NULL;
+	char *port = NULL;
 	struct addrinfo hints, *servinfo, *p;
-	int rv;
+	int sockfd, rv, ret = -1;
+	netout_t *netpriv = NULL;
 
-	if (Rawaddr)
-		strncpy(tmpAddr, Rawaddr, 255);
-	else if (0 == tmpAddr[0])
-		return -1;
+	while ((param = strsep(&params, ","))) {
+		sep = strchr(param, '=');
+		if (!sep)
+			continue;
+		*sep++ = '\0';
+		if (!strcmp("host", param))
+			addr = sep;
+		else if (!strcmp("port", param))
+			port = sep;
+	}
+
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_protocol = IPPROTO_UDP;
-	addr = tmpAddr;
-	port = strstr(addr, ":");
 	if (port == NULL)
 		port = "5555";
-	else {
-		*port = 0;
-		port++;
-	}
 
 	if (R.verbose)
 		fprintf(stderr, "Attempting to resolve '%s:%s'.\n", addr, port);
 
 	if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
 		fprintf(stderr, "Invalid/unknown error '%s' resolving '%s:%s', retrying later.\n", gai_strerror(rv), addr, port);
-		return -1;
+		return NULL;
 	}
 
 	for (p = servinfo; p != NULL; p = p->ai_next) {
-		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
-			continue;
-
-		netOutputAddrLen = p->ai_addrlen;
-		netOutputAddr = malloc(netOutputAddrLen);
-		memcpy(netOutputAddr, p->ai_addr, netOutputAddrLen);
-
-		freeaddrinfo(servinfo);
-		return 0;
+		sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+		if (-1 != sockfd)
+			break;	// success
 	}
 
-	fprintf(stderr, "failed to resolve: '%s:%s'\n", addr, port);
+	if (!p) {
+		fprintf(stderr, "failed to resolve: '%s:%s'\n", addr, port);
+		goto fail;
+	}
 
+	netpriv = malloc(sizeof(*netpriv));
+	if (!netpriv)
+		goto fail;
+
+	memcpy(&netpriv->netOutputAddr, p->ai_addr, p->ai_addrlen);
+	netpriv->netOutputAddrLen = p->ai_addrlen;
+	netpriv->sockfd = sockfd;
+
+fail:
 	freeaddrinfo(servinfo);
-
-	return -1;
+	return netpriv;
 }
 
-static void Netwrite(const void *buf, size_t count)
+void Netwrite(const void *buf, size_t count, netout_t *net)
 {
 	int res;
 
-	if (!netOutputAddrLen) {
-		/* The destination address hasn't yet been succesfully resolved. */
-		if (R.verbose)
-			fprintf(stderr, "retrying DNS resolution.\n");
+	if (!net->netOutputAddrLen)
+		return;
 
-		res = Netoutinit(NULL);
-		if (!res)	/* Resolution failed, so we'll drop this message and try again next time. */
-			return;
-	}
-
-	res = sendto(sockfd, buf, count, 0, netOutputAddr, netOutputAddrLen);
+	res = sendto(net->sockfd, buf, count, 0, (struct sockaddr *)&net->netOutputAddr, net->netOutputAddrLen);
 	if (R.verbose && res < 0)
 		fprintf(stderr, "error on sendto(): %s, ignoring.\n", strerror(errno));
 }
 
-void Netoutpp(acarsmsg_t *msg)
+void Netexit(netout_t *net)
 {
-	static char pkt[3600]; // max. 16 blocks * 220 characters + extra space for msg prefix
-	char *pstr;
-	int res;
-
-	if (!msg)
-		return;
-
-	char *txt = strdup(msg->txt);
-	for (pstr = txt; *pstr != 0; pstr++)
-		if (*pstr == '\n' || *pstr == '\r')
-			*pstr = ' ';
-
-	res = snprintf(pkt, sizeof(pkt), "AC%1c %7s %1c %2s %1c %4s %6s %s",
-		       msg->mode, msg->addr, msg->ack, msg->label, msg->bid ? msg->bid : '.', msg->no,
-		       msg->fid, txt);
-
-	free(txt);
-	Netwrite(pkt, res);
-}
-
-void Netoutsv(acarsmsg_t *msg, char *idstation, int chn, struct timeval tv)
-{
-	static char pkt[3600]; // max. 16 blocks * 220 characters + extra space for msg prefix
-	struct tm tmp;
-	int res;
-
-	if (!msg)
-		return;
-
-	gmtime_r(&(tv.tv_sec), &tmp);
-
-	res = snprintf(pkt, sizeof(pkt),
-		       "%8s %1d %02d/%02d/%04d %02d:%02d:%02d %1d %03d %1c %7s %1c %2s %1c %4s %6s %s",
-		       idstation, chn + 1, tmp.tm_mday, tmp.tm_mon + 1,
-		       tmp.tm_year + 1900, tmp.tm_hour, tmp.tm_min, tmp.tm_sec,
-		       msg->err, (int)(msg->lvl), msg->mode, msg->addr, msg->ack, msg->label,
-		       msg->bid ? msg->bid : '.', msg->no, msg->fid, msg->txt);
-
-	Netwrite(pkt, res);
-}
-
-void Netoutjson(char *jsonbuf)
-{
-	if (jsonbuf)
-		Netwrite(jsonbuf, strlen(jsonbuf));
+	free(net);
 }

@@ -18,6 +18,7 @@
 #include <string.h>
 #include <math.h>
 #include "acarsdec.h"
+#include "output.h"
 
 #define SYN 0x16
 #define SOH 0x01

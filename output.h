@@ -1,7 +1,11 @@
-extern int Netoutinit(char *Rawaddr);
-extern void Netoutpp(acarsmsg_t *msg);
-extern void Netoutsv(acarsmsg_t *msg, char *idstation, int chn, struct timeval tv);
-extern void Netoutjson(char *jsonbuf);
+#ifndef output_h
+#define output_h
 
-extern FILE *Fileoutinit(char *logfilename);
-extern FILE *Fileoutrotate(FILE *fd);
+#include "acarsdec.h"
+
+int setup_output(char *outarg);
+int initOutputs(void);
+void exitOutputs(void);
+void outputmsg(const msgblk_t *blk);
+
+#endif /* output_h */

@@ -16,6 +16,10 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
+
+#ifndef acarsdec_h
+#define acarsdec_h
+
 #include <sys/time.h>
 #include <time.h>
 #include <pthread.h>
@@ -33,18 +37,7 @@
 
 #define INTRATE 12500
 
-#define NETLOG_NONE 0
-#define NETLOG_PLANEPLOTTER 1
-#define NETLOG_NATIVE 2
-#define NETLOG_JSON 3
-#define NETLOG_MQTT 4
-
-#define OUTTYPE_NONE 0
-#define OUTTYPE_ONELINE 1
-#define OUTTYPE_STD 2
-#define OUTTYPE_MONITOR 3
-#define OUTTYPE_JSON 4
-#define OUTTYPE_ROUTEJSON 5
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof(x[0]))
 
 typedef float sample_t;
 
@@ -122,14 +115,20 @@ typedef struct {
 #endif
 } acarsmsg_t;
 
+typedef struct output_s {
+	enum { FMT_ONELINE = 1, FMT_FULL, FMT_MONITOR, FMT_PP, FMT_NATIVE, FMT_JSON, FMT_ROUTEJSON } fmt;
+	enum { DST_FILE = 1, DST_UDP, DST_MQTT } dst;
+	void *params;
+	void *priv;
+	struct output_s *next;
+} output_t;
+
 typedef struct {
 	channel_t *channels;
 	unsigned int nbch;
 
 	int inmode;
 	int verbose;
-	int outtype;
-	int netout;
 	int airflt;
 	int emptymsg;
 	int mdly;
@@ -153,21 +152,10 @@ typedef struct {
 	int freq;
 #endif
 
-#ifdef WITH_MQTT
-	char *mqtt_urls[16];
-	int mqtt_nburls;
-	char *mqtt_topic;
-	char *mqtt_user;
-	char *mqtt_passwd;
-#endif
-
-	char *Rawaddr;
-	char *logfilename;
+	output_t *outputs;
 } runtime_t;
 
 extern runtime_t R;
-
-extern int initOutput(char *, char *);
 
 #ifdef WITH_ALSA
 extern int initAlsa(char **argv, int optind);
@@ -198,12 +186,6 @@ extern int runSoapySample(void);
 extern int runSoapyClose(void);
 #endif
 
-#ifdef WITH_MQTT
-extern int MQTTinit(char **urls, char *client_id, char *topic, char *user, char *passwd);
-extern int MQTTsend(char *msgtxt);
-extern void MQTTend();
-#endif
-
 extern int initRaw(char **argv, int optind);
 extern int runRawSample(void);
 extern int initMsk(channel_t *);
@@ -215,4 +197,4 @@ extern int deinitAcars(void);
 
 extern int DecodeLabel(acarsmsg_t *msg, oooi_t *oooi);
 
-extern void outputmsg(const msgblk_t *);
+#endif /* acarsdec_h */

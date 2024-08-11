@@ -1,3 +1,23 @@
+/*
+ *  Copyright (c) 2015 Thierry Leconte
+ *  Copyright (c) 2024 Thibaut VARENE
+ *
+ *
+ *   This code is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU Library General Public License version 2
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Library General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Library General Public
+ *   License along with this library; if not, write to the Free Software
+ *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,24 +27,20 @@
 #include <sys/time.h>
 #include <time.h>
 #include <errno.h>
+#include <err.h>
 
 #include "acarsdec.h"
+#include "fileout.h"
 
-static char *filename_prefix = NULL;
-static char *extension = NULL;
-static size_t prefix_len;
-static struct tm current_tm;
-
-static FILE *open_outfile()
+static FILE *open_outfile(fileout_t *fout)
 {
 	char *filename = NULL;
 	char *fmt = NULL;
 	size_t tlen = 0;
-	FILE *fd;
 
 	if (R.hourly || R.daily) {
 		time_t t = time(NULL);
-		gmtime_r(&t, &current_tm);
+		gmtime_r(&t, &fout->current_tm);
 		char suffix[16];
 
 		if (R.hourly)
@@ -32,69 +48,108 @@ static FILE *open_outfile()
 		else // daily
 			fmt = "_%Y%m%d";
 
-		tlen = strftime(suffix, sizeof(suffix), fmt, &current_tm);
+		tlen = strftime(suffix, sizeof(suffix), fmt, &fout->current_tm);
 		if (tlen == 0) {
 			fprintf(stderr, "*open_outfile(): strfime returned 0\n");
 			return NULL;
 		}
-		filename = calloc(prefix_len + tlen + 2, sizeof(char));
+		filename = calloc(fout->prefix_len + tlen + 2, sizeof(char));
 		if (filename == NULL) {
 			fprintf(stderr, "open_outfile(): failed to allocate memory\n");
 			return NULL;
 		}
-		sprintf(filename, "%s%s%s", filename_prefix, suffix, extension);
+		sprintf(filename, "%s%s%s", fout->filename_prefix, suffix, fout->extension);
 	} else {
-		filename = strdup(filename_prefix);
+		filename = strdup(fout->filename_prefix);
 	}
 
-	if ((fd = fopen(filename, "a+")) == NULL) {
+	if ((fout->F = fopen(filename, "a+")) == NULL)
 		fprintf(stderr, "Could not open output file %s: %s\n", filename, strerror(errno));
-		free(filename);
-		return NULL;
-	}
+
 	free(filename);
-	return fd;
+	return fout->F;
 }
 
-FILE *Fileoutinit(char *logfilename)
+// params: NULL (defaults to stdout) or "path=" followed by "-" for stdtout or full path to file
+fileout_t *Fileoutinit(char *params)
 {
-	FILE *fd;
+	char *param, *sep, *path = NULL;
+	fileout_t *fout;
 
-	filename_prefix = logfilename;
-	prefix_len = strlen(filename_prefix);
+	while ((param = strsep(&params, ","))) {
+		sep = strchr(param, '=');
+		if (!sep)
+			continue;
+		*sep++ = '\0';
+		if (!strcmp("path", param))
+			path = sep;
+	}
+
+	fout = calloc(1, sizeof(*fout));
+	if (!fout)
+		return NULL;
+
+	// params is path or optional "-" for stdout
+	if (!path || !strcmp("-", path)) {
+		fout->F = stdout;
+		return fout;
+	}
+
+	fout->filename_prefix = path;
+	fout->prefix_len = strlen(path);
 	if (R.hourly || R.daily) {
-		char *basename = strrchr(filename_prefix, '/');
+		// XXX REVISIT
+		char *basename = strrchr(path, '/');
 		if (basename != NULL)
 			basename++;
 		else
-			basename = filename_prefix;
+			basename = path;
 
-		char *ext = strrchr(filename_prefix, '.');
+		char *ext = strrchr(path, '.');
 		if (ext != NULL && (ext <= basename || ext[1] == '\0'))
 			ext = NULL;
 
-		if (ext) {
-			extension = strdup(ext);
-			*ext = '\0';
-		} else {
-			extension = strdup("");
-		}
+		fout->extension = ext ? strdup(ext) : strdup("");
 	}
-	if ((fd = open_outfile()) == NULL)
-		return NULL;
 
-	return fd;
+	if ((open_outfile(fout)) == NULL) {
+		free(fout);
+		return NULL;
+	}
+
+	return fout;
 }
 
-FILE *Fileoutrotate(FILE *fd)
+static FILE *Fileoutrotate(fileout_t *fout)
 {
 	struct tm new_tm;
 	time_t t = time(NULL);
+
 	gmtime_r(&t, &new_tm);
-	if ((R.hourly && new_tm.tm_hour != current_tm.tm_hour) ||
-	    (R.daily && new_tm.tm_mday != current_tm.tm_mday)) {
-		fclose(fd);
-		return open_outfile();
+	if ((R.hourly && new_tm.tm_hour != fout->current_tm.tm_hour) ||
+	    (R.daily && new_tm.tm_mday != fout->current_tm.tm_mday)) {
+		fclose(fout->F);
+		return open_outfile(fout);
 	}
-	return fd;
+	return fout->F;
+}
+
+void Filewrite(const char *buf, size_t buflen, fileout_t *fout)
+{
+	if ((R.hourly || R.daily) && !Fileoutrotate(fout))
+		errx(1, "failed to rotate output file %s", fout->filename_prefix);
+
+	fwrite(buf, buflen, 1, fout->F);
+	fprintf(fout->F, "\n");
+	fflush(fout->F);
+
+}
+
+void Fileoutexit(fileout_t *fout)
+{
+	if (stdout != fout->F)
+		fclose(fout->F);
+
+	free((void *)(uintptr_t)fout->extension);
+	free(fout);
 }
