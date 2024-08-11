@@ -88,6 +88,9 @@ int parse_freqs(char **argv, const int argind, unsigned int *minFc, unsigned int
 
 unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned int inrate)
 {
+	if (R.freq)
+		return R.freq;
+	
 	if ((maxFc - minFc) > inrate - 4 * INTRATE) {
 		fprintf(stderr, "Frequencies too far apart\n");
 		return 0;

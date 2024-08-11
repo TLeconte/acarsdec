@@ -79,16 +79,15 @@ int initSoapy(char **argv, int optind)
 	for (n = 0; n < R.nbch; n++)
 		Fd[n] = (int)R.channels[n].Fr; // XXX
 
-	if (R.freq == 0)
-		R.freq = find_centerfreq(minFc, maxFc, soapyInRate);
+	Fc = find_centerfreq(minFc, maxFc, soapyInRate);
 
-	if (R.freq == 0)
+	if (Fc == 0)
 		return 1;
 
 	for (n = 0; n < R.nbch; n++) {
-		if (Fd[n] < R.freq - soapyInRate / 2 || Fd[n] > R.freq + soapyInRate / 2) {
+		if (Fd[n] < Fc - soapyInRate / 2 || Fd[n] > Fc + soapyInRate / 2) {
 			fprintf(stderr, "WARNING: frequency not in tuned range %d-%d: %d\n",
-				R.freq - soapyInRate / 2, R.freq + soapyInRate / 2, Fd[n]);
+				Fc - soapyInRate / 2, Fc + soapyInRate / 2, Fd[n]);
 			continue;
 		}
 	}
@@ -103,14 +102,14 @@ int initSoapy(char **argv, int optind)
 		ch->oscillator = malloc(R.rateMult * sizeof(*ch->oscillator));
 		ch->dm_buffer = malloc(SOAPYOUTBUFSZ * sizeof(*ch->dm_buffer));
 
-		AMFreq = ((signed)ch->Fr - R.freq) / (float)(soapyInRate) * 2.0 * M_PI;
+		AMFreq = ((signed)ch->Fr - Fc) / (float)(soapyInRate) * 2.0 * M_PI;
 		for (ind = 0; ind < R.rateMult; ind++)
 			ch->oscillator[ind] = cexpf(AMFreq * ind * -I) / R.rateMult;
 	}
 
 	if (R.verbose)
-		fprintf(stderr, "Set center freq. to %dHz\n", (int)R.freq);
-	r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, 0, R.freq, NULL);
+		fprintf(stderr, "Set center freq. to %uHz\n", Fc);
+	r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, 0, Fc, NULL);
 	if (r != 0)
 		fprintf(stderr, "WARNING: Failed to set frequency: %s\n", SoapySDRDevice_lastError());
 

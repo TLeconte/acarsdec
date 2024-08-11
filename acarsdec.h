@@ -107,6 +107,7 @@ typedef struct {
 	int rateMult;
 	int lnaState;
 	int GRdB;
+	unsigned int freq;
 
 	char *idstation;
 
@@ -116,7 +117,6 @@ typedef struct {
 
 #ifdef WITH_SOAPY
 	char *antenna;
-	int freq;
 #endif
 
 	output_t *outputs;

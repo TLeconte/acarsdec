@@ -95,6 +95,7 @@ static void usage(void)
 		" -p ppm\t\t\t: set rtl ppm frequency correction\n"
 		" -m rateMult\t\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
 		" -B bias\t\t\t: Enable (1) or Disable (0) the bias tee (default is 0)\n"
+		" -c freq\t\t: set center frequency to tune to in MHz\n"
 		" -r rtldevice f1 [f2]...[fN]\t: decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -r 0 131.525 131.725 131.825 )\n");
 #endif
 #ifdef WITH_AIR
@@ -108,6 +109,7 @@ static void usage(void)
 		"\n sdrplayopts:\n"
 		"-L lnaState: set the lnaState (depends on the device)\n"
 		"-G Gain reducction in dB's, range 20 .. 59 (-100 is autogain)\n"
+		" -c freq\t\t: set center frequency to tune to in MHz\n"
 		" -s f1 [f2]...[fN]\t: decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -s 131.525 131.725 131.825 )\n");
 #endif
 #ifdef WITH_SOAPY
@@ -116,7 +118,7 @@ static void usage(void)
 		" --antenna antenna\t: set antenna port to use\n"
 		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n"
 		" -p ppm\t\t\t: set ppm frequency correction\n"
-		" -c freq\t\t: set center frequency to tune to\n"
+		" -c freq\t\t: set center frequency to tune to in MHz\n"
 		" -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
 		" -d devicestring f1 [f2] .. [fN]\t: decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to fN in Mhz (ie : -d driver=rtltcp 131.525 131.725 131.825 )\n");
 #endif
@@ -237,9 +239,6 @@ int main(int argc, char **argv)
 			res = initSoapy(argv, optind);
 			R.inmode = 6;
 			break;
-		case 'c':
-			R.freq = atoi(optarg);
-			break;
 #endif
 #ifdef WITH_AIR
 		case 's':
@@ -249,6 +248,9 @@ int main(int argc, char **argv)
 			R.inmode = 4;
 			break;
 #endif
+		case 'c':
+			R.freq = (unsigned int)(1000000 * atof(optarg));
+			break;
 		case 'A':
 			R.airflt = 1;
 			break;
