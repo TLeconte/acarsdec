@@ -84,7 +84,7 @@ static void usage(void)
 	fprintf(stderr, " -s airspydevicenumber [airspyopts] |");
 #endif
 #ifdef WITH_SDRPLAY
-	fprintf(stderr, " -s [sdrplayopts] |");
+	fprintf(stderr, " -S [sdrplayopts] |");
 #endif
 #ifdef WITH_SOAPY
 	fprintf(stderr, " -d devicestring [soapyopts]");
@@ -182,7 +182,7 @@ int main(int argc, char **argv)
 	R.idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt_long(argc, argv, "varfdsRt:g:m:Aep:c:i:L:G:b:B:", long_opts, NULL)) != EOF) {
+	while ((c = getopt_long(argc, argv, "varfdsSRt:g:m:Aep:c:i:L:G:b:B:", long_opts, NULL)) != EOF) {
 		switch (c) {
 		case 3:
 			setup_output(optarg);
@@ -238,7 +238,7 @@ int main(int argc, char **argv)
 			break;
 #endif
 #ifdef WITH_SDRPLAY
-		case 's':
+		case 'S':
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initSdrplay(argv, optind);
