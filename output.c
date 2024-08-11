@@ -495,11 +495,7 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 		if (fl == NULL)
 			return (NULL);
 		strncpy(fl->addr, msg->addr, 8);
-		fl->nbm = 0;
 		fl->ts = tv;
-		fl->chm = 0;
-		fl->rt = 0;
-		fl->next = NULL;
 	}
 
 	strncpy(fl->fid, msg->fid, 7);
