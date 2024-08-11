@@ -9,6 +9,7 @@ typedef struct {
 	const char *extension;
 	size_t prefix_len;
 	struct tm current_tm;
+	enum { ROTATE_NONE, ROTATE_HOURLY, ROTATE_DAILY } rotate;
 } fileout_t;
 
 fileout_t *Fileoutinit(char *params);

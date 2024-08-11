@@ -38,12 +38,12 @@ static FILE *open_outfile(fileout_t *fout)
 	char *fmt = NULL;
 	size_t tlen = 0;
 
-	if (R.hourly || R.daily) {
+	if (ROTATE_NONE != fout->rotate) {
 		time_t t = time(NULL);
 		gmtime_r(&t, &fout->current_tm);
 		char suffix[16];
 
-		if (R.hourly)
+		if (ROTATE_HOURLY == fout->rotate)
 			fmt = "_%Y%m%d_%H";
 		else // daily
 			fmt = "_%Y%m%d";
@@ -71,9 +71,10 @@ static FILE *open_outfile(fileout_t *fout)
 }
 
 // params: NULL (defaults to stdout) or "path=" followed by "-" for stdtout or full path to file
+// optional "rotate=" parameter followed by "none" (default), "hourly", "daily"
 fileout_t *Fileoutinit(char *params)
 {
-	char *param, *sep, *path = NULL;
+	char *param, *sep, *path = NULL, *rotate = NULL;
 	fileout_t *fout;
 
 	while ((param = strsep(&params, ","))) {
@@ -83,6 +84,8 @@ fileout_t *Fileoutinit(char *params)
 		*sep++ = '\0';
 		if (!strcmp("path", param))
 			path = sep;
+		if (!strcmp("rotate", param))
+			rotate = sep;
 	}
 
 	fout = calloc(1, sizeof(*fout));
@@ -95,9 +98,17 @@ fileout_t *Fileoutinit(char *params)
 		return fout;
 	}
 
+	fout->rotate = ROTATE_NONE;
+	if (rotate) {
+		if (!strcmp("daily", rotate))
+			fout->rotate = ROTATE_DAILY;
+		else if (!strcmp("hourly", rotate))
+			fout->rotate = ROTATE_HOURLY;
+	}
+
 	fout->filename_prefix = path;
 	fout->prefix_len = strlen(path);
-	if (R.hourly || R.daily) {
+	if (ROTATE_NONE != fout->rotate) {
 		// XXX REVISIT
 		char *basename = strrchr(path, '/');
 		if (basename != NULL)
@@ -126,8 +137,8 @@ static FILE *Fileoutrotate(fileout_t *fout)
 	time_t t = time(NULL);
 
 	gmtime_r(&t, &new_tm);
-	if ((R.hourly && new_tm.tm_hour != fout->current_tm.tm_hour) ||
-	    (R.daily && new_tm.tm_mday != fout->current_tm.tm_mday)) {
+	if ((ROTATE_HOURLY == fout->rotate && new_tm.tm_hour != fout->current_tm.tm_hour) ||
+	    (ROTATE_DAILY == fout->rotate && new_tm.tm_mday != fout->current_tm.tm_mday)) {
 		fclose(fout->F);
 		return open_outfile(fout);
 	}
@@ -136,7 +147,7 @@ static FILE *Fileoutrotate(fileout_t *fout)
 
 void Filewrite(const char *buf, size_t buflen, fileout_t *fout)
 {
-	if ((R.hourly || R.daily) && !Fileoutrotate(fout))
+	if ((ROTATE_NONE != fout->rotate) && !Fileoutrotate(fout))
 		errx(1, "failed to rotate output file %s", fout->filename_prefix);
 
 	fwrite(buf, buflen, 1, fout->F);

@@ -81,8 +81,6 @@ static void usage(void)
 		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n"
 		"\n"
 		" -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n"
-		" -H\t\t\t: rotate log file once every hour\n"
-		" -D\t\t\t: rotate log file once every day\n"
 		"\n");
 
 #ifdef WITH_ALSA
@@ -161,7 +159,7 @@ int main(int argc, char **argv)
 	R.idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt_long(argc, argv, "HDvarfdsRt:g:m:Aep:c:i:L:G:b:B:", long_opts, NULL)) != EOF) {
+	while ((c = getopt_long(argc, argv, "varfdsRt:g:m:Aep:c:i:L:G:b:B:", long_opts, NULL)) != EOF) {
 		switch (c) {
 		case 3:
 			setup_output(optarg);
@@ -258,12 +256,6 @@ int main(int argc, char **argv)
 		case 'e':
 			R.emptymsg = 1;
 			break;
-		case 'H':
-			R.hourly = 1;
-			break;
-		case 'D':
-			R.daily = 1;
-			break;
 		case 'i':
 			free(R.idstation);
 			R.idstation = strdup(optarg);
@@ -281,9 +273,6 @@ int main(int argc, char **argv)
 
 	if (res)
 		errx(res, "Unable to init input\n");
-
-	if (R.hourly && R.daily)
-		errx(1, "Options: -H and -D are exclusive\n");
 
 	build_label_filter(lblf);
 

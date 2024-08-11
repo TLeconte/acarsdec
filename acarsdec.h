@@ -132,7 +132,6 @@ typedef struct {
 	int airflt;
 	int emptymsg;
 	int mdly;
-	int hourly, daily;
 
 	float gain;
 	int ppm;
