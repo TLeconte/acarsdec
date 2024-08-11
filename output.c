@@ -127,28 +127,30 @@ static la_reasm_table_funcs acars_reasm_funcs = {
 #endif // HAVE_LIBACARS
 
 static const struct {
-	const char *name;
 	int fmt;
+	const char *name;
+	const char *desc;
 } out_fmts[] = {
-	{ "oneline",	FMT_ONELINE, },
-	{ "full",	FMT_FULL, },
-	{ "monitor",	FMT_MONITOR, },
-	{ "pp",		FMT_PP, },
-	{ "native",	FMT_NATIVE, },
+	{ FMT_ONELINE,	"oneline",	"Single line summary" },
+	{ FMT_FULL,	"full",		"Full text decoding" },
+	{ FMT_MONITOR,	"monitor",	"Live monitoring" },
+	{ FMT_PP,	"pp",		"PlanePlotter format" },
+	{ FMT_NATIVE,	"native",	"Acarsdec native format" },
 #ifdef HAVE_CJSON
-	{ "json",	FMT_JSON, },
-	{ "routejson",	FMT_ROUTEJSON, },
+	{ FMT_JSON,	"json",	 	"Acarsdec JSON format" },
+	{ FMT_ROUTEJSON,"routejson",	"Acarsdec Route JSON format" },
 #endif
 };
 
 static const struct {
-	const char *name;
 	int dst;
+	const char *name;
+	const char *desc;
 } out_dsts[] = {
-	{ "file",	DST_FILE, },
-	{ "udp",	DST_UDP, },
+	{ DST_FILE,	"file",		"File (including stdout) output. PARAMS: path,rotate" },
+	{ DST_UDP,	"udp",	 	"UDP network output. PARAMS: host,port" },
 #ifdef WITH_MQTT
-	{ "mqtt",	DST_MQTT, },
+	{ DST_MQTT,	"mqtt",	 	"MQTT output. PARAMS: uri,user,passwd,topic" },
 #endif
 };
 
@@ -181,6 +183,23 @@ static bool validate_output(output_t *output)
 	}
 }
 
+static void output_help(void)
+{
+	int i;
+
+	fprintf(stderr,
+		"--output FORMAT:DESTINATION:PARAMS\n"
+		"\nSupported FORMAT:\n");
+	for (i = 0; i < ARRAY_SIZE(out_fmts); i++)
+		fprintf(stderr, " \"%s\": %s\n", out_fmts[i].name, out_fmts[i].desc);
+
+	fprintf(stderr, "\nSupported DESTINATION:\n");
+	for (i = 0; i < ARRAY_SIZE(out_dsts); i++)
+		fprintf(stderr, " \"%s\": %s\n", out_dsts[i].name, out_dsts[i].desc);
+
+	fprintf(stderr, "\n");
+}
+
 // fmt:dst:param1=xxx,param2=yyy
 int setup_output(char *outarg)
 {
@@ -188,6 +207,12 @@ int setup_output(char *outarg)
 	char **ap, *argv[3] = {0};
 	output_t *output;
 	int i;
+
+	// check if help is needed first
+	if (outarg && !strcmp("help", outarg)) {
+		output_help();
+		return -1;
+	}
 
 	// parse first 2 separators, leave the rest of the string untouched as argv[2]
 	for (ap = argv; ap < &argv[2] && (*ap = strsep(&outarg, ":")); ap++);
@@ -228,10 +253,6 @@ int setup_output(char *outarg)
 	R.outputs = output;
 
 	return 0;
-
-fail:
-	free(output);
-	return -1;
 }
 
 int initOutputs(void)

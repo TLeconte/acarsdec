@@ -100,6 +100,8 @@ static void usage(void)
 		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n"
 		"\n"
 		" -t time\t\t: set forget time (TTL) in seconds for monitor mode (default=600s)\n"
+		"\n"
+		" Use \"--output help\" for available output options\n"
 		"\n");
 
 #ifdef WITH_ALSA
@@ -185,7 +187,9 @@ int main(int argc, char **argv)
 	while ((c = getopt_long(argc, argv, "varfdsSRt:g:m:Aep:c:i:L:G:b:B:", long_opts, NULL)) != EOF) {
 		switch (c) {
 		case 3:
-			setup_output(optarg);
+			res = setup_output(optarg);
+			if (res)
+				exit(res);
 			break;
 		case 'v':
 			R.verbose = 1;
