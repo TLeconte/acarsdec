@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "acarsdec.h"
+#include "acars.h"
 
 #define FLEN ((INTRATE / 1200) + 1)
 #define MFLTOVER 12

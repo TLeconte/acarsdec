@@ -32,6 +32,26 @@
 #include "acarsdec.h"
 #include "output.h"
 #include "label.h"
+#include "acars.h"
+
+#ifdef WITH_AIR
+ #include "air.h"
+#endif
+#ifdef WITH_ALSA
+ #include "alsa.h"
+#endif
+#ifdef WITH_RTL
+ #include "rtl.h"
+#endif
+#ifdef WITH_SOAPY
+ #include "soapy.h"
+#endif
+#ifdef WITH_SDRPLAY
+ #include "sdrplay.h"
+#endif
+#ifdef WITH_SNDFILE
+ #include "soundfile.h"
+#endif
 
 runtime_t R = {
 	.mdly = 600,
@@ -139,6 +159,8 @@ static void sigintHandler(int signum)
 	exit(0);
 #endif
 }
+
+int initMsk(channel_t *);
 
 int main(int argc, char **argv)
 {

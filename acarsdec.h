@@ -124,42 +124,6 @@ typedef struct {
 
 extern runtime_t R;
 
-#ifdef WITH_ALSA
-extern int initAlsa(char **argv, int optind);
-extern int runAlsaSample(void);
-#endif
-
-#ifdef WITH_SNDFILE
-extern int initSoundfile(char **argv, int optind);
-extern int runSoundfileSample(void);
-#endif
-
-#ifdef WITH_RTL
-extern int initRtl(char **argv, int optind);
-extern int runRtlSample(void);
-extern int runRtlCancel(void);
-extern int runRtlClose(void);
-#endif
-
-#ifdef WITH_AIR
-extern int initAirspy(char **argv, int optind);
-extern int runAirspySample(void);
-#endif
-
-#ifdef WITH_SOAPY
-extern int initSoapy(char **argv, int optind);
-extern int soapySetAntenna(const char *antenna);
-extern int runSoapySample(void);
-extern int runSoapyClose(void);
-#endif
-
-extern int initRaw(char **argv, int optind);
-extern int runRawSample(void);
-extern int initMsk(channel_t *);
-extern void demodMSK(channel_t *ch, int len);
-
-extern int initAcars(channel_t *);
-extern void decodeAcars(channel_t *);
-extern int deinitAcars(void);
+void demodMSK(channel_t *ch, int len);
 
 #endif /* acarsdec_h */
