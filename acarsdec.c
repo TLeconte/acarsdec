@@ -31,8 +31,7 @@
 #endif
 #include "acarsdec.h"
 #include "output.h"
-
-extern void build_label_filter(char *arg);
+#include "label.h"
 
 runtime_t R = {
 	.mdly = 600,

@@ -38,14 +38,13 @@
 #include <cJSON.h>
 #endif
 #include "acarsdec.h"
+#include "label.h"
 #include "output.h"
 #include "fileout.h"
 #include "netout.h"
 #ifdef WITH_MQTT
 #include "mqttout.h"
 #endif
-
-extern int label_filter(char *lbl);
 
 #define FMTBUFLEN 30000
 static char fmtbuf[FMTBUFLEN+1];
@@ -442,104 +441,6 @@ static int fmt_msg(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_
 	return len;
 }
 
-#ifdef HAVE_CJSON
-static int fmt_json(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
-{
-	oooi_t oooi;
-#if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
-	float freq = R.channels[chn].Fr / 1000000.0;
-#else
-	float freq = 0;
-#endif
-	cJSON *json_obj;
-	int ok = 0;
-	char convert_tmp[8];
-
-	json_obj = cJSON_CreateObject();
-	if (json_obj == NULL)
-		return ok;
-
-	double t = (double)tv.tv_sec + ((double)tv.tv_usec) / 1e6;
-	cJSON_AddNumberToObject(json_obj, "timestamp", t);
-	if (R.idstation[0])
-		cJSON_AddStringToObject(json_obj, "station_id", R.idstation);
-	cJSON_AddNumberToObject(json_obj, "channel", chn);
-	snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
-	cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
-	snprintf(convert_tmp, sizeof(convert_tmp), "%2.1f", msg->lvl);
-	cJSON_AddRawToObject(json_obj, "level", convert_tmp);
-	cJSON_AddNumberToObject(json_obj, "error", msg->err);
-	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
-	cJSON_AddStringToObject(json_obj, "mode", convert_tmp);
-	cJSON_AddStringToObject(json_obj, "label", msg->label);
-
-	if (msg->bid) {
-		snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->bid);
-		cJSON_AddStringToObject(json_obj, "block_id", convert_tmp);
-
-		if (msg->ack == '!') {
-			cJSON_AddFalseToObject(json_obj, "ack");
-		} else {
-			snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->ack);
-			cJSON_AddStringToObject(json_obj, "ack", convert_tmp);
-		}
-
-		cJSON_AddStringToObject(json_obj, "tail", msg->addr);
-		if (IS_DOWNLINK_BLK(msg->bid)) {
-			cJSON_AddStringToObject(json_obj, "flight", msg->fid);
-			cJSON_AddStringToObject(json_obj, "msgno", msg->no);
-		}
-	}
-	if (msg->txt[0])
-		cJSON_AddStringToObject(json_obj, "text", msg->txt);
-
-	if (msg->be == 0x17)
-		cJSON_AddTrueToObject(json_obj, "end");
-
-	if (DecodeLabel(msg, &oooi)) {
-		if (oooi.sa[0])
-			cJSON_AddStringToObject(json_obj, "depa", oooi.sa);
-		if (oooi.da[0])
-			cJSON_AddStringToObject(json_obj, "dsta", oooi.da);
-		if (oooi.eta[0])
-			cJSON_AddStringToObject(json_obj, "eta", oooi.eta);
-		if (oooi.gout[0])
-			cJSON_AddStringToObject(json_obj, "gtout", oooi.gout);
-		if (oooi.gin[0])
-			cJSON_AddStringToObject(json_obj, "gtin", oooi.gin);
-		if (oooi.woff[0])
-			cJSON_AddStringToObject(json_obj, "wloff", oooi.woff);
-		if (oooi.won[0])
-			cJSON_AddStringToObject(json_obj, "wlin", oooi.won);
-	}
-
-	if (msg->sublabel[0] != '\0') {
-		cJSON_AddStringToObject(json_obj, "sublabel", msg->sublabel);
-		if (msg->mfi[0] != '\0')
-			cJSON_AddStringToObject(json_obj, "mfi", msg->mfi);
-	}
-#ifdef HAVE_LIBACARS
-	if (!R.skip_reassembly)
-		cJSON_AddStringToObject(json_obj, "assstat", la_reasm_status_name_get(msg->reasm_status));
-	if (msg->decoded_tree != NULL) {
-		la_vstring *vstr = la_proto_tree_format_json(NULL, msg->decoded_tree);
-		cJSON_AddRawToObject(json_obj, "libacars", vstr->str);
-		la_vstring_destroy(vstr, true);
-	}
-#endif
-
-	cJSON *app_info = cJSON_AddObjectToObject(json_obj, "app");
-	if (app_info) {
-		cJSON_AddStringToObject(app_info, "name", "acarsdec");
-		cJSON_AddStringToObject(app_info, "ver", ACARSDEC_VERSION);
-	}
-
-	ok = cJSON_PrintPreallocated(json_obj, buf, bufsz, 0);
-	cJSON_Delete(json_obj);
-	return ok ? strlen(buf) : -1;
-}
-#endif /* HAVE_CJSON */
-
 static int fmt_oneline(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
 {
 	char txt[60];
@@ -652,6 +553,102 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 }
 
 #ifdef HAVE_CJSON
+static int fmt_json(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
+{
+	oooi_t oooi;
+#if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
+	float freq = R.channels[chn].Fr / 1000000.0;
+#else
+	float freq = 0;
+#endif
+	cJSON *json_obj;
+	int ok = 0;
+	char convert_tmp[8];
+
+	json_obj = cJSON_CreateObject();
+	if (json_obj == NULL)
+		return ok;
+
+	double t = (double)tv.tv_sec + ((double)tv.tv_usec) / 1e6;
+	cJSON_AddNumberToObject(json_obj, "timestamp", t);
+	if (R.idstation[0])
+		cJSON_AddStringToObject(json_obj, "station_id", R.idstation);
+	cJSON_AddNumberToObject(json_obj, "channel", chn);
+	snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
+	cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
+	snprintf(convert_tmp, sizeof(convert_tmp), "%2.1f", msg->lvl);
+	cJSON_AddRawToObject(json_obj, "level", convert_tmp);
+	cJSON_AddNumberToObject(json_obj, "error", msg->err);
+	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
+	cJSON_AddStringToObject(json_obj, "mode", convert_tmp);
+	cJSON_AddStringToObject(json_obj, "label", msg->label);
+
+	if (msg->bid) {
+		snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->bid);
+		cJSON_AddStringToObject(json_obj, "block_id", convert_tmp);
+
+		if (msg->ack == '!') {
+			cJSON_AddFalseToObject(json_obj, "ack");
+		} else {
+			snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->ack);
+			cJSON_AddStringToObject(json_obj, "ack", convert_tmp);
+		}
+
+		cJSON_AddStringToObject(json_obj, "tail", msg->addr);
+		if (IS_DOWNLINK_BLK(msg->bid)) {
+			cJSON_AddStringToObject(json_obj, "flight", msg->fid);
+			cJSON_AddStringToObject(json_obj, "msgno", msg->no);
+		}
+	}
+	if (msg->txt[0])
+		cJSON_AddStringToObject(json_obj, "text", msg->txt);
+
+	if (msg->be == 0x17)
+		cJSON_AddTrueToObject(json_obj, "end");
+
+	if (DecodeLabel(msg, &oooi)) {
+		if (oooi.sa[0])
+			cJSON_AddStringToObject(json_obj, "depa", oooi.sa);
+		if (oooi.da[0])
+			cJSON_AddStringToObject(json_obj, "dsta", oooi.da);
+		if (oooi.eta[0])
+			cJSON_AddStringToObject(json_obj, "eta", oooi.eta);
+		if (oooi.gout[0])
+			cJSON_AddStringToObject(json_obj, "gtout", oooi.gout);
+		if (oooi.gin[0])
+			cJSON_AddStringToObject(json_obj, "gtin", oooi.gin);
+		if (oooi.woff[0])
+			cJSON_AddStringToObject(json_obj, "wloff", oooi.woff);
+		if (oooi.won[0])
+			cJSON_AddStringToObject(json_obj, "wlin", oooi.won);
+	}
+
+	if (msg->sublabel[0] != '\0') {
+		cJSON_AddStringToObject(json_obj, "sublabel", msg->sublabel);
+		if (msg->mfi[0] != '\0')
+			cJSON_AddStringToObject(json_obj, "mfi", msg->mfi);
+	}
+#ifdef HAVE_LIBACARS
+	if (!R.skip_reassembly)
+		cJSON_AddStringToObject(json_obj, "assstat", la_reasm_status_name_get(msg->reasm_status));
+	if (msg->decoded_tree != NULL) {
+		la_vstring *vstr = la_proto_tree_format_json(NULL, msg->decoded_tree);
+		cJSON_AddRawToObject(json_obj, "libacars", vstr->str);
+		la_vstring_destroy(vstr, true);
+	}
+#endif
+
+	cJSON *app_info = cJSON_AddObjectToObject(json_obj, "app");
+	if (app_info) {
+		cJSON_AddStringToObject(app_info, "name", "acarsdec");
+		cJSON_AddStringToObject(app_info, "ver", ACARSDEC_VERSION);
+	}
+
+	ok = cJSON_PrintPreallocated(json_obj, buf, bufsz, 0);
+	cJSON_Delete(json_obj);
+	return ok ? strlen(buf) : -1;
+}
+
 static int fmt_routejson(flight_t *fl, struct timeval tv, char *buf, size_t bufsz)
 {
 	if (fl == NULL)

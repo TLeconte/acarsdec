@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "acarsdec.h"
+#include "label.h"
 
 static char *lblfilter[1024];
 

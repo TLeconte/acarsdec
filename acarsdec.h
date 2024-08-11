@@ -83,38 +83,6 @@ typedef struct {
 	pthread_t th;
 } channel_t;
 
-typedef struct {
-	char da[5];
-	char sa[5];
-	char eta[5];
-	char gout[5];
-	char gin[5];
-	char woff[5];
-	char won[5];
-} oooi_t;
-
-typedef struct {
-	char mode;
-	char addr[8];
-	char ack;
-	char label[3];
-	char bid;
-	char no[5];
-	char fid[7];
-	char sublabel[3];
-	char mfi[3];
-	char bs, be;
-	char *txt;
-	int err;
-	float lvl;
-#ifdef HAVE_LIBACARS
-	char msn[4];
-	char msn_seq;
-	la_proto_node *decoded_tree;
-	la_reasm_status reasm_status;
-#endif
-} acarsmsg_t;
-
 typedef struct output_s {
 	enum { FMT_ONELINE = 1, FMT_FULL, FMT_MONITOR, FMT_PP, FMT_NATIVE, FMT_JSON, FMT_ROUTEJSON } fmt;
 	enum { DST_FILE = 1, DST_UDP, DST_MQTT } dst;
@@ -193,7 +161,5 @@ extern void demodMSK(channel_t *ch, int len);
 extern int initAcars(channel_t *);
 extern void decodeAcars(channel_t *);
 extern int deinitAcars(void);
-
-extern int DecodeLabel(acarsmsg_t *msg, oooi_t *oooi);
 
 #endif /* acarsdec_h */
