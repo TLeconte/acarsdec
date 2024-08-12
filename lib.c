@@ -20,6 +20,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
+#include <complex.h>
 
 #include "acarsdec.h"
 #include "lib.h"
@@ -116,4 +118,32 @@ unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned in
 
 	return Fc;
 #endif
+}
+
+int channels_init_sdr(unsigned int Fc, unsigned int multiplier, unsigned int bufsz, float scale)
+{
+	int n, ind;
+	float correctionPhase;
+
+	for (n = 0; n < R.nbch; n++) {
+		channel_t *ch = &R.channels[n];
+
+		ch->counter = 0;
+		ch->D = 0;
+
+		ch->oscillator = malloc(multiplier * sizeof(*ch->oscillator));
+		ch->dm_buffer = malloc(bufsz * sizeof(*ch->dm_buffer));
+		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
+			perror(NULL);
+			return 1;
+		}
+
+		correctionPhase = (signed)(ch->Fr - Fc) / (float)(INTRATE * multiplier) * 2.0 * M_PI;
+		if (R.verbose)
+			fprintf(stderr, "#%d: Fc = %uHz, Fr = %uHz, phase = % f (%+dHz)\n", n+1, Fc, ch->Fr, correctionPhase, (signed)(ch->Fr - Fc));
+		for (ind = 0; ind < multiplier; ind++)
+			ch->oscillator[ind] = cexpf(correctionPhase * ind * -I) / multiplier / scale;
+	}
+
+	return 0;
 }

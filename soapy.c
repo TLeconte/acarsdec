@@ -26,7 +26,7 @@ static int soapyExit = 0;
 
 int initSoapy(char **argv, int optind)
 {
-	int r, n;
+	int r;
 	char *argF;
 	unsigned int Fc, minFc, maxFc;
 
@@ -83,24 +83,9 @@ int initSoapy(char **argv, int optind)
 	if (Fc == 0)
 		return 1;
 
-	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channels[n]);
-		int ind;
-		float AMFreq;
-
-		ch->counter = 0;
-		ch->D = 0;
-		ch->oscillator = malloc(R.rateMult * sizeof(*ch->oscillator));
-		ch->dm_buffer = malloc(SOAPYOUTBUFSZ * sizeof(*ch->dm_buffer));
-		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
-			perror(NULL);
-			return 1;
-		}
-
-		AMFreq = ((signed)ch->Fr - Fc) / (float)(soapyInRate) * 2.0 * M_PI;
-		for (ind = 0; ind < R.rateMult; ind++)
-			ch->oscillator[ind] = cexpf(AMFreq * ind * -I) / R.rateMult;
-	}
+	r = channels_init_sdr(Fc, R.rateMult, SOAPYOUTBUFSZ, 32768.0F);
+	if (r)
+		return r;
 
 	if (R.verbose)
 		fprintf(stderr, "Set center freq. to %uHz\n", Fc);
@@ -183,7 +168,7 @@ int runSoapySample(void)
 				float r = (float)soapyInBuf[i];
 				float g = (float)soapyInBuf[i + 1];
 				float complex v = r + g * I;
-				D += v * ch->oscillator[local_ind++] / 32768.0;
+				D += v * ch->oscillator[local_ind++];
 				if (local_ind >= R.rateMult) {
 					ch->dm_buffer[ch->counter++] = cabsf(D);
 					local_ind = 0;

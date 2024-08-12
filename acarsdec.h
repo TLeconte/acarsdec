@@ -54,12 +54,10 @@ typedef struct mskblk_s {
 typedef struct {
 	int chn;
 
-#if defined(WITH_RTL) || defined(WITH_SDRPLAY) || defined(WITH_SOAPY) || defined(WITH_AIR)
 	unsigned int Fr;
 	float complex *oscillator;
 	float complex D;
 	int counter;
-#endif
 
 	float *dm_buffer;
 	double MskPhi;

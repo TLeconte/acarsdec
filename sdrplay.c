@@ -64,7 +64,7 @@ static int get_lnaGRdB(int hwVersion, int lnaState)
 unsigned int Fc;
 int initSdrplay(char **argv, int optind)
 {
-	int r, n;
+	int r;
 	char *argF;
 	unsigned int minFc, maxFc;
 	int result;
@@ -81,25 +81,9 @@ int initSdrplay(char **argv, int optind)
 	if (Fc == 0)
 		return 1;
 
-	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channels[n]);
-		ch->counter = 0;
-		int ind;
-		double correctionPhase;
-
-		ch->D = 0;
-		ch->oscillator = malloc(SDRPLAY_MULT * sizeof(*ch->oscillator));
-		ch->dm_buffer = malloc(512 * sizeof(*ch->dm_buffer));
-		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
-			perror(NULL);
-			return 1;
-		}
-
-		correctionPhase = (signed)(ch->Fr - Fc) / (float)(SDRPLAY_INRATE) * 2.0 * M_PI;
-		fprintf(stderr, "Fc = %d, phase = %f (%f)\n", Fc, correctionPhase, ch->Fr - (float)Fc);
-		for (ind = 0; ind < SDRPLAY_MULT; ind++)
-			ch->oscillator[ind] = cexpf(correctionPhase * ind * -I) / SDRPLAY_MULT;
-	}
+	r = channels_init_sdr(Fc, SDRPLAY_MULT, 512, 1.0F);	// XXX REVIEW, scale doesn't seem right
+	if (r)
+		return r;
 
 	float ver;
 	result = mir_sdr_ApiVersion(&ver);

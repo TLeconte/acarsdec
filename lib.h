@@ -22,5 +22,6 @@
 
 int parse_freqs(char **argv, int optind, unsigned int *minFc, unsigned int *maxFc);
 unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned int inrate);
+int channels_init_sdr(unsigned int Fc, unsigned int multiplier, unsigned int bufsz, float scale);
 
 #endif /* lib_h */

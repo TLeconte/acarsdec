@@ -148,7 +148,7 @@ int nearest_gain(int target_gain)
 
 int initRtl(char **argv, int optind)
 {
-	int r, n;
+	int r;
 	int dev_index;
 	unsigned int Fc, minFc, maxFc;
 
@@ -202,21 +202,9 @@ int initRtl(char **argv, int optind)
 	if (Fc == 0)
 		return 1;
 
-	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channels[n]);
-		int ind;
-		float AMFreq;
-
-		ch->oscillator = malloc(R.rateMult * sizeof(*ch->oscillator));
-		ch->dm_buffer = malloc(RTLOUTBUFSZ * sizeof(*ch->dm_buffer));
-		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
-			perror(NULL);
-			return 1;
-		}
-		AMFreq = (signed)(ch->Fr - Fc) / (float)(rtlInRate) * 2.0 * M_PI;
-		for (ind = 0; ind < R.rateMult; ind++)
-			ch->oscillator[ind] = cexpf(AMFreq * ind * -I) / R.rateMult / 127.5;
-	}
+	r = channels_init_sdr(Fc, R.rateMult, RTLOUTBUFSZ, 127.5F);
+	if (r)
+		return r;
 
 	if (R.verbose)
 		fprintf(stderr, "Set center freq. to %dHz\n", (int)Fc);
