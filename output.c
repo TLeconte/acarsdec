@@ -716,8 +716,6 @@ static int fmt_monitor(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, s
 		len += snprintf(buf + len, bufsz - len, " %-8s %-7s %3d ", fl->addr, fl->fid, fl->nbm);
 		for (i = 0; i < R.nbch; i++)
 			len += snprintf(buf + len, bufsz - len, "%c", (fl->chm & (1 << i)) ? 'x' : '.');
-		for (; i < R.nbch; i++)
-			len += snprintf(buf + len, bufsz - len, " ");
 		len += snprintf(buf + len, bufsz - len, " ");
 		len += fmt_time(fl->ts, buf + len, bufsz - len);
 		if (fl->oooi.sa[0])
