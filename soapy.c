@@ -18,11 +18,11 @@
 static SoapySDRDevice *dev = NULL;
 static SoapySDRStream *stream = NULL;
 static int16_t *soapyInBuf = NULL;
-static int soapyInBufSize = 0;
-static int soapyInRate = 0;
+static unsigned int soapyInBufSize = 0;
+static unsigned int soapyInRate = 0;
 static int soapyExit = 0;
 
-#define SOAPYOUTBUFSZ 1024
+#define SOAPYOUTBUFSZ 1024U
 
 int initSoapy(char **argv, int optind)
 {
@@ -42,7 +42,7 @@ int initSoapy(char **argv, int optind)
 	}
 	optind++;
 
-	soapyInBufSize = SOAPYOUTBUFSZ * R.rateMult * 2;
+	soapyInBufSize = SOAPYOUTBUFSZ * R.rateMult * 2U;
 	soapyInRate = INTRATE * R.rateMult;
 
 	soapyInBuf = malloc(sizeof(*soapyInBuf) * soapyInBufSize);
@@ -131,8 +131,8 @@ int soapySetAntenna(const char *antenna)
 int runSoapySample(void)
 {
 	int current_index = 0;
-	int n, i, local_ind;
-	int res = 0;
+	unsigned int n, local_ind;
+	int i, res = 0;
 	int flags = 0;
 	long long timens = 0;
 	void *bufs[] = { soapyInBuf };
@@ -144,7 +144,7 @@ int runSoapySample(void)
 
 	while (!soapyExit) {
 		flags = 0;
-		res = SoapySDRDevice_readStream(dev, stream, bufs, soapyInBufSize / 2, &flags, &timens, 10000000);
+		res = SoapySDRDevice_readStream(dev, stream, bufs, soapyInBufSize / 2U, &flags, &timens, 10000000);
 		if (res == 0) {
 			usleep(500);
 			continue; // retry

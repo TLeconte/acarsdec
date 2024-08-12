@@ -34,7 +34,7 @@
 #define HOST_NAME_MAX 255
 #endif
 
-#define INTRATE 12500
+#define INTRATE 12500U
 
 #define ARRAY_SIZE(x)	(sizeof(x) / sizeof(x[0]))
 
@@ -55,9 +55,9 @@ typedef struct {
 	int chn;
 
 	unsigned int Fr;
+	unsigned int counter;
 	float complex *oscillator;
 	float complex D;
-	int counter;
 
 	float *dm_buffer;
 	double MskPhi;
@@ -96,7 +96,7 @@ typedef struct {
 	float gain;
 	int ppm;
 	int bias;
-	int rateMult;
+	unsigned int rateMult;
 	int lnaState;
 	int GRdB;
 	unsigned int freq;

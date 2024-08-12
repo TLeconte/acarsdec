@@ -185,7 +185,7 @@ static bool validate_output(output_t *output)
 
 static void output_help(void)
 {
-	int i;
+	unsigned int i;
 
 	fprintf(stderr,
 		"--output FORMAT:DESTINATION:PARAMS\n"
@@ -206,7 +206,7 @@ int setup_output(char *outarg)
 	// NB: outarg is taken from program global argv: it exists throughout the execution of the program
 	char **ap, *argv[3] = {0};
 	output_t *output;
-	int i;
+	unsigned int i;
 
 	// check if help is needed first
 	if (outarg && !strcmp("help", outarg)) {
@@ -713,7 +713,7 @@ static int fmt_monitor(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, s
 
 	fl = flight_head;
 	while (fl) {
-		int i;
+		unsigned int i;
 
 		len += snprintf(buf + len, bufsz - len, " %-8s %-7s %3d ", fl->addr, fl->fid, fl->nbm);
 		for (i = 0; i < R.nbch; i++)

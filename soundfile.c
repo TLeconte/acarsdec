@@ -29,7 +29,7 @@ static SNDFILE *insnd;
 int initSoundfile(char **argv, int optind)
 {
 	SF_INFO infsnd;
-	int n;
+	unsigned int n;
 
 	infsnd.format = 0;
 	insnd = sf_open(argv[optind], SFM_READ, &infsnd);
@@ -63,7 +63,8 @@ int initSoundfile(char **argv, int optind)
 
 int runSoundfileSample(void)
 {
-	int nbi, n, i;
+	int nbi, i;
+	unsigned int n;
 	sample_t sndbuff[MAXNBFRAMES * R.nbch];
 
 	do {

@@ -55,7 +55,7 @@
 
 runtime_t R = {
 	.mdly = 600,
-	.rateMult = 160,
+	.rateMult = 160U,
 	.lnaState = 2,
 	.GRdB = 20,
 };
@@ -167,7 +167,8 @@ int initMsk(channel_t *);
 int main(int argc, char **argv)
 {
 	int c;
-	int res, n;
+	int res;
+	unsigned int n;
 	struct sigaction sigact;
 	struct option long_opts[] = {
 		{ "verbose", no_argument, NULL, 'v' },
@@ -228,7 +229,7 @@ int main(int argc, char **argv)
 			R.ppm = atoi(optarg);
 			break;
 		case 'm':
-			R.rateMult = atoi(optarg);
+			R.rateMult = (unsigned)atoi(optarg);
 			break;
 #ifdef WITH_RTL
 		case 'r':

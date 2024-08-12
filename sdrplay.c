@@ -116,7 +116,7 @@ int initSdrplay(char **argv, int optind)
 	return 0;
 }
 
-static int current_index = 0;
+static unsigned int current_index = 0;
 static void myStreamCallback(int16_t *xi,
 			     int16_t *xq,
 			     uint32_t firstSampleNum,
@@ -128,8 +128,7 @@ static void myStreamCallback(int16_t *xi,
 			     uint32_t hwRemoved,
 			     void *cbContext)
 {
-	int n, i;
-	int local_ind;
+	unsigned int i, n, local_ind;
 
 	for (n = 0; n < R.nbch; n++) {
 		local_ind = current_index;

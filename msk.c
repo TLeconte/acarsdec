@@ -23,13 +23,13 @@
 #endif
 
 #define FLEN ((INTRATE / 1200) + 1)
-#define MFLTOVER 12
+#define MFLTOVER 12U
 #define FLENO (FLEN * MFLTOVER + 1)
 static float h[FLENO];
 
 int initMsk(channel_t *ch)
 {
-	int i;
+	unsigned int i;
 
 	ch->MskPhi = ch->MskClk = 0;
 	ch->MskS = 0;
@@ -45,7 +45,7 @@ int initMsk(channel_t *ch)
 
 	if (ch->chn == 0)
 		for (i = 0; i < FLENO; i++) {
-			h[i] = cosf(2.0 * M_PI * 600.0 / INTRATE / MFLTOVER * (i - (FLENO - 1) / 2));
+			h[i] = cosf(2.0 * M_PI * 600.0 / INTRATE / MFLTOVER * (signed)(i - (FLENO - 1) / 2));
 			if (h[i] < 0)
 				h[i] = 0;
 		}
@@ -72,14 +72,14 @@ void demodMSK(channel_t *ch, int len)
 {
 	/* MSK demod */
 	int n;
-	int idx = ch->idx;
+	unsigned int idx = ch->idx;
 	double p = ch->MskPhi;
 
 	for (n = 0; n < len; n++) {
 		float in;
 		double s;
 		float complex v;
-		int j, o;
+		unsigned int j, o;
 
 		/* VCO */
 		s = 1800.0 / INTRATE * 2.0 * M_PI + ch->MskDf;

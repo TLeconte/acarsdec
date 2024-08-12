@@ -33,14 +33,14 @@
 // rateMult 192	// 2.4000 Ms/s
 // rateMult 200   // 2.5000 Ms/s
 
-#define RTLMULTMAX 320 // this is well beyond the rtl-sdr capabilities
+#define RTLMULTMAX 320U // this is well beyond the rtl-sdr capabilities
 
 static rtlsdr_dev_t *dev = NULL;
 static int status = 0;
-static int rtlInBufSize = 0;
-static int rtlInRate = 0;
+static unsigned int rtlInBufSize = 0;
+static unsigned int rtlInRate = 0;
 
-#define RTLOUTBUFSZ 1024
+#define RTLOUTBUFSZ 1024U
 
 /* function verbose_device_search by Kyle Keen
  * from http://cgit.osmocom.org/rtl-sdr/tree/src/convenience/convenience.c
@@ -207,7 +207,7 @@ int initRtl(char **argv, int optind)
 		return r;
 
 	if (R.verbose)
-		fprintf(stderr, "Set center freq. to %dHz\n", (int)Fc);
+		fprintf(stderr, "Set center freq. to %uHz\n", Fc);
 
 	r = rtlsdr_set_center_freq(dev, Fc);
 	if (r < 0) {
@@ -216,7 +216,7 @@ int initRtl(char **argv, int optind)
 	}
 
 	fprintf(stderr, "Setting sample rate: %.4f MS/s\n", rtlInRate / 1e6);
-	r = rtlsdr_set_sample_rate(dev, (unsigned)rtlInRate);
+	r = rtlsdr_set_sample_rate(dev, rtlInRate);
 	if (r < 0) {
 		fprintf(stderr, "WARNING: Failed to set sample rate.\n");
 		return 1;
@@ -240,7 +240,7 @@ int initRtl(char **argv, int optind)
 
 static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
-	int n;
+	unsigned int n;
 
 	if (nread != rtlInBufSize) {
 		fprintf(stderr, "warning: partial read\n");
@@ -252,9 +252,9 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	// rtlInBufSize = RTLOUTBUFSZ * rateMult * 2;
 
 	float complex vb[RTLMULTMAX];
-	int i = 0;
-	for (int m = 0; m < RTLOUTBUFSZ; m++) {
-		for (int ind = 0; ind < R.rateMult; ind++) {
+	unsigned int i = 0;
+	for (unsigned int m = 0; m < RTLOUTBUFSZ; m++) {
+		for (unsigned int ind = 0; ind < R.rateMult; ind++) {
 			float r, g;
 
 			r = (float)rtlinbuff[i] - 127.37f;
@@ -271,7 +271,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 
 			oscillator = ch->oscillator;
 			D = 0;
-			for (int ind = 0; ind < R.rateMult; ind++) {
+			for (unsigned int ind = 0; ind < R.rateMult; ind++) {
 				D += vb[ind] * oscillator[ind];
 			}
 			ch->dm_buffer[m] = cabsf(D);

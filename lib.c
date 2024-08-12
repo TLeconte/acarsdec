@@ -88,12 +88,12 @@ int parse_freqs(char **argv, const int argind, unsigned int *minFc, unsigned int
 	return 0;
 }
 
-unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned int inrate)
+unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned int samplerate)
 {
 	if (R.freq)
 		return R.freq;
 	
-	if ((maxFc - minFc) > inrate - 4 * INTRATE) {
+	if ((maxFc - minFc) > samplerate - 4 * INTRATE) {
 		fprintf(stderr, "Frequencies too far apart\n");
 		return 0;
 	}
@@ -105,7 +105,7 @@ unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned in
 #if 0
 	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
 		for (n = 0; n < nbch; n++) {
-			if (abs(Fc - Fd[n]) > rtlInRate / 2 - 2 * INTRATE)
+			if (abs(Fc - Fd[n]) > samplerate / 2 - 2 * INTRATE)
 				break;
 			if (abs(Fc - Fd[n]) < 2 * INTRATE)
 				break;
@@ -122,7 +122,7 @@ unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned in
 
 int channels_init_sdr(unsigned int Fc, unsigned int multiplier, unsigned int bufsz, float scale)
 {
-	int n, ind;
+	unsigned int n, ind;
 	float correctionPhase;
 
 	for (n = 0; n < R.nbch; n++) {
