@@ -207,15 +207,15 @@ int initRtl(char **argv, int optind)
 		int ind;
 		float AMFreq;
 
-		ch->wf = malloc(R.rateMult * sizeof(*ch->wf));
+		ch->oscillator = malloc(R.rateMult * sizeof(*ch->oscillator));
 		ch->dm_buffer = malloc(RTLOUTBUFSZ * sizeof(*ch->dm_buffer));
-		if (ch->wf == NULL || ch->dm_buffer == NULL) {
+		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
 			fprintf(stderr, "ERROR : malloc\n");
 			return 1;
 		}
 		AMFreq = (signed)(ch->Fr - Fc) / (float)(rtlInRate) * 2.0 * M_PI;
 		for (ind = 0; ind < R.rateMult; ind++)
-			ch->wf[ind] = cexpf(AMFreq * ind * -I) / R.rateMult / 127.5;
+			ch->oscillator[ind] = cexpf(AMFreq * ind * -I) / R.rateMult / 127.5;
 	}
 
 	if (R.verbose)
@@ -279,12 +279,12 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 
 		for (n = 0; n < R.nbch; n++) {
 			channel_t *ch = &(R.channels[n]);
-			float complex D, *wf;
+			float complex D, *oscillator;
 
-			wf = ch->wf;
+			oscillator = ch->oscillator;
 			D = 0;
 			for (int ind = 0; ind < R.rateMult; ind++) {
-				D += vb[ind] * wf[ind];
+				D += vb[ind] * oscillator[ind];
 			}
 			ch->dm_buffer[m] = cabsf(D);
 		}

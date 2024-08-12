@@ -249,9 +249,9 @@ int initAirspy(char **argv, int optind)
 		int i;
 		double AMFreq, Ph;
 
-		ch->wf = malloc(AIRMULT * sizeof(*ch->wf));
+		ch->oscillator = malloc(AIRMULT * sizeof(*ch->oscillator));
 		ch->dm_buffer = malloc(512 * sizeof(*ch->dm_buffer));
-		if (ch->wf == NULL || ch->dm_buffer == NULL) {
+		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
 			fprintf(stderr, "malloc error\n");
 			airspy_close(device);
 			airspy_exit();
@@ -261,7 +261,7 @@ int initAirspy(char **argv, int optind)
 
 		AMFreq = 2.0 * M_PI * (Fc - ch->Fr + (double)AIRINRATE / 4) / (double)(AIRINRATE);
 		for (i = 0, Ph = 0; i < AIRMULT; i++) {
-			ch->wf[i] = cexpf(Ph * -I) / AIRMULT;
+			ch->oscillator[i] = cexpf(Ph * -I) / AIRMULT;
 			Ph += AMFreq;
 			if (Ph > 2.0 * M_PI)
 				Ph -= 2.0 * M_PI;
@@ -300,7 +300,7 @@ static int rx_callback(airspy_transfer_t *transfer)
 		k = 0;
 		for (i = ind; i < AIRMULT; i++, k++) {
 			S = pt_rx_buffer[k];
-			D += ch->wf[i] * S;
+			D += ch->oscillator[i] * S;
 		}
 		ch->dm_buffer[m++] = cabsf(D);
 
@@ -308,7 +308,7 @@ static int rx_callback(airspy_transfer_t *transfer)
 			D = 0;
 			for (i = 0; i < AIRMULT; i++, k++) {
 				S = pt_rx_buffer[k];
-				D += ch->wf[i] * S;
+				D += ch->oscillator[i] * S;
 			}
 			ch->dm_buffer[m++] = cabsf(D);
 		}
@@ -316,7 +316,7 @@ static int rx_callback(airspy_transfer_t *transfer)
 		D = 0;
 		for (i = 0; i < ben; i++, k++) {
 			S = pt_rx_buffer[k];
-			D += ch->wf[i] * S;
+			D += ch->oscillator[i] * S;
 		}
 		ch->D = D;
 

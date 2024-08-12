@@ -22,7 +22,6 @@
 
 #include <sys/time.h>
 #include <time.h>
-#include <pthread.h>
 #include <complex.h>
 #ifdef HAVE_LIBACARS
 #include <libacars/libacars.h>
@@ -55,9 +54,6 @@ typedef struct mskblk_s {
 typedef struct {
 	int chn;
 
-#if defined(WITH_RTL) || defined(WITH_AIR)
-	float complex *wf;
-#endif
 #if defined(WITH_RTL) || defined(WITH_SDRPLAY) || defined(WITH_SOAPY) || defined(WITH_AIR)
 	unsigned int Fr;
 	float complex *oscillator;
@@ -79,8 +75,6 @@ typedef struct {
 
 	enum { WSYN, SYN2, SOH1, TXT, CRC1, CRC2, END } Acarsstate;
 	msgblk_t *blk;
-
-	pthread_t th;
 } channel_t;
 
 typedef struct output_s {
