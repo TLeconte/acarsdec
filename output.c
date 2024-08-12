@@ -300,7 +300,6 @@ int initOutputs(void)
 void exitOutputs(void)
 {
 	output_t *out;
-	int ret;
 
 	if (!R.outputs)
 		return;
@@ -326,7 +325,6 @@ void exitOutputs(void)
 static int fmt_sv(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
 {
 	struct tm tmp;
-	int res;
 
 	if (!msg || !buf)
 		return -1;
@@ -747,7 +745,7 @@ void outputmsg(const msgblk_t *blk)
 	acarsmsg_t msg;
 	int i, j, k;
 	int outflg = 0;
-	flight_t *fl;
+	flight_t *fl = NULL;
 	output_t *out;
 
 	/* fill msg struct */
@@ -938,6 +936,8 @@ void outputmsg(const msgblk_t *blk)
 			len = fmt_json(&msg, blk->chn, blk->tv, fmtbuf, FMTBUFLEN);
 			break;
 #endif /* HAVE_CJSON */
+		default:
+			continue;
 		}
 
 		// NB if the same format is used for multiple outputs, the buffer will be recomputed each time. Deemed acceptable
@@ -957,6 +957,8 @@ void outputmsg(const msgblk_t *blk)
 			MQTTwrite(fmtbuf, len, out->priv);
 			break;
 #endif
+		default:
+			continue;
 		}
 	}
 

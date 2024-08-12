@@ -27,7 +27,6 @@ static int soapyExit = 0;
 int initSoapy(char **argv, int optind)
 {
 	int r;
-	char *argF;
 	unsigned int Fc, minFc, maxFc;
 
 	if (argv[optind] == NULL) {

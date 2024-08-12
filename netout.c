@@ -39,7 +39,7 @@ netout_t *Netoutinit(char *params)
 	char *addr = NULL;
 	char *port = NULL;
 	struct addrinfo hints, *servinfo, *p;
-	int sockfd, rv, ret = -1;
+	int sockfd, rv;
 	netout_t *netpriv = NULL;
 
 	while ((param = strsep(&params, ","))) {
