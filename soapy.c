@@ -29,7 +29,6 @@ int initSoapy(char **argv, int optind)
 	int r, n;
 	char *argF;
 	unsigned int Fc, minFc, maxFc;
-	unsigned int Fd[R.nbch];	// XXX
 
 	if (argv[optind] == NULL) {
 		fprintf(stderr, "Need device string (ex: driver=rtltcp,rtltcp=127.0.0.1) after -d\n");
@@ -79,21 +78,10 @@ int initSoapy(char **argv, int optind)
 	if (r)
 		return r;
 
-	for (n = 0; n < R.nbch; n++)
-		Fd[n] = (int)R.channels[n].Fr; // XXX
-
 	Fc = find_centerfreq(minFc, maxFc, soapyInRate);
 
 	if (Fc == 0)
 		return 1;
-
-	for (n = 0; n < R.nbch; n++) {
-		if (Fd[n] < Fc - soapyInRate / 2 || Fd[n] > Fc + soapyInRate / 2) {
-			fprintf(stderr, "WARNING: frequency not in tuned range %d-%d: %d\n",
-				Fc - soapyInRate / 2, Fc + soapyInRate / 2, Fd[n]);
-			continue;
-		}
-	}
 
 	for (n = 0; n < R.nbch; n++) {
 		channel_t *ch = &(R.channels[n]);
