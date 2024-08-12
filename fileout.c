@@ -56,7 +56,7 @@ static FILE *open_outfile(fileout_t *fout)
 		}
 		filename = malloc(fout->prefix_len + tlen + 2);
 		if (filename == NULL) {
-			fprintf(stderr, "open_outfile(): failed to allocate memory\n");
+			perror("open_outfile()");
 			return NULL;
 		}
 		sprintf(filename, "%s%s%s", fout->filename_prefix, suffix, fout->extension ? fout->extension : "");
@@ -90,8 +90,10 @@ fileout_t *Fileoutinit(char *params)
 	}
 
 	fout = calloc(1, sizeof(*fout));
-	if (!fout)
+	if (!fout) {
+		perror(NULL);
 		return NULL;
+	}
 
 	// params is path or optional "-" for stdout
 	if (!path || !strcmp("-", path)) {

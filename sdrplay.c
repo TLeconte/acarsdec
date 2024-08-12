@@ -90,6 +90,10 @@ int initSdrplay(char **argv, int optind)
 		ch->D = 0;
 		ch->oscillator = malloc(SDRPLAY_MULT * sizeof(*ch->oscillator));
 		ch->dm_buffer = malloc(512 * sizeof(*ch->dm_buffer));
+		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
+			perror(NULL);
+			return 1;
+		}
 
 		correctionPhase = (signed)(ch->Fr - Fc) / (float)(SDRPLAY_INRATE) * 2.0 * M_PI;
 		fprintf(stderr, "Fc = %d, phase = %f (%f)\n", Fc, correctionPhase, ch->Fr - (float)Fc);

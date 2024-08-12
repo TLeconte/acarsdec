@@ -279,6 +279,7 @@ void decodeAcars(channel_t *ch)
 			if (ch->blk == NULL) {
 				ch->blk = malloc(sizeof(*ch->blk));
 				if (ch->blk == NULL) {
+					perror(NULL);
 					resetAcars(ch);
 					return;
 				}

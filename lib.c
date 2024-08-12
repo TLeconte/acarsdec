@@ -55,7 +55,7 @@ int parse_freqs(char **argv, const int argind, unsigned int *minFc, unsigned int
 	/* allocate channels */
 	R.channels = calloc(nb, sizeof(*R.channels));
 	if (!R.channels) {
-		fprintf(stderr, "ERROR: Out of memory\n");
+		perror(NULL);
 		return -1;
 	}
 

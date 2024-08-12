@@ -38,8 +38,10 @@ int initMsk(channel_t *ch)
 
 	ch->idx = 0;
 	ch->inb = calloc(FLEN, sizeof(*ch->inb));
-	if (ch->inb == NULL)
+	if (ch->inb == NULL) {
+		perror(NULL);
 		return -1;
+	}
 
 	if (ch->chn == 0)
 		for (i = 0; i < FLENO; i++) {

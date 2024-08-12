@@ -47,6 +47,10 @@ int initSoapy(char **argv, int optind)
 	soapyInRate = INTRATE * R.rateMult;
 
 	soapyInBuf = malloc(sizeof(*soapyInBuf) * soapyInBufSize);
+	if (!soapyInBuf) {
+		perror(NULL);
+		return 1;
+	}
 
 	if (R.gain <= -10.0) {
 		if (R.verbose)
@@ -100,6 +104,10 @@ int initSoapy(char **argv, int optind)
 		ch->D = 0;
 		ch->oscillator = malloc(R.rateMult * sizeof(*ch->oscillator));
 		ch->dm_buffer = malloc(SOAPYOUTBUFSZ * sizeof(*ch->dm_buffer));
+		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
+			perror(NULL);
+			return 1;
+		}
 
 		AMFreq = ((signed)ch->Fr - Fc) / (float)(soapyInRate) * 2.0 * M_PI;
 		for (ind = 0; ind < R.rateMult; ind++)

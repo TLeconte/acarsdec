@@ -210,7 +210,7 @@ int initRtl(char **argv, int optind)
 		ch->oscillator = malloc(R.rateMult * sizeof(*ch->oscillator));
 		ch->dm_buffer = malloc(RTLOUTBUFSZ * sizeof(*ch->dm_buffer));
 		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
-			fprintf(stderr, "ERROR : malloc\n");
+			perror(NULL);
 			return 1;
 		}
 		AMFreq = (signed)(ch->Fr - Fc) / (float)(rtlInRate) * 2.0 * M_PI;

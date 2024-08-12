@@ -81,8 +81,10 @@ netout_t *Netoutinit(char *params)
 	}
 
 	netpriv = malloc(sizeof(*netpriv));
-	if (!netpriv)
+	if (!netpriv) {
+		perror(NULL);
 		goto fail;
+	}
 
 	memcpy(&netpriv->netOutputAddr, p->ai_addr, p->ai_addrlen);
 	netpriv->netOutputAddrLen = p->ai_addrlen;

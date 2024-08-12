@@ -68,8 +68,10 @@ mqttout_t *MQTTinit(char *params)
 	create_opts.deleteOldestMessages = 1;
 
 	mqpriv = calloc(1, sizeof(*mqpriv));
-	if (!mqpriv)
+	if (!mqpriv) {
+		perror(NULL);
 		return NULL;
+	}
 
 	MQTTAsync_createWithOptions(&mqpriv->client, urls[0], R.idstation, MQTTCLIENT_PERSISTENCE_NONE, NULL, &create_opts);
 
@@ -88,8 +90,10 @@ mqttout_t *MQTTinit(char *params)
 
 	if (topic == NULL) {
 		msgtopic = malloc(strlen(R.idstation) + strlen("acarsdec") + 2);
-		if (msgtopic == NULL)
+		if (msgtopic == NULL) {
+			perror(NULL);
 			goto fail;
+		}
 		sprintf(msgtopic, "acarsdec/%s", R.idstation);
 	} else
 		msgtopic = strdup(topic);

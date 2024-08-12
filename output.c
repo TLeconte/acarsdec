@@ -224,8 +224,10 @@ int setup_output(char *outarg)
 	}
 
 	output = calloc(1, sizeof(*output));
-	if (!output)
-		return -1;	// OOM
+	if (!output) {
+		perror(NULL);
+		return -1;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(out_fmts); i++) {
 		if (!strcmp(argv[0], out_fmts[i].name)) {
@@ -513,8 +515,10 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 
 	if (fl == NULL) {
 		fl = calloc(1, sizeof(*fl));
-		if (fl == NULL)
+		if (fl == NULL) {
+			perror(NULL);
 			return (NULL);
+		}
 		strncpy(fl->addr, msg->addr, 8);
 		fl->ts = tv;
 	}
@@ -871,7 +875,9 @@ void outputmsg(const msgblk_t *blk)
 		} else {
 #endif // HAVE_LIBACARS
 			msg.txt = calloc(txt_len + 1, sizeof(char));
-			if (msg.txt && txt_len > 0) {
+			if (!msg.txt)
+				perror(NULL);
+			else if (txt_len > 0) {
 				memcpy(msg.txt, blk->txt + k, txt_len);
 			}
 #ifdef HAVE_LIBACARS
@@ -879,6 +885,8 @@ void outputmsg(const msgblk_t *blk)
 #endif
 	} else { // empty message text
 		msg.txt = calloc(1, sizeof(char));
+		if (!msg.txt)
+			perror(NULL);
 	}
 
 #ifdef HAVE_LIBACARS

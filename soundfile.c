@@ -40,7 +40,7 @@ int initSoundfile(char **argv, int optind)
 
 	R.channels = calloc(infsnd.channels, sizeof(*R.channels));
 	if (!R.channels) {
-		fprintf(stderr, "ERROR: Out of memory\n");
+		perror(NULL);
 		return -1;
 	}
 	R.nbch = infsnd.channels;
@@ -50,8 +50,13 @@ int initSoundfile(char **argv, int optind)
 		return (1);
 	}
 
-	for (n = 0; n < R.nbch; n++)
+	for (n = 0; n < R.nbch; n++) {
 		R.channels[n].dm_buffer = malloc(sizeof(*R.channels[n].dm_buffer) * MAXNBFRAMES);
+		if (!R.channels[n].dm_buffer) {
+			perror(NULL);
+			return -1;
+		}
+	}
 
 	return (0);
 }

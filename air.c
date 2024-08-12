@@ -96,8 +96,10 @@ int initAirspy(char **argv, int optind)
 	}
 
 	airspy_device_list = malloc(sizeof(*airspy_device_list) * airspy_device_count);
-	if (airspy_device_list == NULL)
+	if (airspy_device_list == NULL) {
+		perror(NULL);
 		return -1;
+	}
 	result = airspy_list_devices(airspy_device_list, airspy_device_count);
 	if (result != airspy_device_count) {
 		fprintf(stderr, "airspy_list_devices() failed.\n");
@@ -184,7 +186,7 @@ int initAirspy(char **argv, int optind)
 	airspy_get_samplerates(device, &count, 0);
 	supported_samplerates = malloc(count * sizeof(*supported_samplerates));
 	if (supported_samplerates == NULL) {
-		fprintf(stderr, "malloc error\n");
+		perror(NULL);
 		airspy_close(device);
 		airspy_exit();
 		return -1;
@@ -252,7 +254,7 @@ int initAirspy(char **argv, int optind)
 		ch->oscillator = malloc(AIRMULT * sizeof(*ch->oscillator));
 		ch->dm_buffer = malloc(512 * sizeof(*ch->dm_buffer));
 		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
-			fprintf(stderr, "malloc error\n");
+			perror(NULL);
 			airspy_close(device);
 			airspy_exit();
 			return -1;
