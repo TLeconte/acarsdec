@@ -33,6 +33,18 @@ target_link_directories(acarsdec PUBLIC ${LIBCJSON_LIBRARY_DIRS})
 
 endif()
 
+SET(WITH_ALSA NO)
+pkg_check_modules(LIBASOUND alsa)
+if(LIBASOUND_FOUND)
+add_definitions(-DWITH_ALSA )
+target_sources( acarsdec PRIVATE alsa.c)
+target_link_libraries(acarsdec ${LIBASOUND_LIBRARIES})
+target_include_directories(acarsdec PUBLIC ${LIBASOUND_INCLUDE_DIRS})
+target_link_directories(acarsdec PUBLIC ${LIBASOUND_LIBRARY_DIRS})
+SET(WITH_ALSA YES)
+endif()
+message ( STATUS "Using alsa: ${WITH_ALSA}")
+
 SET(WITH_LIBACARS NO)
 pkg_check_modules(LIBACARS libacars-2>=2.0.0)
 if(LIBACARS_FOUND)

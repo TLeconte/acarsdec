@@ -103,7 +103,7 @@ int initAlsa(char **argv, int optind)
 
 int runAlsaSample(void)
 {
-	int r, n, i;
+	int r;
 
 	do {
 		r = snd_pcm_readi(capture_handle, R.channels[0].dm_buffer, MAXNBFRAMES);
