@@ -156,16 +156,18 @@ int runSoapySample(void)
 			break;
 		}
 
-		for (n = 0; n < R.nbch; n++) {
-			local_ind = current_index;
-			channel_t *ch = &(R.channels[n]);
-			float complex D = ch->D;
+		local_ind = current_index;
 
-			for (i = 0; i < res * 2; i += 2) {
-				float r = (float)soapyInBuf[i];
-				float g = (float)soapyInBuf[i + 1];
-				float complex v = r + g * I;
-				D += v * ch->oscillator[local_ind++];
+		for (i = 0; i < res * 2; i += 2) {
+			float r = (float)soapyInBuf[i];
+			float g = (float)soapyInBuf[i + 1];
+			float complex v = r + g * I;
+
+			for (n = 0; n < R.nbch; n++) {
+				channel_t *ch = &(R.channels[n]);
+				float complex D = ch->D;
+				
+				D += v * ch->oscillator[local_ind];
 				if (local_ind >= R.rateMult) {
 					ch->dm_buffer[ch->counter++] = cabsf(D);
 					local_ind = 0;
@@ -175,8 +177,9 @@ int runSoapySample(void)
 						ch->counter = 0;
 					}
 				}
+				ch->D = D;
 			}
-			ch->D = D;
+			local_ind++;
 		}
 		current_index = (current_index + res) % R.rateMult;
 	}
