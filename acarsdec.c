@@ -155,11 +155,11 @@ static void sigintHandler(int signum)
 #endif
 #ifdef WITH_RTL
 	runRtlCancel();
-#elif WITH_SOAPY
-	runSoapyClose();
-#else
-	exit(0);
 #endif
+#ifdef WITH_SOAPY
+	runSoapyClose();
+#endif
+	exit(0);
 }
 
 int initMsk(channel_t *);
