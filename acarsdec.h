@@ -34,7 +34,7 @@
 #define HOST_NAME_MAX 255
 #endif
 
-#define INTRATE 12500U
+#define INTRATE 12500U	// 12.5kHz: ACARS is 2400Bd NRZI, AM 10kHz BW with a 1800Hz Fc, 1200Hz shift MSK.
 
 #define ARRAY_SIZE(x)	(sizeof(x) / sizeof(x[0]))
 
@@ -54,12 +54,12 @@ typedef struct mskblk_s {
 typedef struct {
 	int chn;
 
-	unsigned int Fr;
+	unsigned int Fr;		// channel frequency (in Hz)
 	unsigned int counter;
 	float complex *oscillator;
 	float complex D;
 
-	float *dm_buffer;
+	float *dm_buffer;		// INTRATE-sampled signal buffer
 	double MskPhi;
 	double MskDf;
 	float MskClk;

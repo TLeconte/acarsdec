@@ -138,6 +138,9 @@ int channels_init_sdr(unsigned int Fc, unsigned int multiplier, unsigned int buf
 			return 1;
 		}
 
+		/* precompute a scaled, oversampled local INTRATE oscillator per channel
+		 mixing this oscillator with the received full-scale oversampled signal
+		 will provide a normalized signal at the channel frequency */
 		correctionPhase = (signed)(ch->Fr - Fc) / (float)(INTRATE * multiplier) * 2.0 * M_PI;
 		if (R.verbose)
 			fprintf(stderr, "#%d: Fc = %uHz, Fr = %uHz, phase = % f (%+dHz)\n", n+1, Fc, ch->Fr, correctionPhase, (signed)(ch->Fr - Fc));

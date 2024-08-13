@@ -1,5 +1,6 @@
 /*
  *  Copyright (c) 2016 Thierry Leconte
+ *  Copyright (c) 2024 Thibaut VARENE
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -36,7 +37,6 @@
 #define RTLMULTMAX 320U // this is well beyond the rtl-sdr capabilities
 
 static rtlsdr_dev_t *dev = NULL;
-static int status = 0;
 static unsigned int rtlInBufSize = 0;
 
 #define RTLOUTBUFSZ 1024U
@@ -236,33 +236,58 @@ int initRtl(char **argv, int optind)
 	return 0;
 }
 
+/*
+ Regarding I/Q offset
+ https://osmocom-sdr.osmocom.narkive.com/58eMkTE4/recording-iq-stream-with-rtlsdr-and-sdr-in-the-same-format#post16
+ Quoted below:
+
+ > rtl dongle output a 8bit unsigned interger for both I/Q signals.
+ > To convert it to float man must remove the zero value.
+ > A signed 8bit is normally between -128 and 127 so the convertion must
+ > be something like :
+ > I=(float)rtlinbuff[i++]-128.0; // with rtlinbuff the input 8bit unsigned buffer
+ > Q=(float)rtlinbuff[i++]-128.0; // and I/Q float values
+ >
+ > But, I try to find that 0 level by a very simple low pass filter.
+ > something like :
+ > IM=0.99999*IM+0.00001*(double)rtlinbuff[i++];
+ > QM=0.99999*QM+0.00001*(double)rtlinbuff[i++];
+ >
+ > and after a few seconds of running with antenna disconnected , I find a
+ > value around 127.35 for a first dongle and 127.4 for a second.
+ > I do some differents runs and these values seem consistant.
+
+ Using 127.37 as a "work for all" average.
+ */
 static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
+	float complex phasor[R.rateMult];
 	unsigned int n;
 
 	if (nread != rtlInBufSize) {
 		fprintf(stderr, "warning: partial read\n");
 		return;
 	}
-	status = 0;
 
-	// code requires this relationship set in initRtl:
-	// rtlInBufSize = RTLOUTBUFSZ * rateMult * 2;
-
-	float complex vb[RTLMULTMAX];
-	unsigned int i = 0;
-	for (unsigned int m = 0; m < RTLOUTBUFSZ; m++) {
+	// each dm_buffer sample is made of a rateMult-oversampled I/Q pair (2-byte)
+	// dm-buffer is rateMult-downsampled
+	for (unsigned int m = 0; m < nread / R.rateMult / 2; m++) {
+		// compute rateMult-oversampled, full-scale phasor
+		// this loops consumes rateMult*2 bytes of rtlinbuff
 		for (unsigned int ind = 0; ind < R.rateMult; ind++) {
-			float r, g;
+			float i, q;
 
-			r = (float)rtlinbuff[i] - 127.37f;
-			i++;
-			g = (float)rtlinbuff[i] - 127.37f;
-			i++;
+			// make I and Q signed floats, range c. -127.5 to 127.5 (see note above)
+			i = (float)(*rtlinbuff++) - 127.37f;
+			q = (float)(*rtlinbuff++) - 127.37f;
 
-			vb[ind] = r + g * I;
+			phasor[ind] = i + q * I;
 		}
 
+		/* for each channel, mix the oversampled full-scale phasor with channel downscaled oversampled
+		 local oscillator and sum the result rateMult times: this gives us a normalized complex signal
+		 at the local oscillator freq. Then compute the magnitude of the resulting signal,
+		 which is the magnitude of the signal received at that local oscillator freq */
 		for (n = 0; n < R.nbch; n++) {
 			channel_t *ch = &(R.channels[n]);
 			float complex D, *oscillator;
@@ -270,7 +295,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 			oscillator = ch->oscillator;
 			D = 0;
 			for (unsigned int ind = 0; ind < R.rateMult; ind++) {
-				D += vb[ind] * oscillator[ind];
+				D += phasor[ind] * oscillator[ind];
 			}
 			ch->dm_buffer[m] = cabsf(D);
 		}
