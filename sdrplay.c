@@ -77,7 +77,7 @@ int initSdrplay(char **argv, int optind)
 	if (r)
 		return r;
 
-	Fc = find_centerfreq(minFc, maxFc, SDRPLAY_INRATE);
+	Fc = find_centerfreq(minFc, maxFc, SDRPLAY_MULT);
 	if (Fc == 0)
 		return 1;
 

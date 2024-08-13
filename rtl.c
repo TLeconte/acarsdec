@@ -38,7 +38,6 @@
 static rtlsdr_dev_t *dev = NULL;
 static int status = 0;
 static unsigned int rtlInBufSize = 0;
-static unsigned int rtlInRate = 0;
 
 #define RTLOUTBUFSZ 1024U
 
@@ -165,7 +164,6 @@ int initRtl(char **argv, int optind)
 	}
 
 	rtlInBufSize = RTLOUTBUFSZ * R.rateMult * 2;
-	rtlInRate = INTRATE * R.rateMult;
 
 	r = rtlsdr_open(&dev, dev_index);
 	if (r < 0) {
@@ -198,7 +196,7 @@ int initRtl(char **argv, int optind)
 	if (r)
 		return r;
 
-	Fc = find_centerfreq(minFc, maxFc, rtlInRate);
+	Fc = find_centerfreq(minFc, maxFc, R.rateMult);
 	if (Fc == 0)
 		return 1;
 
@@ -215,8 +213,8 @@ int initRtl(char **argv, int optind)
 		return 1;
 	}
 
-	fprintf(stderr, "Setting sample rate: %.4f MS/s\n", rtlInRate / 1e6);
-	r = rtlsdr_set_sample_rate(dev, rtlInRate);
+	fprintf(stderr, "Setting sample rate: %.4f MS/s\n", INTRATE * R.rateMult / 1e6);
+	r = rtlsdr_set_sample_rate(dev, INTRATE * R.rateMult);
 	if (r < 0) {
 		fprintf(stderr, "WARNING: Failed to set sample rate.\n");
 		return 1;

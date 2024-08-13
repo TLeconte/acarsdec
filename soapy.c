@@ -19,7 +19,6 @@ static SoapySDRDevice *dev = NULL;
 static SoapySDRStream *stream = NULL;
 static int16_t *soapyInBuf = NULL;
 static unsigned int soapyInBufSize = 0;
-static unsigned int soapyInRate = 0;
 static int soapyExit = 0;
 
 #define SOAPYOUTBUFSZ 1024U
@@ -42,7 +41,6 @@ int initSoapy(char **argv, int optind)
 	optind++;
 
 	soapyInBufSize = SOAPYOUTBUFSZ * R.rateMult * 2U;
-	soapyInRate = INTRATE * R.rateMult;
 
 	soapyInBuf = malloc(sizeof(*soapyInBuf) * soapyInBufSize);
 	if (!soapyInBuf) {
@@ -77,7 +75,7 @@ int initSoapy(char **argv, int optind)
 	if (r)
 		return r;
 
-	Fc = find_centerfreq(minFc, maxFc, soapyInRate);
+	Fc = find_centerfreq(minFc, maxFc, R.rateMult);
 
 	if (Fc == 0)
 		return 1;
@@ -93,8 +91,8 @@ int initSoapy(char **argv, int optind)
 		fprintf(stderr, "WARNING: Failed to set frequency: %s\n", SoapySDRDevice_lastError());
 
 	if (R.verbose)
-		fprintf(stderr, "Setting sample rate: %.4f MS/s\n", soapyInRate / 1e6);
-	r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, 0, soapyInRate);
+		fprintf(stderr, "Setting sample rate: %.4f MS/s\n", INTRATE * R.rateMult / 1e6);
+	r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, 0, INTRATE * R.rateMult);
 	if (r != 0)
 		fprintf(stderr, "WARNING: Failed to set sample rate: %s\n", SoapySDRDevice_lastError());
 
