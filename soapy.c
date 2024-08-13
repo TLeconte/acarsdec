@@ -1,3 +1,4 @@
+// 2024 changes (C) 2024 Thibaut VARENE
 
 #define _GNU_SOURCE
 
@@ -127,9 +128,10 @@ int soapySetAntenna(const char *antenna)
 
 int runSoapySample(void)
 {
-	int current_index = 0;
-	unsigned int n, local_ind;
-	int i, res = 0;
+	float complex D[R.nbch];
+	unsigned int ind = 0;
+	unsigned int n, counter = 0;
+	int m, res = 0;
 	int flags = 0;
 	long long timens = 0;
 	void *bufs[] = { soapyInBuf };
@@ -138,6 +140,9 @@ int runSoapySample(void)
 		fprintf(stderr, "WARNING: Failed to activate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
 		return 1;
 	}
+
+	for (n = 0; n < R.nbch; n++)
+		D[n] = 0;
 
 	while (!soapyExit) {
 		flags = 0;
@@ -156,32 +161,32 @@ int runSoapySample(void)
 			break;
 		}
 
-		local_ind = current_index;
-
-		for (i = 0; i < res * 2; i += 2) {
-			float r = (float)soapyInBuf[i];
-			float g = (float)soapyInBuf[i + 1];
-			float complex v = r + g * I;
+		for (m = 0; m < res * 2; m += 2) {
+			float i = (float)soapyInBuf[m];
+			float q = (float)soapyInBuf[m+1];
+			float complex phasor = i + q * I;
 
 			for (n = 0; n < R.nbch; n++) {
 				channel_t *ch = &(R.channels[n]);
-				float complex D = ch->D;
-				
-				D += v * ch->oscillator[local_ind];
-				if (local_ind >= R.rateMult) {
-					ch->dm_buffer[ch->counter++] = cabsf(D);
-					local_ind = 0;
-					D = 0;
-					if (ch->counter >= SOAPYOUTBUFSZ) {
-						demodMSK(ch, SOAPYOUTBUFSZ);
-						ch->counter = 0;
-					}
+
+				if (!ind) {	// NB first dm_buffer at startup will be 0. Considered harmless.
+					ch->dm_buffer[counter] = cabsf(D[n]);
+					D[n] = 0;
+
+					if (n == R.nbch-1)	// update counter after last channel is processed
+						counter++;
 				}
-				ch->D = D;
+				D[n] += phasor * ch->oscillator[ind];
 			}
-			local_ind++;
+			if (++ind >= R.rateMult)
+				ind = 0;
+
+			if (counter >= SOAPYOUTBUFSZ) {
+				for (n = 0; n < R.nbch; n++)
+					demodMSK(&R.channels[n], SOAPYOUTBUFSZ);
+				counter = 0;
+			}
 		}
-		current_index = (current_index + res) % R.rateMult;
 	}
 	return 0;
 }
