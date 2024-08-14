@@ -99,8 +99,8 @@ typedef struct {
 	unsigned int rateMult;
 	int lnaState;
 	int GRdB;
-	unsigned int freq;
-
+	unsigned int Fc, minFc, maxFc;
+	
 	char *idstation;
 
 #ifdef HAVE_LIBACARS

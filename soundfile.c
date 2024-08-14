@@ -26,15 +26,15 @@
 #define MAXNBFRAMES 4096
 static SNDFILE *insnd;
 
-int initSoundfile(char **argv, int optind)
+int initSoundfile(char *optarg)
 {
 	SF_INFO infsnd;
 	unsigned int n;
 
 	infsnd.format = 0;
-	insnd = sf_open(argv[optind], SFM_READ, &infsnd);
+	insnd = sf_open(optarg, SFM_READ, &infsnd);
 	if (insnd == NULL) {
-		fprintf(stderr, "could not open %s\n", argv[optind]);
+		fprintf(stderr, "could not open %s\n", optarg);
 		return (1);
 	}
 

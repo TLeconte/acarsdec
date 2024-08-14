@@ -1,5 +1,6 @@
 /*
  *  Copyright (c) 2015 Thierry Leconte
+ *  Copyright (c) 2024 Thibaut VARENE
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -33,6 +34,7 @@
 #include "output.h"
 #include "label.h"
 #include "acars.h"
+#include "lib.h"
 
 #ifdef WITH_AIR
  #include "air.h"
@@ -179,13 +181,14 @@ int main(int argc, char **argv)
 	};
 	char sys_hostname[HOST_NAME_MAX + 1];
 	char *lblf = NULL;
+	char *inarg = NULL;
 
 	gethostname(sys_hostname, HOST_NAME_MAX);
 	sys_hostname[HOST_NAME_MAX] = 0;
 	R.idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt_long(argc, argv, "varfdsSRt:g:m:Aep:c:i:L:G:b:B:", long_opts, NULL)) != EOF) {
+	while ((c = getopt_long(argc, argv, "va:r:f:d:s:St:g:m:Aep:c:i:L:G:b:B:", long_opts, NULL)) != EOF) {
 		switch (c) {
 		case 3:
 			res = setup_output(optarg);
@@ -211,6 +214,7 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_ALSA;
+			inarg = optarg;
 			break;
 #endif
 #ifdef WITH_SNDFILE
@@ -218,6 +222,7 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_SNDFILE;
+			inarg = optarg;
 			break;
 #endif
 		case 'g':
@@ -234,6 +239,7 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_RTL;
+			inarg = optarg;
 			break;
 		case 'B':
 			R.bias = atoi(optarg);
@@ -260,6 +266,7 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_SOAPY;
+			inarg = optarg;
 			break;
 #endif
 #ifdef WITH_AIR
@@ -267,10 +274,11 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_AIR;
+			inarg = optarg;
 			break;
 #endif
 		case 'c':
-			R.freq = (unsigned int)(1000000 * atof(optarg));
+			R.Fc = (unsigned int)(1000000 * atof(optarg));
 			break;
 		case 'A':
 			R.airflt = 1;
@@ -289,46 +297,52 @@ int main(int argc, char **argv)
 	}
 
 	if (R.inmode == IN_NONE) {
-		fprintf(stderr, "Need at least one of -a|-f|-r|-R|-d options\n");
+		fprintf(stderr, "Missing input\n");
 		usage();
+	}
+
+	if (optind < argc) {	// parse remaining non-option arguments as frequencies
+		res = parse_freqs(argv, optind);
+		if (res)
+			return res;
 	}
 
 	/* init input  */
 	switch (R.inmode) {
 #ifdef WITH_ALSA
 	case IN_ALSA:
-		res = initAlsa(argv, optind);
+		res = initAlsa(inarg);
 		break;
 #endif
 #ifdef WITH_SNDFILE
 	case IN_SNDFILE:
-		res = initSoundfile(argv, optind);
+		res = initSoundfile(inarg);
 		break;
 #endif
 #ifdef WITH_RTL
 	case IN_RTL:
 		if (!R.gain)
 			R.gain = -10;
-		res = initRtl(argv, optind);
+		res = initRtl(inarg);
 		break;
 #endif
 #ifdef WITH_AIR
 	case IN_AIR:
 		if (!R.gain)
 			R.gain = 18;
-		res = initAirspy(argv, optind);
+		res = initAirspy(inarg);
 		break;
 #endif
 #ifdef WITH_SDRPLAY
 	case IN_SDRPLAY:
-		res = initSdrplay(argv, optind);
+		res = initSdrplay();
 		break;
 #endif
 #ifdef WITH_SOAPY
 	case IN_SOAPY:
 		if (!R.gain)
 			R.gain = -10;
-		res = initSoapy(argv, optind);
+		res = initSoapy(inarg);
 		break;
 #endif
 	default:
@@ -342,7 +356,7 @@ int main(int argc, char **argv)
 
 	res = initOutputs();
 	if (res)
-		errx(res, "Unable to init output\n");
+		errx(res, "Unable to init outputs\n");
 
 #ifdef WITH_SOAPY
 	if (R.antenna) {

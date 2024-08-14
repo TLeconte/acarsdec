@@ -145,18 +145,17 @@ int nearest_gain(int target_gain)
 	return close_gain;
 }
 
-int initRtl(char **argv, int optind)
+int initRtl(char *optarg)
 {
 	int r;
 	int dev_index;
-	unsigned int Fc, minFc, maxFc;
+	unsigned int Fc;
 
-	if (argv[optind] == NULL) {
+	if (optarg == NULL) {
 		fprintf(stderr, "Need device name or index (ex: 0) after -r\n");
 		exit(1);
 	}
-	dev_index = verbose_device_search(argv[optind]);
-	optind++;
+	dev_index = verbose_device_search(optarg);
 
 	if (R.rateMult > RTLMULTMAX) {
 		fprintf(stderr, "rateMult can't be larger than %d\n", RTLMULTMAX);
@@ -192,11 +191,7 @@ int initRtl(char **argv, int optind)
 			fprintf(stderr, "WARNING: Failed to set freq. correction\n");
 	}
 
-	r = parse_freqs(argv, optind, &minFc, &maxFc);
-	if (r)
-		return r;
-
-	Fc = find_centerfreq(minFc, maxFc, R.rateMult);
+	Fc = find_centerfreq(R.minFc, R.maxFc, R.rateMult);
 	if (Fc == 0)
 		return 1;
 

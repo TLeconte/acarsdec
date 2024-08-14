@@ -1,7 +1,7 @@
 #ifndef rtl_h
 #define rtl_h
 
-int initRtl(char **argv, int optind);
+int initRtl(char *optarg);
 int runRtlSample(void);
 int runRtlCancel(void);
 int runRtlClose(void);

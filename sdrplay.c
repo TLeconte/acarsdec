@@ -62,22 +62,17 @@ static int get_lnaGRdB(int hwVersion, int lnaState)
 
 //
 unsigned int Fc;
-int initSdrplay(char **argv, int optind)
+int initSdrplay(void)
 {
 	int r;
 	char *argF;
-	unsigned int minFc, maxFc;
 	int result;
 	uint32_t i;
 	uint deviceIndex, numofDevs;
 	mir_sdr_DeviceT devDesc[4];
 	mir_sdr_ErrT err;
 
-	r = parse_freqs(argv, optind, &minFc, &maxFc);
-	if (r)
-		return r;
-
-	Fc = find_centerfreq(minFc, maxFc, SDRPLAY_MULT);
+	Fc = find_centerfreq(R.minFc, R.maxFc, SDRPLAY_MULT);
 	if (Fc == 0)
 		return 1;
 

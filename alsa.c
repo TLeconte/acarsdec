@@ -25,16 +25,16 @@
 #define MAXNBFRAMES 4096
 
 static snd_pcm_t *capture_handle;
-int initAlsa(char **argv, int optind)
+int initAlsa(char *optarg)
 {
 	snd_pcm_hw_params_t *hw_params;
 	int err, n;
 	unsigned int Fs;
 
-	if ((err = snd_pcm_open(&capture_handle, argv[optind],
+	if ((err = snd_pcm_open(&capture_handle, optarg,
 				SND_PCM_STREAM_CAPTURE, 0)) < 0) {
 		fprintf(stderr, "Alsa cannot open audio device %s (%s)\n",
-			argv[optind], snd_strerror(err));
+			optarg, snd_strerror(err));
 		return 1;
 	}
 

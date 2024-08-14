@@ -26,7 +26,7 @@
 #include "acarsdec.h"
 #include "lib.h"
 
-int parse_freqs(char **argv, const int argind, unsigned int *minFc, unsigned int *maxFc)
+int parse_freqs(char **argv, const int argind)
 {
 	unsigned int nb = 0;
 	unsigned int freq, minF, maxF;
@@ -43,7 +43,7 @@ int parse_freqs(char **argv, const int argind, unsigned int *minFc, unsigned int
 		ind++;
 		freq = (1000U * (unsigned int)atof(argF));
 		if (freq < 118000U || freq > 138000U) {
-			fprintf(stderr, "WARNING: Ignoring invalid frequency %d\n", freq);
+			fprintf(stderr, "WARNING: Ignoring invalid frequency '%s'\n", argF);
 			continue;
 		}
 		nb++;
@@ -80,18 +80,16 @@ int parse_freqs(char **argv, const int argind, unsigned int *minFc, unsigned int
 		nb++;
 	};
 
-	if (minFc && maxFc) {
-		*minFc = minF;
-		*maxFc = maxF;
-	}
+	R.minFc = minF;
+	R.maxFc = maxF;
 
 	return 0;
 }
 
 unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned int multiplier)
 {
-	if (R.freq)
-		return R.freq;
+	if (R.Fc)
+		return R.Fc;
 	
 	if ((maxFc - minFc) > multiplier * INTRATE - 4 * INTRATE) {
 		fprintf(stderr, "Frequencies too far apart\n");

@@ -71,11 +71,11 @@ static unsigned int chooseFc(unsigned int minF, unsigned int maxF, int filter)
 	return (((maxF + minF) / 2 + off + INTRATE / 2) / INTRATE * INTRATE);
 }
 
-int initAirspy(char **argv, int optind)
+int initAirspy(char *optarg)
 {
 	int n;
 	char *argF;
-	unsigned int Fc, minFc = 140000000, maxFc = 0;
+	unsigned int Fc;
 	int result;
 	uint32_t i, count;
 	uint32_t *supported_samplerates;
@@ -111,7 +111,7 @@ int initAirspy(char **argv, int optind)
 	// clear errno to catch invalid input.
 	errno = 0;
 	// Attempt to interpret first argument as a specific device serial.
-	airspy_serial = strtoull(argv[optind], &argF, 16);
+	airspy_serial = strtoull(optarg, &argF, 16);
 
 	// If strtoull result is an integer from 0 to airspy_device_count:
 	//  1. Attempt to open airspy serial indicated.
@@ -125,23 +125,17 @@ int initAirspy(char **argv, int optind)
 	// Else:
 	//  1. Give up.
 
-	if ((argv[optind] != argF) && (errno == 0)) {
+	if ((optarg != argF) && (errno == 0)) {
 		if ((airspy_serial < airspy_device_count)) {
 			if (R.verbose) {
 				fprintf(stderr, "Attempting to open airspy device slot #%lu with serial %016lx.\n", airspy_serial, airspy_device_list[airspy_serial]);
 			}
 			result = airspy_open_sn(&device, airspy_device_list[airspy_serial]);
-			if (result == AIRSPY_SUCCESS) {
-				optind++; // consume parameter
-			}
 		} else {
 			if (R.verbose) {
 				fprintf(stderr, "Attempting to open airspy serial 0x%016lx\n", airspy_serial);
 			}
 			result = airspy_open_sn(&device, airspy_serial);
-			if (result == AIRSPY_SUCCESS) {
-				optind++; // consume parameter
-			}
 		}
 	}
 
@@ -167,11 +161,6 @@ int initAirspy(char **argv, int optind)
 			return -1;
 		}
 	}
-
-	/* parse freqs */
-	result = parse_freqs(argv, optind, &minFc, &maxFc);
-	if (result)
-		return result;
 
 	/* init airspy */
 
@@ -229,7 +218,7 @@ int initAirspy(char **argv, int optind)
 		fprintf(stderr, "airspy_set_vga_gain() failed: %s (%d)\n", airspy_error_name(result), result);
 	}
 
-	Fc = chooseFc(minFc, maxFc, AIRINRATE == 5000000);
+	Fc = chooseFc(R.minFc, R.maxFc, AIRINRATE == 5000000);
 	if (Fc == 0) {
 		fprintf(stderr, "Frequencies too far apart\n");
 		return 1;

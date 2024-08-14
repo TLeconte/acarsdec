@@ -22,22 +22,21 @@ static int soapyExit = 0;
 
 #define SOAPYOUTBUFSZ 1024U
 
-int initSoapy(char **argv, int optind)
+int initSoapy(char *optarg)
 {
 	int r;
-	unsigned int Fc, minFc, maxFc;
+	unsigned int Fc;
 
-	if (argv[optind] == NULL) {
+	if (optarg == NULL) {
 		fprintf(stderr, "Need device string (ex: driver=rtltcp,rtltcp=127.0.0.1) after -d\n");
 		exit(1);
 	}
 
-	dev = SoapySDRDevice_makeStrArgs(argv[optind]);
+	dev = SoapySDRDevice_makeStrArgs(optarg);
 	if (dev == NULL) {
-		fprintf(stderr, "ERROR: opening SoapySDR device using string \"%s\": %s\n", argv[optind], SoapySDRDevice_lastError());
+		fprintf(stderr, "ERROR: opening SoapySDR device using string \"%s\": %s\n", optarg, SoapySDRDevice_lastError());
 		return -1;
 	}
-	optind++;
 
 	if (R.gain <= -10.0) {
 		if (R.verbose)
@@ -62,11 +61,7 @@ int initSoapy(char **argv, int optind)
 			fprintf(stderr, "WARNING: Failed to set freq correction: %s\n", SoapySDRDevice_lastError());
 	}
 
-	r = parse_freqs(argv, optind, &minFc, &maxFc);
-	if (r)
-		return r;
-
-	Fc = find_centerfreq(minFc, maxFc, R.rateMult);
+	Fc = find_centerfreq(R.minFc, R.maxFc, R.rateMult);
 
 	if (Fc == 0)
 		return 1;

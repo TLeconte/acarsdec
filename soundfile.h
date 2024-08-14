@@ -1,7 +1,7 @@
 #ifndef soundfile_h
 #define soundfile_h
 
-int initSoundfile(char **argv, int optind);
+int initSoundfile(char *optarg);
 int runSoundfileSample(void);
 
 #ifdef DEBUG
