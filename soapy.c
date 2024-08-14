@@ -18,8 +18,6 @@
 
 static SoapySDRDevice *dev = NULL;
 static SoapySDRStream *stream = NULL;
-static int16_t *soapyInBuf = NULL;
-static unsigned int soapyInBufSize = 0;
 static int soapyExit = 0;
 
 #define SOAPYOUTBUFSZ 1024U
@@ -36,18 +34,10 @@ int initSoapy(char **argv, int optind)
 
 	dev = SoapySDRDevice_makeStrArgs(argv[optind]);
 	if (dev == NULL) {
-		fprintf(stderr, "Error opening SoapySDR device using string \"%s\": %s\n", argv[optind], SoapySDRDevice_lastError());
+		fprintf(stderr, "ERROR: opening SoapySDR device using string \"%s\": %s\n", argv[optind], SoapySDRDevice_lastError());
 		return -1;
 	}
 	optind++;
-
-	soapyInBufSize = SOAPYOUTBUFSZ * R.rateMult * 2U;
-
-	soapyInBuf = malloc(sizeof(*soapyInBuf) * soapyInBufSize);
-	if (!soapyInBuf) {
-		perror(NULL);
-		return 1;
-	}
 
 	if (R.gain <= -10.0) {
 		if (R.verbose)
@@ -86,21 +76,19 @@ int initSoapy(char **argv, int optind)
 		return r;
 
 	if (R.verbose)
-		fprintf(stderr, "Set center freq. to %uHz\n", Fc);
+		fprintf(stderr, "Setting center freq. to %uHz\n", Fc);
 	r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, 0, Fc, NULL);
-	if (r != 0)
-		fprintf(stderr, "WARNING: Failed to set frequency: %s\n", SoapySDRDevice_lastError());
+	if (r != 0) {
+		fprintf(stderr, "ERROR: Failed to set frequency: %s\n", SoapySDRDevice_lastError());
+		return r;
+	}
 
 	if (R.verbose)
 		fprintf(stderr, "Setting sample rate: %.4f MS/s\n", INTRATE * R.rateMult / 1e6);
 	r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, 0, INTRATE * R.rateMult);
-	if (r != 0)
-		fprintf(stderr, "WARNING: Failed to set sample rate: %s\n", SoapySDRDevice_lastError());
-
-	stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL);
-	if (!stream) {
-		fprintf(stderr, "WARNING: Failed to setup SoapySDR stream: %s\n", SoapySDRDevice_lastError());
-		return 1;
+	if (r != 0) {
+		fprintf(stderr, "ERROR: Failed to set sample rate: %s\n", SoapySDRDevice_lastError());
+		return r;
 	}
 
 	return 0;
@@ -128,6 +116,8 @@ int soapySetAntenna(const char *antenna)
 
 int runSoapySample(void)
 {
+	const unsigned int soapyInBufSize = SOAPYOUTBUFSZ * R.rateMult * 2U;
+	int16_t soapyInBuf[soapyInBufSize];
 	float complex D[R.nbch];
 	unsigned int ind = 0;
 	unsigned int n, counter = 0;
@@ -135,6 +125,12 @@ int runSoapySample(void)
 	int flags = 0;
 	long long timens = 0;
 	void *bufs[] = { soapyInBuf };
+
+	stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL);
+	if (!stream) {
+		fprintf(stderr, "WARNING: Failed to setup SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+		return 1;
+	}
 
 	if (SoapySDRDevice_activateStream(dev, stream, 0, 0, 0)) {
 		fprintf(stderr, "WARNING: Failed to activate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
@@ -208,11 +204,6 @@ int runSoapyClose(void)
 		if (res != 0)
 			fprintf(stderr, "WARNING: Failed to close SoapySDR device: %s\n", SoapySDRDevice_lastError());
 		dev = NULL;
-	}
-
-	if (soapyInBuf) {
-		free(soapyInBuf);
-		soapyInBuf = NULL;
 	}
 
 	return res;
