@@ -171,7 +171,7 @@ int initRtl(char **argv, int optind)
 		return r;
 	}
 
-	if (R.gain > 52.0F || R.gain <= 10.0F) {
+	if (R.gain > 52.0F || R.gain <= -10.0F) {
 		if (R.verbose)
 			fprintf(stderr, "Tuner gain: AGC\n");
 		r = rtlsdr_set_tuner_gain_mode(dev, 0);
