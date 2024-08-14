@@ -34,6 +34,9 @@
 #define SDRPLAY_MULT 160
 #define SDRPLAY_INRATE (INTRATE * SDRPLAY_MULT)
 
+static float complex *D;
+static unsigned int *counter;
+
 extern void *compute_thread(void *arg);
 
 static int hwVersion;
@@ -79,6 +82,13 @@ int initSdrplay(void)
 	r = channels_init_sdr(Fc, SDRPLAY_MULT, 512, 1.0F);	// XXX REVIEW, scale doesn't seem right
 	if (r)
 		return r;
+
+	D = calloc(R.nbch, sizeof(*D));
+	counter = calloc(R.nbch, sizeof(*counter));
+	if (!D || !counter) {
+		perror(NULL);
+		return 1;
+	}
 
 	float ver;
 	result = mir_sdr_ApiVersion(&ver);
@@ -128,23 +138,21 @@ static void myStreamCallback(int16_t *xi,
 	for (n = 0; n < R.nbch; n++) {
 		local_ind = current_index;
 		channel_t *ch = &(R.channels[n]);
-		float complex D = ch->D;
 		for (i = 0; i < numSamples; i++) {
 			float r = ((float)(xi[i]));
 			float g = ((float)(xq[i]));
 			float complex v = r + g * I;
-			D += v * ch->oscillator[local_ind++];
+			D[n] += v * ch->oscillator[local_ind++];
 			if (local_ind >= SDRPLAY_MULT) {
-				ch->dm_buffer[ch->counter++] = cabsf(D) / 4;
+				ch->dm_buffer[counter[n]++] = cabsf(D[n]) / 4;
 				local_ind = 0;
-				D = 0;
-				if (ch->counter >= 512) {
+				D[n] = 0;
+				if (counter[n] >= 512) {
 					demodMSK(ch, 512);
-					ch->counter = 0;
+					counter[n] = 0;
 				}
 			}
 		}
-		ch->D = D;
 	}
 	current_index = (current_index + numSamples) % SDRPLAY_MULT;
 }
@@ -199,5 +207,7 @@ int runSdrplaySample(void)
 		sleep(2);
 
 	mir_sdr_ReleaseDeviceIdx();
+	free(counter);
+	free(D);
 	return 0;
 }
