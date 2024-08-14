@@ -154,11 +154,8 @@ int runSoapySample(void)
 		if (res < 0) {
 			if (res == SOAPY_SDR_OVERFLOW)
 				continue;
-			if (!soapyExit) {
-				fprintf(stderr, "WARNING: Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
-				return 1;
-			}
-			break;
+			fprintf(stderr, "WARNING: Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
+			return 1;
 		}
 
 		for (m = 0; m < res * 2; m += 2) {
@@ -196,22 +193,21 @@ int runSoapyClose(void)
 	int res = 0;
 	soapyExit = 1;
 
-	if (stream) {
-		res = SoapySDRDevice_closeStream(dev, stream);
-		stream = NULL;
-		if (res != 0)
-			fprintf(stderr, "WARNING: Failed to close SoapySDR stream: %s\n", SoapySDRDevice_lastError());
-
-		res = SoapySDRDevice_deactivateStream(dev, stream, 0, 0);
-		stream = NULL;
-		if (res != 0)
-			fprintf(stderr, "WARNING: Failed to deactivate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
-	}
 	if (dev) {
+		if (stream) {
+			res = SoapySDRDevice_deactivateStream(dev, stream, 0, 0);
+			if (res != 0)
+				fprintf(stderr, "WARNING: Failed to deactivate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+
+			res = SoapySDRDevice_closeStream(dev, stream);
+			if (res != 0)
+				fprintf(stderr, "WARNING: Failed to close SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+			stream = NULL;
+		}
 		res = SoapySDRDevice_unmake(dev);
-		dev = NULL;
 		if (res != 0)
 			fprintf(stderr, "WARNING: Failed to close SoapySDR device: %s\n", SoapySDRDevice_lastError());
+		dev = NULL;
 	}
 
 	if (soapyInBuf) {
