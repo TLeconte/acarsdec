@@ -210,7 +210,6 @@ int main(int argc, char **argv)
 		case 'a':
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
-			res = initAlsa(argv, optind);
 			R.inmode = IN_ALSA;
 			break;
 #endif
@@ -218,7 +217,6 @@ int main(int argc, char **argv)
 		case 'f':
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
-			res = initSoundfile(argv, optind);
 			R.inmode = IN_SNDFILE;
 			break;
 #endif
@@ -235,7 +233,6 @@ int main(int argc, char **argv)
 		case 'r':
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
-			res = initRtl(argv, optind);
 			R.inmode = IN_RTL;
 			break;
 		case 'B':
@@ -246,7 +243,6 @@ int main(int argc, char **argv)
 		case 'S':
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
-			res = initSdrplay(argv, optind);
 			R.inmode = IN_SDRPLAY;
 			break;
 		case 'L':
@@ -263,7 +259,6 @@ int main(int argc, char **argv)
 		case 'd':
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
-			res = initSoapy(argv, optind);
 			R.inmode = IN_SOAPY;
 			break;
 #endif
@@ -271,7 +266,6 @@ int main(int argc, char **argv)
 		case 's':
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
-			res = initAirspy(argv, optind);
 			R.inmode = IN_AIR;
 			break;
 #endif
@@ -297,6 +291,48 @@ int main(int argc, char **argv)
 	if (R.inmode == IN_NONE) {
 		fprintf(stderr, "Need at least one of -a|-f|-r|-R|-d options\n");
 		usage();
+	}
+
+	/* init input  */
+	switch (R.inmode) {
+#ifdef WITH_ALSA
+	case IN_ALSA:
+		res = initAlsa(argv, optind);
+		break;
+#endif
+#ifdef WITH_SNDFILE
+	case IN_SNDFILE:
+		res = initSoundfile(argv, optind);
+		break;
+#endif
+#ifdef WITH_RTL
+	case IN_RTL:
+		if (!R.gain)
+			R.gain = -10;
+		res = initRtl(argv, optind);
+		break;
+#endif
+#ifdef WITH_AIR
+	case IN_AIR:
+		if (!R.gain)
+			R.gain = 18;
+		res = initAirspy(argv, optind);
+		break;
+#endif
+#ifdef WITH_SDRPLAY
+	case IN_SDRPLAY:
+		res = initSdrplay(argv, optind);
+		break;
+#endif
+#ifdef WITH_SOAPY
+	case IN_SOAPY:
+		if (!R.gain)
+			R.gain = -10;
+		res = initSoapy(argv, optind);
+		break;
+#endif
+	default:
+		res = -1;
 	}
 
 	if (res)
@@ -365,16 +401,12 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_RTL
 	case IN_RTL:
-		if (!R.gain)
-			R.gain = -10;
 		runRtlSample();
 		res = runRtlClose();
 		break;
 #endif
 #ifdef WITH_AIR
 	case IN_AIR:
-		if (!R.gain)
-			R.gain = 18;
 		res = runAirspySample();
 		break;
 #endif
@@ -385,8 +417,6 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_SOAPY
 	case IN_SOAPY:
-		if (!R.gain)
-			R.gain = -10;
 		res = runSoapySample();
 		break;
 #endif
