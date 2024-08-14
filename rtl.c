@@ -254,49 +254,29 @@ int initRtl(char *optarg)
  */
 static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
-	float complex phasor[R.rateMult];
-	unsigned int n;
+	const unsigned int mult = R.rateMult;
+	float complex phasors[mult];
 
-	if (nread != rtlInBufSize) {
-		fprintf(stderr, "warning: partial read\n");
+	if (nread % 2) {
+		fprintf(stderr, "ERROR: rtlsdr: incomplete read\n");
 		return;
 	}
 
-	// each dm_buffer sample is made of a rateMult-oversampled I/Q pair (2-byte)
-	// dm-buffer is rateMult-downsampled
-	for (unsigned int m = 0; m < nread / R.rateMult / 2; m++) {
+	while (nread) {
+		unsigned int lim = nread/2 < mult ? nread/2 : mult;	// mult-sized chunks
 		// compute rateMult-oversampled, full-scale phasor
-		// this loops consumes rateMult*2 bytes of rtlinbuff
-		for (unsigned int ind = 0; ind < R.rateMult; ind++) {
+		// this loops consumes at most mult*2 bytes of rtlinbuff
+		for (unsigned int ind = 0; ind < lim; ind++) {
 			float i, q;
 
 			// make I and Q signed floats, range c. -127.5 to 127.5 (see note above)
 			i = (float)(*rtlinbuff++) - 127.37f;
 			q = (float)(*rtlinbuff++) - 127.37f;
 
-			phasor[ind] = i + q * I;
+			phasors[ind] = i + q * I;
 		}
-
-		/* for each channel, mix the oversampled full-scale phasor with channel downscaled oversampled
-		 local oscillator and sum the result rateMult times: this gives us a normalized complex signal
-		 at the local oscillator freq. Then compute the magnitude of the resulting signal,
-		 which is the magnitude of the signal received at that local oscillator freq */
-		for (n = 0; n < R.nbch; n++) {
-			channel_t *ch = &(R.channels[n]);
-			float complex D, *oscillator;
-
-			oscillator = ch->oscillator;
-			D = 0;
-			for (unsigned int ind = 0; ind < R.rateMult; ind++) {
-				D += phasor[ind] * oscillator[ind];
-			}
-			ch->dm_buffer[m] = cabsf(D);
-		}
-	}
-
-	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channels[n]);
-		demodMSK(ch, DMBUFSZ);
+		channels_mix_phasors(phasors, lim, mult);
+		nread -= lim * 2;
 	}
 }
 

@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <complex.h>
+#include <sysexits.h>
+#include <err.h>
 
 #include "acarsdec.h"
 #include "lib.h"
@@ -147,4 +149,97 @@ int channels_init_sdr(unsigned int Fc, unsigned int multiplier, float scale)
 	}
 
 	return 0;
+}
+
+/**
+ * Compute the magnitude of the oversampled signal and update the channel buffer.
+ * @param D an R.nbch-wide array of oversampled I/Q pairs
+ * @note zeroes input
+ */
+static void channels_push_and_demod_sample(float complex *restrict D)
+{
+	static unsigned int counter = 0;
+	const unsigned int nbch = R.nbch;
+	unsigned int n;
+
+	// each dm_buffer sample is made of a the magnitude of a rateMult-oversampled I/Q pair.
+	// dm-buffer is rateMult-downsampled
+	for (n = 0; n < nbch; n++) {
+		R.channels[n].dm_buffer[counter] = cabsf(D[n]);
+		D[n] = 0;
+	}
+
+	if (++counter >= DMBUFSZ) {
+		for (n = 0; n < nbch; n++)
+			demodMSK(&R.channels[n], DMBUFSZ);
+		counter = 0;
+	}
+}
+
+/**
+ * Mix an array of oversampled phasors with each channel local oscillator to retrieve the signal at that channel frequency.
+ * Invoke channels_push_and_demod_sample() when enough data has been accumulated.
+ *
+ * @param phasors an array of oversampled phasors
+ * @param len the length of the phasors array (need not be a multiple of oversampling multiplier)
+ * @param multiplier the oversampling multiplier
+ * @note can process an arbitrary number of phasors, perf benefits are obtained if #len is always an exact multiple of #multiplier,
+ * or if #len is larger than #multiplier *2
+*
+ * Theory of operation: together with channels_push_and_demod_sample():
+ * For each channel, mix the oversampled full-scale phasor with channel downscaled oversampled
+ * local oscillator and sum (integrate) the result rateMult times: this gives us a normalized complex signal
+ * at the local oscillator freq. Then compute the magnitude of the resulting signal,
+ * which is the magnitude of the signal received at that local oscillator freq
+ */
+void channels_mix_phasors(const float complex *restrict phasors, unsigned int len, const unsigned int multiplier)
+{
+	static float complex *restrict D = NULL;
+	static unsigned int ind = 0;
+	const unsigned int nbch = R.nbch;
+	unsigned int n, k = 0;
+	float complex d, *restrict oscillator;
+
+	if (!len)
+		return;
+
+	if (!D) {
+		D = calloc(nbch, sizeof(*D));
+		if (!D)
+			err(EX_OSERR, NULL);
+	}
+
+	// realign to multiplier stride if necessary
+	if (ind) {
+		for (k = 0; ind < multiplier && k < len; k++, ind++) {
+			for (n = 0; n < nbch; n++)
+				D[n] += phasors[k] * R.channels[n].oscillator[ind];
+		}
+		if (multiplier == ind) {
+			channels_push_and_demod_sample(D);
+			ind = 0;
+		}
+	}
+
+	len -= k;
+	phasors += k;
+
+	// here either (ind==0 and len>=0) or len==0
+
+	// then use a vectorized loop for the remainder of the buffer
+	while (len) {
+		unsigned int lim = len < multiplier ? len : multiplier;	// process multiplier-sized chunks
+		for (n = 0; n < nbch; n++) {
+			oscillator = R.channels[n].oscillator;
+			for (d = 0, k = 0; k < lim; k++)		// vectorizable
+				d += phasors[k] * oscillator[k];
+			D[n] = d;	// update static variable outside of loop
+		}
+		if (multiplier == lim)
+			channels_push_and_demod_sample(D);
+		else	// partial write
+			ind = lim;
+		len -= lim;
+		phasors += lim;
+	}
 }

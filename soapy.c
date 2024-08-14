@@ -97,13 +97,10 @@ int initSoapy(char *optarg)
 #define SOAPYINBUFSZ 4096U
 int runSoapySample(void)
 {
-	float complex D[R.nbch];
 	float complex soapyInBuf[SOAPYINBUFSZ];
 	void *bufs[] = { soapyInBuf };
 
-	unsigned int ind = 0;
-	unsigned int n, counter = 0;
-	int m, res, flags = 0;
+	int res, flags = 0;
 	long long timens = 0;
 
 	stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, SOAPY_SDR_CF32, NULL, 0, NULL);
@@ -116,9 +113,6 @@ int runSoapySample(void)
 		fprintf(stderr, "WARNING: Failed to activate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
 		return 1;
 	}
-
-	for (n = 0; n < R.nbch; n++)
-		D[n] = 0;
 
 	while (!soapyExit) {
 		flags = 0;
@@ -134,30 +128,7 @@ int runSoapySample(void)
 			return 1;
 		}
 
-		for (m = 0; m < res; m++) {
-			float complex phasor = soapyInBuf[m];
-
-			for (n = 0; n < R.nbch; n++) {
-				channel_t *ch = &(R.channels[n]);
-
-				if (!ind) {	// NB first dm_buffer at startup will be 0. Considered harmless.
-					ch->dm_buffer[counter] = cabsf(D[n]);
-					D[n] = 0;
-
-					if (n == R.nbch-1)	// update counter after last channel is processed
-						counter++;
-				}
-				D[n] += phasor * ch->oscillator[ind];
-			}
-			if (++ind >= R.rateMult)
-				ind = 0;
-
-			if (counter >= DMBUFSZ) {
-				for (n = 0; n < R.nbch; n++)
-					demodMSK(&R.channels[n], DMBUFSZ);
-				counter = 0;
-			}
-		}
+		channels_mix_phasors(soapyInBuf, res, R.rateMult);
 	}
 	return 0;
 }
