@@ -87,7 +87,7 @@ typedef struct {
 	channel_t *channels;
 	unsigned int nbch;
 
-	int inmode;
+	enum { IN_NONE = 0, IN_ALSA, IN_SNDFILE, IN_RTL, IN_AIR, IN_SDRPLAY, IN_SOAPY } inmode;
 	int verbose;
 	int airflt;
 	int emptymsg;

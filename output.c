@@ -391,14 +391,14 @@ static int fmt_msg(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_
 	int len = 0;
 
 #if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
-	if (R.inmode >= 3)
+	if (R.inmode >= IN_RTL)
 		len += snprintf(buf + len, bufsz - len, "[#%1d (F:%3.3f L:%+5.1f E:%1d) ", chn + 1,
 			R.channels[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
 #endif
 		len += snprintf(buf + len, bufsz - len, "[#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
-	if (R.inmode != 2)
+	if (R.inmode != IN_SNDFILE)
 		len += fmt_date(tv, buf + len, bufsz - len);
 
 	len += snprintf(buf + len, bufsz - len, " --------------------------------\n");
@@ -476,7 +476,7 @@ static int fmt_oneline(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, s
 
 	len = snprintf(buf, bufsz, "#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
-	if (R.inmode != 2)
+	if (R.inmode != IN_SNDFILE)
 		len += fmt_date(tv, buf + len, bufsz - len);
 
 	len += snprintf(buf + len, bufsz - len, " %7s %6s %1c %2s %4s %s", msg->addr, msg->fid, msg->mode, msg->label, msg->no, txt);

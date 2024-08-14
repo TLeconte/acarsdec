@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initAlsa(argv, optind);
-			R.inmode = 1;
+			R.inmode = IN_ALSA;
 			break;
 #endif
 #ifdef WITH_SNDFILE
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initSoundfile(argv, optind);
-			R.inmode = 2;
+			R.inmode = IN_SNDFILE;
 			break;
 #endif
 		case 'g':
@@ -236,7 +236,7 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initRtl(argv, optind);
-			R.inmode = 3;
+			R.inmode = IN_RTL;
 			break;
 		case 'B':
 			R.bias = atoi(optarg);
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initSdrplay(argv, optind);
-			R.inmode = 5;
+			R.inmode = IN_SDRPLAY;
 			break;
 		case 'L':
 			R.lnaState = atoi(optarg);
@@ -264,7 +264,7 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initSoapy(argv, optind);
-			R.inmode = 6;
+			R.inmode = IN_SOAPY;
 			break;
 #endif
 #ifdef WITH_AIR
@@ -272,7 +272,7 @@ int main(int argc, char **argv)
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			res = initAirspy(argv, optind);
-			R.inmode = 4;
+			R.inmode = IN_AIR;
 			break;
 #endif
 		case 'c':
@@ -294,7 +294,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (R.inmode == 0) {
+	if (R.inmode == IN_NONE) {
 		fprintf(stderr, "Need at least one of -a|-f|-r|-R|-d options\n");
 		usage();
 	}
@@ -343,7 +343,7 @@ int main(int argc, char **argv)
 		errx(res, "Unable to init internal decoders\n");
 
 #if defined(DEBUG) && defined(WITH_SNDFILE)
-	if (R.inmode != 2) {
+	if (R.inmode != IN_SNDFILE) {
 		initSndWrite();
 	}
 #endif
@@ -354,17 +354,17 @@ int main(int argc, char **argv)
 	/* main decoding  */
 	switch (R.inmode) {
 #ifdef WITH_ALSA
-	case 1:
+	case IN_ALSA:
 		res = runAlsaSample();
 		break;
 #endif
 #ifdef WITH_SNDFILE
-	case 2:
+	case IN_SNDFILE:
 		res = runSoundfileSample();
 		break;
 #endif
 #ifdef WITH_RTL
-	case 3:
+	case IN_RTL:
 		if (!R.gain)
 			R.gain = -10;
 		runRtlSample();
@@ -372,19 +372,19 @@ int main(int argc, char **argv)
 		break;
 #endif
 #ifdef WITH_AIR
-	case 4:
+	case IN_AIR:
 		if (!R.gain)
 			R.gain = 18;
 		res = runAirspySample();
 		break;
 #endif
 #ifdef WITH_SDRPLAY
-	case 5:
+	case IN_SDRPLAY:
 		res = runSdrplaySample();
 		break;
 #endif
 #ifdef WITH_SOAPY
-	case 6:
+	case IN_SOAPY:
 		if (!R.gain)
 			R.gain = -10;
 		res = runSoapySample();
