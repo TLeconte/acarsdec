@@ -35,6 +35,7 @@ Multiple instances of `--output` can be enabled.
 Not all combinations of format and destination are valid, acarsdec will complain if an invalid combination is chosen.
 
 One (and only one) input source must also be selected, see below.
+Options (including frequencies) can be provided in any order.
 
 #### Supported output formats:
 
@@ -82,41 +83,56 @@ DESTPARAMS are:
 #### RTL-SDR
 
 ```
+ -r rtldevice	decode from rtl dongle number or S/N rtldevice
  -g gain	set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)
  -p ppm		set rtl ppm frequency correction
  -m rateMult	set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)
  -B bias	Enable (1) or Disable (0) the bias tee (default is 0)
  -c freq	set center frequency to tune to in MHz
- -r rtldevice f1 [f2]...[fN]	decode from rtl dongle number or S/N rtldevice receiving at VHF frequencies f1 and optionally f2 to fN in MHz (e.g. : -r 0 131.525 131.725 131.825)
 ```
 
 
 #### Airspy R2 / Mini
 
 ```
- -g linearity_gain			set linearity gain [0-21] default : 18
- -s airspydevice f1 [f2]...[fN]		decode from airspy dongle number or hex serial number receiving at VHF frequencies f1 and optionally f2 to fN in MHz (ie : -s 131.525 131.725 131.825 )
+ -s airspydevice	decode from airspy dongle number or hex serial number
+ -g linearity_gain	set linearity gain [0-21] default : 18
 ```
 
 #### SDRplay
 
 ```
+ -S 			decode from sdrplay
  -L lnaState		set the lnaState (depends on the device)
  -G GRdB		gain reduction in dB's, range 20 .. 59 (-100 is autogain)
  -c freq		set center frequency to tune to in MHz
- -S f1 [f2]...[fN]	decode from sdrplay receiving at VHF frequencies f1 and optionally f2 to fN in MHz (ie : -s 131.525 131.725 131.825 )
 
 ```
 
 #### SoapySDR
 
 ```
- --antenna antenna	set antenna port to use
+ -d devicestring	decode from a SoapySDR device located by devicestring
  -g gain		set gain in db (-10 will result in AGC; default is AGC)
  -p ppm			set ppm frequency correction
  -c freq		set center frequency to tune to in MHz
  -m rateMult		set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)
- -d devicestring f1 [f2] .. [fN]	decode from a SoapySDR device located by devicestring at VHF frequencies f1 and optionally f2 to fN in MHz (ie : -d driver=rtltcp 131.525 131.725 131.825 )
+ --antenna antenna	set antenna port to use
+```
+
+The SDR sources above expect a list of frequencies `f1 [f2 ... fN]` to decode from expressed in decimal MHz,
+e.g. `131.525 131.725 131.825`.
+
+#### WAV sound file
+
+```
+ -f file.wav		decode from file.wav. Must be sampled at 12.5kHz
+```
+
+#### ALSA device
+
+```
+ -a alsadevice		decode from ALSA PCM device alsadevice
 ```
 
 ## Examples
@@ -134,13 +150,9 @@ Logging to file "airspy.log" rotated daily, from airspy mini with serial number 
 
 `acarsdec --output full:file:path=airspy.log,rotate=daily -g 18 -s 0xa74068c82f531693 129.350 130.025 130.425 130.450 130.650 131.125 131.475 131.550 131.600 131.725 131.850`
 
-Decoding from first airspy available with 3 frequencies :
-
-`acarsdec --output full:file -s 130.450 131.550 131.125`
-
 Decoding with JSON output to stdout, an sdrplay device using Soapy driver, and specifying Antenna C :
 
-`acarsdec --output json:file:path=- --antenna "Antenna C" -d driver=sdrplay,agc_setpoint=-15 130.025 130.450 130.825 131.125 131.550 131.650 131.725`
+`acarsdec --output json:file:path=- -d driver=sdrplay,agc_setpoint=-15 --antenna "Antenna C" 130.025 130.450 130.825 131.125 131.550 131.650 131.725`
 
 Decoding 7 channels from rtl dongle with serial '86000034', filtering empty messages, setting ppm correction to 36, gain to 48 dB, full text to stdout, sending JSON to feed.acars.io:5550 with station ID "MY-STATION-ID":
 
