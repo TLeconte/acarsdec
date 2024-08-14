@@ -2,7 +2,6 @@
 #define soapy_h
 
 int initSoapy(char *optarg);
-int soapySetAntenna(const char *antenna);
 int runSoapySample(void);
 int runSoapyClose(void);
 

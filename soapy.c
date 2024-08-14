@@ -86,24 +86,11 @@ int initSoapy(char *optarg)
 		return r;
 	}
 
-	return 0;
-}
-
-int soapySetAntenna(const char *antenna)
-{
-	if (dev == NULL) {
-		fprintf(stderr, "soapySetAntenna: SoapySDR not init'd\n");
-		return 1;
-	}
-
-	if (antenna == NULL) {
-		fprintf(stderr, "soapySetAntenna: antenna is NULL\n");
-		return 1;
-	}
-
-	if (SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, 0, antenna) != 0) {
-		fprintf(stderr, "soapySetAntenna: SoapySDRDevice_setAntenna failed (check antenna validity)\n");
-		return 1;
+	if (R.antenna) {
+		if (SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, 0, R.antenna) != 0) {
+			fprintf(stderr, "ERROR: SoapySDRDevice_setAntenna failed (check antenna validity)\n");
+			return 1;
+		}
 	}
 
 	return 0;

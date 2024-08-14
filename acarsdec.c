@@ -358,16 +358,6 @@ int main(int argc, char **argv)
 	if (res)
 		errx(res, "Unable to init outputs\n");
 
-#ifdef WITH_SOAPY
-	if (R.antenna) {
-		if (R.verbose)
-			fprintf(stderr, "Setting soapy antenna to %s\n", R.antenna);
-		res = soapySetAntenna(R.antenna);
-		if (res)
-			errx(res, "Unable to set antenna for SoapySDR\n");
-	}
-#endif
-
 	if (!R.channels)
 		errx(-1, "No channel initialized!");
 
