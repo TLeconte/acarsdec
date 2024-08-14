@@ -28,7 +28,7 @@
 #include <libacars/reassembly.h>
 #endif
 
-#define ACARSDEC_VERSION "3.X"
+#define ACARSDEC_VERSION "4.X"
 
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 255
