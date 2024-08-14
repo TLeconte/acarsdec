@@ -71,7 +71,7 @@ int initSoapy(char **argv, int optind)
 	if (Fc == 0)
 		return 1;
 
-	r = channels_init_sdr(Fc, R.rateMult, SOAPYOUTBUFSZ, 32768.0F);
+	r = channels_init_sdr(Fc, R.rateMult, SOAPYOUTBUFSZ, 1.0F);
 	if (r)
 		return r;
 
@@ -114,19 +114,19 @@ int soapySetAntenna(const char *antenna)
 	return 0;
 }
 
+#define SOAPYINBUFSZ 4096U
 int runSoapySample(void)
 {
-	const unsigned int soapyInBufSize = SOAPYOUTBUFSZ * R.rateMult * 2U;
-	int16_t soapyInBuf[soapyInBufSize];
 	float complex D[R.nbch];
-	unsigned int ind = 0;
-	unsigned int n, counter = 0;
-	int m, res = 0;
-	int flags = 0;
-	long long timens = 0;
+	float complex soapyInBuf[SOAPYINBUFSZ];
 	void *bufs[] = { soapyInBuf };
 
-	stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL);
+	unsigned int ind = 0;
+	unsigned int n, counter = 0;
+	int m, res, flags = 0;
+	long long timens = 0;
+
+	stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, SOAPY_SDR_CF32, NULL, 0, NULL);
 	if (!stream) {
 		fprintf(stderr, "WARNING: Failed to setup SoapySDR stream: %s\n", SoapySDRDevice_lastError());
 		return 1;
@@ -142,7 +142,7 @@ int runSoapySample(void)
 
 	while (!soapyExit) {
 		flags = 0;
-		res = SoapySDRDevice_readStream(dev, stream, bufs, soapyInBufSize / 2U, &flags, &timens, 10000000);
+		res = SoapySDRDevice_readStream(dev, stream, bufs, SOAPYINBUFSZ, &flags, &timens, 10000000);
 		if (res == 0) {
 			usleep(500);
 			continue; // retry
@@ -154,10 +154,8 @@ int runSoapySample(void)
 			return 1;
 		}
 
-		for (m = 0; m < res * 2; m += 2) {
-			float i = (float)soapyInBuf[m];
-			float q = (float)soapyInBuf[m+1];
-			float complex phasor = i + q * I;
+		for (m = 0; m < res; m++) {
+			float complex phasor = soapyInBuf[m];
 
 			for (n = 0; n < R.nbch; n++) {
 				channel_t *ch = &(R.channels[n]);
