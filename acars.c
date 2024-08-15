@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include "acarsdec.h"
 #include "output.h"
+#include "statsd.h"
 
 #define SYN 0x16
 #define SOH 0x01
@@ -120,15 +121,20 @@ static void *blk_thread(void *arg)
 			blkq_s = NULL;
 		pthread_mutex_unlock(&blkq_mtx);
 
-		chn = blk->chn + 1;
+		chn = blk->chn;
 
 		if (R.verbose)
-			fprintf(stderr, "get message #%d\n", chn);
+			fprintf(stderr, "get message #%d\n", chn+1);
+
+		if (R.statsd)
+			statsd_inc_per_channel(chn, "decoder.msg.count");
 
 		/* handle message */
 		if (blk->len < 13) {
 			if (R.verbose)
-				fprintf(stderr, "#%d too short\n", chn);
+				fprintf(stderr, "#%d too short\n", chn+1);
+			if (R.statsd)
+				statsd_inc_per_channel(chn, "decoder.errors.too_short");
 			free(blk);
 			continue;
 		}
@@ -149,12 +155,14 @@ static void *blk_thread(void *arg)
 		}
 		if (pn > MAXPERR) {
 			if (R.verbose)
-				fprintf(stderr, "#%d too many parity errors: %d\n", chn, pn);
+				fprintf(stderr, "#%d too many parity errors: %d\n", chn+1, pn);
+			if (R.statsd)
+				statsd_inc_per_channel(chn, "decoder.errors.parity_excess");
 			free(blk);
 			continue;
 		}
 		if (pn > 0 && R.verbose)
-			fprintf(stderr, "#%d parity error(s): %d\n", chn, pn);
+			fprintf(stderr, "#%d parity error(s): %d\n", chn+1, pn);
 		blk->err = pn;
 
 		/* crc check */
@@ -163,29 +171,33 @@ static void *blk_thread(void *arg)
 			update_crc(crc, blk->txt[i]);
 		update_crc(crc, blk->crc[0]);
 		update_crc(crc, blk->crc[1]);
-		if (crc && R.verbose)
-			fprintf(stderr, "#%d crc error\n", chn);
+		if (crc) {
+			if (R.verbose)
+				fprintf(stderr, "#%d crc error\n", chn+1);
+			if (R.statsd)
+				statsd_inc_per_channel(chn, "decoder.errors.crc");
+		}
 
 		/* try to fix error */
 		if (pn) {
 			if (fixprerr(blk, crc, pr, pn) == 0) {
 				if (R.verbose)
-					fprintf(stderr, "#%d not able to fix errors\n", chn);
+					fprintf(stderr, "#%d not able to fix errors\n", chn+1);
 				free(blk);
 				continue;
 			}
 			if (R.verbose)
-				fprintf(stderr, "#%d errors fixed\n", chn);
+				fprintf(stderr, "#%d errors fixed\n", chn+1);
 		} else {
 			if (crc) {
 				if (fixdberr(blk, crc) == 0) {
 					if (R.verbose)
-						fprintf(stderr, "#%d not able to fix errors\n", chn);
+						fprintf(stderr, "#%d not able to fix errors\n", chn+1);
 					free(blk);
 					continue;
 				}
 				if (R.verbose)
-					fprintf(stderr, "#%d errors fixed\n", chn);
+					fprintf(stderr, "#%d errors fixed\n", chn+1);
 			}
 		}
 
@@ -197,9 +209,22 @@ static void *blk_thread(void *arg)
 			blk->txt[i] &= 0x7f;
 		}
 		if (pn) {
-			fprintf(stderr, "#%d parity check problem\n", chn);
+			fprintf(stderr, "#%d parity check problem\n", chn+1);
 			free(blk);
 			continue;
+		}
+
+		if (R.statsd) {
+			char pfx[16];
+			statsd_metric_t metrics[] = {
+				{ .type = STATSD_UCOUNTER, .name = "decoder.msg.good", .value.u = 1 },
+				{ .type = STATSD_LGAUGE, .name = "decoder.msg.errs", .value.l = blk->err },
+				{ .type = STATSD_FGAUGE, .name = "decoder.msg.lvl", .value.f = blk->lvl },
+				{ .type = STATSD_LGAUGE, .name = "decoder.msg.len", .value.l = blk->len },
+			};
+			// use the frequency if available, else the channel number
+			snprintf(pfx, sizeof(pfx), "%u.", R.channels[chn].Fr ? R.channels[chn].Fr : chn+1);
+			statsd_update(pfx, metrics, ARRAY_SIZE(metrics));
 		}
 
 		outputmsg(blk);
