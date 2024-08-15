@@ -43,35 +43,34 @@ typedef float sample_t;
 
 typedef struct mskblk_s {
 	struct mskblk_s *prev;
-	int chn;
 	struct timeval tv;
+	float lvl;
+	int chn;
 	int len;
 	int err;
-	float lvl;
-	char txt[250];
 	unsigned char crc[2];
+	char txt[250];
 } msgblk_t;
 
 typedef struct {
-	int chn;
-
-	unsigned int Fr;		// channel frequency (in Hz)
+	msgblk_t *blk;
 	float complex *oscillator;
 
 	float *dm_buffer;		// INTRATE-sampled signal buffer
+	float complex *inb;
 	double MskPhi;
 	double MskDf;
-	float MskClk;
 	double MskLvlSum;
+	float MskClk;
 	int MskBitCount;
 	unsigned int MskS, idx;
-	float complex *inb;
 
-	unsigned char outbits;
-	int nbits;
+	int chn;
+	unsigned int Fr;		// channel frequency (in Hz)
 
 	enum { WSYN, SYN2, SOH1, TXT, CRC1, CRC2, END } Acarsstate;
-	msgblk_t *blk;
+	int nbits;
+	unsigned char outbits;
 } channel_t;
 
 typedef struct output_s {
@@ -99,8 +98,6 @@ typedef struct {
 	int lnaState;
 	int GRdB;
 	unsigned int Fc, minFc, maxFc;
-	
-	char *idstation;
 
 #ifdef HAVE_LIBACARS
 	int skip_reassembly;
@@ -109,6 +106,8 @@ typedef struct {
 #ifdef WITH_SOAPY
 	char *antenna;
 #endif
+
+	char *idstation;
 
 	output_t *outputs;
 } runtime_t;
