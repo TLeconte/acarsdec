@@ -36,6 +36,7 @@ extern void *compute_thread(void *arg);
 
 static const unsigned int r820t_hf[] = { 1953050, 1980748, 2001344, 2032592, 2060291, 2087988 };
 static const unsigned int r820t_lf[] = { 525548, 656935, 795424, 898403, 1186034, 1502073, 1715133, 1853622 };
+static float complex *chD;
 
 static unsigned int chooseFc(unsigned int minF, unsigned int maxF, int filter)
 {
@@ -82,6 +83,12 @@ int initAirspy(char *optarg)
 	uint64_t airspy_serial = 0;
 	int airspy_device_count = 0;
 	uint64_t *airspy_device_list = NULL;
+
+	chD = calloc(R.nbch, sizeof(*chD));
+	if (!chD) {
+		perror(NULL);
+		return -1;
+	}
 
 	// Request the total number of libairspy devices connected, allocate space, then request the list.
 	result = airspy_device_count = airspy_list_devices(NULL, 0);
@@ -249,7 +256,6 @@ int initAirspy(char *optarg)
 			airspy_exit();
 			return -1;
 		}
-		ch->D = 0;
 
 		AMFreq = 2.0 * M_PI * (Fc - ch->Fr + (double)AIRINRATE / 4) / (double)(AIRINRATE);
 		for (i = 0, Ph = 0; i < AIRMULT; i++) {
@@ -285,7 +291,7 @@ static int rx_callback(airspy_transfer_t *transfer)
 		int k, bn, m;
 		float complex D;
 
-		D = ch->D;
+		D = chD[n];
 
 		/* compute */
 		m = 0;
@@ -310,7 +316,7 @@ static int rx_callback(airspy_transfer_t *transfer)
 			S = pt_rx_buffer[k];
 			D += ch->oscillator[i] * S;
 		}
-		ch->D = D;
+		chD[n] = D;
 
 		demodMSK(ch, m);
 	}
@@ -334,6 +340,8 @@ int runAirspySample(void)
 	while (airspy_is_streaming(device) == AIRSPY_TRUE) {
 		sleep(2);
 	}
+
+	free(chD);
 
 	return 0;
 }
