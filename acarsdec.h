@@ -56,9 +56,7 @@ typedef struct {
 	int chn;
 
 	unsigned int Fr;		// channel frequency (in Hz)
-	unsigned int counter;
 	float complex *oscillator;
-	float complex D;
 
 	float *dm_buffer;		// INTRATE-sampled signal buffer
 	double MskPhi;

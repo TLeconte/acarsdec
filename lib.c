@@ -128,9 +128,6 @@ int channels_init_sdr(unsigned int Fc, unsigned int multiplier, float scale)
 	for (n = 0; n < R.nbch; n++) {
 		channel_t *ch = &R.channels[n];
 
-		ch->counter = 0;
-		ch->D = 0;
-
 		ch->oscillator = malloc(multiplier * sizeof(*ch->oscillator));
 		ch->dm_buffer = malloc(DMBUFSZ * sizeof(*ch->dm_buffer));
 		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
