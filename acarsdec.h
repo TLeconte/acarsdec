@@ -20,6 +20,7 @@
 #ifndef acarsdec_h
 #define acarsdec_h
 
+#include <stdbool.h>
 #include <sys/time.h>
 #include <time.h>
 #include <complex.h>
@@ -86,9 +87,10 @@ typedef struct {
 	unsigned int nbch;
 
 	enum { IN_NONE = 0, IN_ALSA, IN_SNDFILE, IN_RTL, IN_AIR, IN_SDRPLAY, IN_SOAPY } inmode;
-	int verbose;
-	int airflt;
-	int emptymsg;
+	bool verbose;
+	bool airflt;
+	bool emptymsg;
+	bool statsd;
 	int mdly;
 
 	float gain;

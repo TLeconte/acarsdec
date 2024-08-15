@@ -36,6 +36,7 @@
 #include "label.h"
 #include "acars.h"
 #include "lib.h"
+#include "statsd.h"
 
 #ifdef WITH_AIR
  #include "air.h"
@@ -271,11 +272,12 @@ int main(int argc, char **argv)
 		{ "skip-reassembly", no_argument, NULL, 1 },
 		{ "antenna", required_argument, NULL, 2 },
 		{ "output", required_argument, NULL, 3 },
+		{ "statsd", required_argument, NULL, 4 },
 		{ NULL, 0, NULL, 0 }
 	};
 	char sys_hostname[HOST_NAME_MAX + 1];
 	char *lblf = NULL;
-	char *inarg = NULL;
+	char *inarg = NULL, *statsdarg = NULL;
 
 	gethostname(sys_hostname, HOST_NAME_MAX);
 	sys_hostname[HOST_NAME_MAX] = 0;
@@ -288,6 +290,9 @@ int main(int argc, char **argv)
 			res = setup_output(optarg);
 			if (res)
 				exit(res);
+			break;
+		case 4:
+			statsdarg = optarg;
 			break;
 		case 'v':
 			R.verbose = 1;
@@ -454,6 +459,13 @@ int main(int argc, char **argv)
 
 	if (!R.channels)
 		errx(-1, "No channel initialized!");
+
+	if (statsdarg) {
+		res = statsd_init(statsdarg, R.idstation);
+		if (res < 0)
+			errx(res, "Unable to init statsd");
+		R.statsd = 1;
+	}
 
 	sigact.sa_handler = sigintHandler;
 	sigemptyset(&sigact.sa_mask);
