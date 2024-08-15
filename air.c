@@ -164,6 +164,7 @@ int initAirspy(char *optarg)
 
 	/* init airspy */
 
+	// XXX REVIEW: airspy can do AIRSPY_SAMPLE_FLOAT32_IQ, like everyone else. Is there a reason to use real?
 	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_FLOAT32_REAL);
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_set_sample_type() failed: %s (%d)\n", airspy_error_name(result), result);
@@ -264,9 +265,9 @@ int initAirspy(char *optarg)
 	return 0;
 }
 
-int ind = 0;
 static int rx_callback(airspy_transfer_t *transfer)
 {
+	static int ind = 0;
 	float *pt_rx_buffer;
 	int n, i;
 	int bo, be, ben, nbk;
