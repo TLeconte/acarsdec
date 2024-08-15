@@ -97,7 +97,7 @@ static void *blk_thread(void *arg)
 {
 	do {
 		msgblk_t *blk;
-		int i, pn;
+		int i, pn, chn;
 		unsigned short crc;
 		int pr[MAXPERR];
 
@@ -120,13 +120,15 @@ static void *blk_thread(void *arg)
 			blkq_s = NULL;
 		pthread_mutex_unlock(&blkq_mtx);
 
+		chn = blk->chn + 1;
+
 		if (R.verbose)
-			fprintf(stderr, "get message #%d\n", blk->chn + 1);
+			fprintf(stderr, "get message #%d\n", chn);
 
 		/* handle message */
 		if (blk->len < 13) {
 			if (R.verbose)
-				fprintf(stderr, "#%d too short\n", blk->chn + 1);
+				fprintf(stderr, "#%d too short\n", chn);
 			free(blk);
 			continue;
 		}
@@ -147,15 +149,12 @@ static void *blk_thread(void *arg)
 		}
 		if (pn > MAXPERR) {
 			if (R.verbose)
-				fprintf(stderr,
-					"#%d too many parity errors: %d\n",
-					blk->chn + 1, pn);
+				fprintf(stderr, "#%d too many parity errors: %d\n", chn, pn);
 			free(blk);
 			continue;
 		}
 		if (pn > 0 && R.verbose)
-			fprintf(stderr, "#%d parity error(s): %d\n",
-				blk->chn + 1, pn);
+			fprintf(stderr, "#%d parity error(s): %d\n", chn, pn);
 		blk->err = pn;
 
 		/* crc check */
@@ -165,28 +164,28 @@ static void *blk_thread(void *arg)
 		update_crc(crc, blk->crc[0]);
 		update_crc(crc, blk->crc[1]);
 		if (crc && R.verbose)
-			fprintf(stderr, "#%d crc error\n", blk->chn + 1);
+			fprintf(stderr, "#%d crc error\n", chn);
 
 		/* try to fix error */
 		if (pn) {
 			if (fixprerr(blk, crc, pr, pn) == 0) {
 				if (R.verbose)
-					fprintf(stderr, "#%d not able to fix errors\n", blk->chn + 1);
+					fprintf(stderr, "#%d not able to fix errors\n", chn);
 				free(blk);
 				continue;
 			}
 			if (R.verbose)
-				fprintf(stderr, "#%d errors fixed\n", blk->chn + 1);
+				fprintf(stderr, "#%d errors fixed\n", chn);
 		} else {
 			if (crc) {
 				if (fixdberr(blk, crc) == 0) {
 					if (R.verbose)
-						fprintf(stderr, "#%d not able to fix errors\n", blk->chn + 1);
+						fprintf(stderr, "#%d not able to fix errors\n", chn);
 					free(blk);
 					continue;
 				}
 				if (R.verbose)
-					fprintf(stderr, "#%d errors fixed\n", blk->chn + 1);
+					fprintf(stderr, "#%d errors fixed\n", chn);
 			}
 		}
 
@@ -198,8 +197,7 @@ static void *blk_thread(void *arg)
 			blk->txt[i] &= 0x7f;
 		}
 		if (pn) {
-			fprintf(stderr, "#%d parity check problem\n",
-				blk->chn + 1);
+			fprintf(stderr, "#%d parity check problem\n", chn);
 			free(blk);
 			continue;
 		}
