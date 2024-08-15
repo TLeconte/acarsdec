@@ -5,7 +5,7 @@ add_compile_options(-Ofast)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 
-add_executable(acarsdec acars.c  acarsdec.c  label.c  msk.c  output.c netout.c fileout.c lib.c)
+add_executable(acarsdec acars.c  acarsdec.c  label.c  msk.c  output.c netout.c fileout.c lib.c statsd.c)
 
 find_package(PkgConfig)
 if(NOT PKG_CONFIG_FOUND)
