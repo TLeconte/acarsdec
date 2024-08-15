@@ -386,13 +386,13 @@ int main(int argc, char **argv)
 	}
 
 	if (res)
-		errx(res, "Unable to init input\n");
+		errx(res, "Unable to init input");
 
 	build_label_filter(lblf);
 
 	res = initOutputs();
 	if (res)
-		errx(res, "Unable to init outputs\n");
+		errx(res, "Unable to init outputs");
 
 	if (!R.channels)
 		errx(-1, "No channel initialized!");
@@ -416,7 +416,7 @@ int main(int argc, char **argv)
 	}
 
 	if (res)
-		errx(res, "Unable to init internal decoders\n");
+		errx(res, "Unable to init internal decoders");
 
 #if defined(DEBUG) && defined(WITH_SNDFILE)
 	if (R.inmode != IN_SNDFILE) {
