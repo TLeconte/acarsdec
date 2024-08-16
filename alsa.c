@@ -98,8 +98,18 @@ int initAlsa(char *optarg)
 		return 1;
 	}
 
+	R.channels = calloc(1, sizeof(*R.channels));
+	if (!R.channels) {
+		perror(NULL);
+		return 1;
+	}
+
 	R.channels[0].chn = 0;
 	R.channels[0].dm_buffer = malloc(MAXNBFRAMES * sizeof(*R.channels[0].dm_buffer));
+	if (!R.channels[0].dm_buffer) {
+		perror(NULL);
+		return 1;
+	}
 
 	return (0);
 }
