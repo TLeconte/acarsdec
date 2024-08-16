@@ -40,8 +40,6 @@
 
 #define ARRAY_SIZE(x)	(sizeof(x) / sizeof(x[0]))
 
-typedef float sample_t;
-
 typedef struct mskblk_s {
 	struct mskblk_s *prev;
 	struct timeval tv;

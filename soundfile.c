@@ -69,7 +69,7 @@ int runSoundfileSample(void)
 {
 	int nbi, i;
 	unsigned int n;
-	sample_t sndbuff[MAXNBFRAMES * R.nbch];
+	float sndbuff[MAXNBFRAMES * R.nbch];
 
 	do {
 		nbi = sf_read_float(insnd, sndbuff, MAXNBFRAMES * R.nbch);
