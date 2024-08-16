@@ -31,6 +31,7 @@
 #include <libacars/version.h>
 #endif
 #include "acarsdec.h"
+#include "msk.h"
 #include "output.h"
 #include "label.h"
 #include "acars.h"
@@ -163,8 +164,6 @@ static void sigintHandler(int signum)
 #endif
 	exit(0);
 }
-
-int initMsk(channel_t *);
 
 int main(int argc, char **argv)
 {

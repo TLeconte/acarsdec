@@ -27,6 +27,7 @@
 
 #include "acarsdec.h"
 #include "lib.h"
+#include "msk.h"
 
 int parse_freqs(char **argv, const int argind)
 {

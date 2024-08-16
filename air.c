@@ -27,6 +27,7 @@
 #include <libairspy/airspy.h>
 #include "acarsdec.h"
 #include "lib.h"
+#include "msk.h"
 
 static unsigned int AIRMULT;
 static unsigned int AIRINRATE;

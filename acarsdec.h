@@ -114,6 +114,4 @@ typedef struct {
 
 extern runtime_t R;
 
-void demodMSK(channel_t *ch, int len);
-
 #endif /* acarsdec_h */

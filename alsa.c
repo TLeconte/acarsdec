@@ -21,6 +21,7 @@
 #include <string.h>
 #include <alsa/asoundlib.h>
 #include "acarsdec.h"
+#include "msk.h"
 
 #define MAXNBFRAMES 4096
 

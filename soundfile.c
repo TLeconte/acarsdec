@@ -22,6 +22,7 @@
 #include <string.h>
 #include <sndfile.h>
 #include "acarsdec.h"
+#include "msk.h"
 
 #define MAXNBFRAMES 4096
 static SNDFILE *insnd;
