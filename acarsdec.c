@@ -202,6 +202,64 @@ static void sigintHandler(int signum)
 	exit(0);
 }
 
+static int parse_freqs(char **argv, const int argind)
+{
+	unsigned int nb = 0;
+	unsigned int freq, minF, maxF;
+	int ind = argind;
+	char *argF;
+
+	minF = 140000000U;
+	maxF = 0;
+
+	/* count frequency args */
+	while ((argF = argv[ind])) {
+		ind++;
+		freq = (1000U * (unsigned int)atof(argF));
+		if (freq < 118000U || freq > 138000U) {
+			fprintf(stderr, "WARNING: Ignoring invalid frequency '%s'\n", argF);
+			continue;
+		}
+		nb++;
+	}
+
+	if (!nb) {
+		fprintf(stderr, "ERROR: Need a least one frequency\n");
+		return 1;
+	}
+
+	/* allocate channels */
+	R.channels = calloc(nb, sizeof(*R.channels));
+	if (!R.channels) {
+		perror(NULL);
+		return -1;
+	}
+
+	R.nbch = nb;
+
+	/* parse frequency args */
+	nb = 0;
+	ind = argind;
+	while ((argF = argv[ind])) {
+		ind++;
+		freq = (((unsigned int)(1000000 * atof(argF)) + INTRATE / 2) / INTRATE) * INTRATE;
+		if (freq < 118000000 || freq > 138000000)
+			continue;
+
+		R.channels[nb].chn = nb;
+		R.channels[nb].Fr = freq;
+
+		minF = freq < minF ? freq : minF;
+		maxF = freq > maxF ? freq : maxF;
+		nb++;
+	};
+
+	R.minFc = minF;
+	R.maxFc = maxF;
+
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	int c;
