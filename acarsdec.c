@@ -128,7 +128,7 @@ static void usage(void)
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, "(libacars %s)\n", LA_VERSION);
 #endif
-	fprintf(stderr, "\nUsage: acarsdec  [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id] --output FORMAT:DESTINATION:PARAMS [--output ...]");
+	fprintf(stderr, "\nUsage: acarsdec  [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id] [--statsd host=ip,port=1234] --output FORMAT:DESTINATION:PARAMS [--output ...]");
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " [--skip-reassembly]");
 #endif
@@ -143,6 +143,7 @@ static void usage(void)
 #ifdef HAVE_LIBACARS
 		" --skip-reassembly\t: disable reassembling fragmented ACARS messages\n"
 #endif
+		" --statsd host=myhost,port=1234\t: enable statsd reporting to host 'myhost' on port '1234'\n"
 		"\n Use \"--output help\" for available output options\n");
 
 #ifdef WITH_ALSA

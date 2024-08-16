@@ -12,6 +12,7 @@ Since 3.0, it can work with a database backend : acarsserv to store received aca
  * multiple simultaneous outputs via file or UDP
  * multiple output formats: one line, full text, planeplotter, acarsserv, JSON and live monitoring
  * decoding of ARINC-622 ATS applications (ADS-C, CPDLC) via [libacars](https://github.com/szpajder/libacars) library
+ * statistics reporting via StatsD-compliant interface
 
 Multi-channel decoding is particularly useful with broadband devices such
 as the RTLSDR dongle, the AIRspy and the SDRplay device.
@@ -22,16 +23,17 @@ It allows the user to directly monitor different frequencies simultaneously with
 ### Common options:
 
 ```
- -i stationid	station id used in acarsdec network format (defaults to hostname)
- -A		don't output uplink messages (ie : only aircraft messages)
- -e		don't output empty messages (ie : _d,Q0, etc ...)
- -b filter	filter output by label (ex: -b "H1:Q0" : only output messages  with label H1 or Q0)
- -t time	set forget time (TTL) in seconds for monitor mode (default=600s)
- 
-  --output FORMAT:DESTINATION:DESTPARAMS (see below for supported output formats and destinations. DESTPARAMS are coma-separated: ',')
+ [-i stationid]	station id used in acarsdec network format (defaults to hostname)
+ [-A]		don't output uplink messages (ie : only aircraft messages)
+ [-e]		don't output empty messages (ie : _d,Q0, etc ...)
+ [-b filter]	filter output by label (ex: -b "H1:Q0" : only output messages  with label H1 or Q0)
+ [-t time]	set forget time (TTL) in seconds for monitor mode (default=600s)
+
+ [--statsd host=myhost,port=1234]
+ --output FORMAT:DESTINATION:DESTPARAMS (see below for supported output formats and destinations. DESTPARAMS are coma-separated: ',')
 ```
 
-Multiple instances of `--output` can be enabled.
+Multiple instances of `--output` can be enabled. At least one is required.
 Not all combinations of format and destination are valid, acarsdec will complain if an invalid combination is chosen.
 
 One (and only one) input source must also be selected, see below.
@@ -265,6 +267,7 @@ It depends on some optional external libraries :
  * libsndfile for soundfile input/output
  * libacars for decoding ATS applications (https://github.com/szpajder/libacars)
  * libcjson for JSON output support (https://github.com/DaveGamble/cJSON)
+ * paho-mqtt3a (and libcjson) for MQTT output support (https://github.com/eclipse/paho.mqtt.c)
 
 ### Building
 
