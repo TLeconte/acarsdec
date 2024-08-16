@@ -266,36 +266,33 @@ It depends on some optional external libraries :
  * libacars for decoding ATS applications (https://github.com/szpajder/libacars)
  * libcjson for JSON output support (https://github.com/DaveGamble/cJSON)
 
-> :warning: Raspberry Pi users : read Troubleshooting first
-
 ### Building
 
 ```
 mkdir build
 cd build
-cmake ..
+cmake .. -DCMAKE_C_FLAGS="-march=native"
 make
 sudo make install
 ```
+
+This will produce an `acarsdec` executable that is optimized for the machine it was built on
+(by specifiying `-DCMAKE_C_FLAGS="-march=native"`). 
 
 Notes : 
  * Airspy version will set the R820T tuner bandwidth to suit given frequencies. See : (https://tleconte.github.io/R820T/r820IF.html)
  * All optional libraries will be autodected at build time, a summary of what is enabled will be printed by cmake.
  
-## Troubleshooting
-It seems that the default compile options `-march=native` is problematic on Raspberry Pi.
+#### Raspberry Pi builds
 
-In CMakeLists.txt change the line :
+It seems that the compile option `-march=native` may be problematic on Raspberry Pi.
 
-`add_compile_options(-Ofast -march=native)`
+In that case, one can use the following cmake parameter instead in the above procedure:
 
-to :
+ * for PI 2B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a7 -mfpu=neon-vfpv4"`
+ * for PI 3B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a53 -mfpu=neon-fp-armv8"`
+ * for PI 4B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a72 -mfpu=neon-fp-armv8")"`
 
- * for PI 2B : `add_compile_options(-Ofast -mcpu=cortex-a7 -mfpu=neon-vfpv4)`
- * for PI 3B : `add_compile_options(-Ofast -mcpu=cortex-a53 -mfpu=neon-fp-armv8)`
- * for PI 4B : `add_compile_options(-Ofast -mcpu=cortex-a72 -mfpu=neon-fp-armv8)`
-
-then rebuild (remove anyting in build directory then follow Compilation procedure)
 
 ## License
 
