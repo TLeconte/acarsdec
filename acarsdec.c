@@ -63,6 +63,63 @@ runtime_t R = {
 	.GRdB = 20,
 };
 
+static void print_available_ins(void)
+{
+	int i, end;
+
+	const char *const inopts[] = {
+#ifdef WITH_ALSA
+		"[-a alsapcmdevice]",
+#endif
+#ifdef WITH_SNDFILE
+		"[-f inputwavfile]",
+#endif
+	};
+
+	const char *const sdropts[] = {
+#ifdef WITH_RTL
+		"[rtlopts]",
+#endif
+#ifdef WITH_AIR
+		"[airspyopts]",
+#endif
+#ifdef WITH_SDRPLAY
+		"[sdrplayopts]",
+#endif
+#ifdef WITH_SOAPY
+		"[soapyopts]",
+#endif
+	};
+
+	// non-sdr inputs first
+	end = ARRAY_SIZE(inopts);
+
+	if (end) {
+		fprintf(stderr, " ");
+		for (i = 0; i < end; i++) {
+			fprintf(stderr, "%s", inopts[i]);
+			if (i < end-1)
+				fprintf(stderr, " | ");
+		}
+	}
+
+	// then sdrs
+	end = ARRAY_SIZE(sdropts);
+
+	if (end) {
+		if (ARRAY_SIZE(inopts))
+			fprintf(stderr, " |");
+		fprintf(stderr, " [ ");
+		for (i = 0; i < end; i++) {
+			fprintf(stderr, "%s", sdropts[i]);
+			if (i < end-1)
+				fprintf(stderr, " | ");
+		}
+		fprintf(stderr, " f1 [f2] .. [fN] ]\n\n");
+		fprintf(stderr, " f1 [f2] .. [fN] are given in decimal MHz, e.g. 131.525");
+	}
+}
+
 static void usage(void)
 {
 	fprintf(stderr,
@@ -72,80 +129,60 @@ static void usage(void)
 #endif
 	fprintf(stderr, "\nUsage: acarsdec  [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id] --output FORMAT:DESTINATION:PARAMS [--output ...]");
 #ifdef HAVE_LIBACARS
-	fprintf(stderr, " [--skip-reassembly] ");
+	fprintf(stderr, " [--skip-reassembly]");
 #endif
-#ifdef WITH_ALSA
-	fprintf(stderr, " [-a alsapcmdevice] |");
-#endif
-#ifdef WITH_SNDFILE
-	fprintf(stderr, " [-f inputwavfile] |");
-#endif
-#ifdef WITH_RTL
-	fprintf(stderr, " [rtlopts] |");
-#endif
-#ifdef WITH_AIR
-	fprintf(stderr, " [airspyopts] |");
-#endif
-#ifdef WITH_SDRPLAY
-	fprintf(stderr, " [sdrplayopts] |");
-#endif
-#ifdef WITH_SOAPY
-	fprintf(stderr, " [soapyopts]");
-#endif
-	fprintf(stderr, " f1 [f2] .. [fN]\n\n");
-#ifdef HAVE_LIBACARS
-	fprintf(stderr, " --skip-reassembly\t: disable reassembling fragmented ACARS messages\n");
-#endif
+	print_available_ins();
 	fprintf(stderr,
+		"\n\n"
 		" -i stationid\t\t: station id used in acarsdec network format.\n"
 		" -A\t\t\t: don't output uplink messages (ie : only aircraft messages)\n"
 		" -e\t\t\t: don't output empty messages (ie : _d,Q0, etc ...)\n"
 		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n"
 		" -t time\t\t: set forget time (TTL) in seconds for flight routes (affects monitor and routejson, default=600s)\n"
-		"\n"
-		" Use \"--output help\" for available output options\n"
-		" f1 [f2] .. [fN] are given in decimal MHz, e.g. 131.525\n"
-		"\n");
+#ifdef HAVE_LIBACARS
+		" --skip-reassembly\t: disable reassembling fragmented ACARS messages\n"
+#endif
+		"\n Use \"--output help\" for available output options\n");
 
 #ifdef WITH_ALSA
-	fprintf(stderr, " -a alsapcmdevice\t: decode from soundcard input alsapcmdevice (ie: hw:0,0)\n");
+	fprintf(stderr, "\n -a alsapcmdevice\t: decode from soundcard input alsapcmdevice (ie: hw:0,0)\n");
 #endif
 #ifdef WITH_SNDFILE
-	fprintf(stderr, " -f inputwavfile\t: decode from a wav file at %uHz sampling rate\n", INTRATE);
+	fprintf(stderr, "\n -f inputwavfile\t: decode from a wav file at %uHz sampling rate\n", INTRATE);
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
 		"\n rtlopts:\n"
 		" -r rtldevice\t\t: decode from rtl dongle number or S/N rtldevice\n"
 		" -g gain\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n"
-		" -p ppm\t\t\t: set rtl ppm frequency correction\n"
+		" -p ppm\t\t\t: set rtl ppm frequency correction (default: 0)\n"
 		" -m rateMult\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
 		" -B bias\t\t: Enable (1) or Disable (0) the bias tee (default is 0)\n"
-		" -c freq\t\t: set center frequency to tune to in MHz, e.g. 131.800\n");
+		" -c freq\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
 		"\n airspyopts:\n"
 		" -s airspydevice\t: decode from airspy dongle number or hex serial number\n"
-		" -g linearity_gain\t: set linearity gain [0-21] default : 18\n");
+		" -g linearity_gain\t: set linearity gain [0-21] (default: 18)\n");
 #endif
 #ifdef WITH_SDRPLAY
 	fprintf(stderr,
 		"\n sdrplayopts:\n"
 		" -s\t\t: decode from sdrplay\n"
 		" -L lnaState\t: set the lnaState (depends on the device)\n"
-		" -G GRdB\t\t: gain reduction in dB's, range 20 .. 59 (-100 is autogain)\n"
-		" -c freq\t\t: set center frequency to tune to in MHz, e.g. 131.800\n");
+		" -G GRdB\t\t: gain reduction in dB's, range 20 .. 59 (default: -100 is autogain)\n"
+		" -c freq\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n");
 #endif
 #ifdef WITH_SOAPY
 	fprintf(stderr,
 		"\n soapyopts:\n"
 		" -d devicestring\t: decode from a SoapySDR device located by devicestring\n"
 		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n"
-		" -p ppm\t\t\t: set ppm frequency correction\n"
-		" -c freq\t\t: set center frequency to tune to in MHz\n"
+		" -p ppm\t\t\t: set ppm frequency correction (default: 0)\n"
+		" -c freq\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n"
 		" -m rateMult\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
-		" --antenna antenna\t: set antenna port to use\n");
+		" --antenna antenna\t: set antenna port to use (default: soapy default)\n");
 #endif
 	exit(1);
 }
