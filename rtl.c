@@ -37,7 +37,6 @@
 #define RTLMULTMAX 320U // this is well beyond the rtl-sdr capabilities
 
 static rtlsdr_dev_t *dev = NULL;
-static unsigned int rtlInBufSize = 0;
 
 /* function verbose_device_search by Kyle Keen
  * from http://cgit.osmocom.org/rtl-sdr/tree/src/convenience/convenience.c
@@ -160,8 +159,6 @@ int initRtl(char *optarg)
 		return 1;
 	}
 
-	rtlInBufSize = DMBUFSZ * R.rateMult * 2;
-
 	r = rtlsdr_open(&dev, dev_index);
 	if (r < 0) {
 		fprintf(stderr, "Failed to open rtlsdr device\n");
@@ -282,6 +279,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 
 int runRtlSample(void)
 {
+	unsigned int rtlInBufSize = DMBUFSZ * R.rateMult * 2;
 	rtlsdr_read_async(dev, in_callback, NULL, 4, rtlInBufSize);
 	return 0;
 }
