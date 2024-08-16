@@ -1,33 +1,33 @@
 # ACARSDEC
 
-Acarsdec is a multi-channels acars decoder with built-in rtl_sdr, airspy front end or sdrplay device.
-Since 3.0, it can work with a database backend : acarsserv to store received acars messages. (See acarsserv chapter below).
+Acarsdec is a multi-channels acars decoder with built-in rtl_sdr, soapysdr, airspy or sdrplay device support.
+Since 3.0, it can work with a database backend: [acarsserv](https://github.com/TLeconte/acarsserv) to store received acars messages.
 
 ## Features
 
  * Arbitrary number of channels decoded simultaneously (limited by bandwidth and CPU power)
  * error detection AND correction
- * input via WAV sound file or [rtl_sdr](https://sdr.osmocom.org/trac/wiki/rtl-sdr),
-   or [airspy](https://airspy.com/) or [sdrplay](https://www.sdrplay.com) software defined radios (SDR)
- * multiple simultaneous outputs via file or UDP
+ * input via WAV sound file, ALSA soundcard, or [rtl_sdr](https://sdr.osmocom.org/trac/wiki/rtl-sdr),
+   [SoapySDR](https://github.com/pothosware/SoapySDR/wiki), [airspy](https://airspy.com/)
+   or [sdrplay](https://www.sdrplay.com) software defined radios (SDR)
+ * multiple simultaneous outputs via file, UDP or MQTT
  * multiple output formats: one line, full text, planeplotter, acarsserv, JSON and live monitoring
  * decoding of ARINC-622 ATS applications (ADS-C, CPDLC) via [libacars](https://github.com/szpajder/libacars) library
  * statistics reporting via StatsD-compliant interface
 
-Multi-channel decoding is particularly useful with broadband devices such
-as the RTLSDR dongle, the AIRspy and the SDRplay device.
-It allows the user to directly monitor different frequencies simultaneously with very low cost hardware.
+Multi-channel decoding is particularly useful with SDR devices,
+it enables simultaneous monitoring of different frequencies with low cost hardware.
 
 ## Usage
 
 ### Common options:
 
 ```
- [-i stationid]	station id used in acarsdec network format (defaults to hostname)
- [-A]		don't output uplink messages (ie : only aircraft messages)
- [-e]		don't output empty messages (ie : _d,Q0, etc ...)
- [-b filter]	filter output by label (ex: -b "H1:Q0" : only output messages  with label H1 or Q0)
- [-t time]	set forget time (TTL) in seconds for monitor mode (default=600s)
+ -i <stationid>	station id used in statsd reports and network destinations (defaults to hostname)
+ -A		don't output uplink messages (ie : only aircraft messages)
+ -e		don't output empty messages (ie : _d,Q0, etc ...)
+ -b <filter>	filter output by label (ex: -b "H1:Q0" : only output messages  with label H1 or Q0)
+ -t <seconds>	set forget time (TTL) in seconds for monitor mode (default=600s)
 
  [--statsd host=myhost,port=1234]
  --output FORMAT:DESTINATION:DESTPARAMS (see below for supported output formats and destinations. DESTPARAMS are coma-separated: ',')
@@ -78,63 +78,63 @@ DESTPARAMS are:
 - `uri=` (required) followed by a valid MQTT URI (e.g. `tcp://host:port`). Can be repeated up to 15 times.
 - `user=` (optional) followed by a username
 - `passwd=` (optional) followed by a password
-- `topic=` (optional) followed by a topic (defaults to `acarsdec/stationid`) 
+- `topic=` (optional) followed by a topic (defaults to `acarsdec/<stationid>`) 
 
 ### Input sources
 
 #### RTL-SDR
 
 ```
- -r rtldevice	decode from rtl dongle number or S/N rtldevice
- -g gain	set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)
- -p ppm		set rtl ppm frequency correction
- -m rateMult	set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)
- -B bias	Enable (1) or Disable (0) the bias tee (default is 0)
- -c freq	set center frequency to tune to in MHz
+ --rtlsdr <device>	decode from rtl dongle number <device> or S/N <device>
+ -g <gain>		set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)
+ -p <ppm>		set rtl ppm frequency correction (default: 0)
+ -m <rateMult>		set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)
+ -B <bias>		enable (1) or disable (0) the bias tee (default is 0)
+ -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
 ```
 
 
 #### Airspy R2 / Mini
 
 ```
- -s airspydevice	decode from airspy dongle number or hex serial number
- -g linearity_gain	set linearity gain [0-21] default : 18
+ --airspy <device>	decode from airspy dongle number <device> or hex serial <device>
+ -g <linearity_gain>	set linearity gain [0-21] (default: 18)
 ```
 
 #### SDRplay
 
 ```
- -S 			decode from sdrplay
- -L lnaState		set the lnaState (depends on the device)
- -G GRdB		gain reduction in dB's, range 20 .. 59 (-100 is autogain)
- -c freq		set center frequency to tune to in MHz
+ --sdrplay 		decode from sdrplay
+ -L <lnaState>		set the lnaState (depends on the device)
+ -G <GRdB		gain reduction in dB's, range 20 .. 59 (default: -100 is autogain)
+ -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
 
 ```
 
 #### SoapySDR
 
 ```
- -d devicestring	decode from a SoapySDR device located by devicestring
- -g gain		set gain in db (-10 will result in AGC; default is AGC)
- -p ppm			set ppm frequency correction
- -c freq		set center frequency to tune to in MHz
- -m rateMult		set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)
- --antenna antenna	set antenna port to use
+ --soapysdr <params>	decode from a SoapySDR designed by device_string <params>\n"
+ -g <gain>		set gain in db (-10 will result in AGC; default is AGC)\n"
+ -p <ppm>		set ppm frequency correction (default: 0)\n"
+ -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n"
+ -m <rateMult>		set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
+ -a <antenna>		set antenna port to use (default: soapy default)\n");
 ```
 
-The SDR sources above expect a list of frequencies `f1 [f2 ... fN]` to decode from expressed in decimal MHz,
+The SDR sources above expect a list of frequencies `<f1> [<f2> [...]]` to decode from expressed in decimal MHz,
 e.g. `131.525 131.725 131.825`.
 
 #### WAV sound file
 
 ```
- -f file.wav		decode from file.wav. Must be sampled at 12.5kHz
+ --sndfile <file.wav>	decode from <file.wav>. Must be sampled at 12.5kHz
 ```
 
 #### ALSA device
 
 ```
- -a alsadevice		decode from ALSA PCM device alsadevice
+ --alsa <alsadevice>	decode from ALSA PCM device <alsadevice>
 ```
 
 ## Examples
@@ -142,23 +142,26 @@ e.g. `131.525 131.725 131.825`.
 Decoding from rtl dongle number 0 on 3 frequencies, sending aircraft messages in native format to 192.168.1.1 on port 5555
 and no other loging :
 
-`acarsdec -A --output native:udp:host=192.168.1.1,port=5555 -r 0 131.525 131.725 131.825`
+`acarsdec -A --output native:udp:host=192.168.1.1,port=5555 --rtlsdr 0 131.525 131.725 131.825`
 
 Monitoring from rtl dongle with serial number `ACARS2` on 1 frequency with gain 34.0 :
 
-`acarsdec --output monitor:file -g 34 -r ACARS2 130.450`
+`acarsdec --output monitor:file -g 34 --rtlsdr ACARS2 130.450`
 
 Logging to file "airspy.log" rotated daily, from airspy mini with serial number `0xa74068c82f531693` on 11 frequencies with gain 18 :
 
-`acarsdec --output full:file:path=airspy.log,rotate=daily -g 18 -s 0xa74068c82f531693 129.350 130.025 130.425 130.450 130.650 131.125 131.475 131.550 131.600 131.725 131.850`
+`acarsdec --output full:file:path=airspy.log,rotate=daily -g 18 --airspy 0xa74068c82f531693 129.350 130.025 130.425 130.450 130.650 131.125 131.475 131.550 131.600 131.725 131.850`
 
 Decoding with JSON output to stdout, an sdrplay device using Soapy driver, and specifying Antenna C :
 
-`acarsdec --output json:file:path=- -d driver=sdrplay,agc_setpoint=-15 --antenna "Antenna C" 130.025 130.450 130.825 131.125 131.550 131.650 131.725`
+`acarsdec --output json:file:path=- --soapysdr driver=sdrplay,agc_setpoint=-15 -a "Antenna C" 130.025 130.450 130.825 131.125 131.550 131.650 131.725`
 
-Decoding 7 channels from rtl dongle with serial '86000034', filtering empty messages, setting ppm correction to 36, gain to 48 dB, full text to stdout, sending JSON to feed.acars.io:5550 with station ID "MY-STATION-ID":
+Decoding 7 channels from rtl dongle with serial '86000034', filtering empty messages,
+setting ppm correction to 36, gain to 48 dB, full text to stdout,
+sending JSON to feed.acars.io:5550 with station ID "MY-STATION-ID",
+sending statsd data to host "statsd.lan" port "8125":
 
-`acarsdec -e -i MY-STATION-ID --output full:file --output json:udp:host=feed.acars.io,port=5550 -p 36 -g 48 -r 86000034 131.550 130.825 130.850 131.525 131.725 131.825 131.850`
+`acarsdec -e -i MY-STATION-ID --output full:file --output json:udp:host=feed.acars.io,port=5550 -p 36 --rtlsdr 86000034 -g 48 131.550 130.825 130.850 131.525 131.725 131.825 131.850 --statsd host=statsd.lan,port=8125`
 
 ### Output formats examples
 
@@ -310,11 +313,3 @@ Copyright: (C) 2015-2022 Thierry Leconte 2015-2022, (C) 2024 Thibaut VARENE
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-
-# Acarsserv
-
-acarsserv is a companion program for acarsdec.
-It listens to acars messages on UDP coming from one or more acarsdec processes and stores them in a sqlite database.
-
-See : [acarsserv](https://github.com/TLeconte/acarsserv)

@@ -70,10 +70,10 @@ static void print_available_ins(void)
 
 	const char *const inopts[] = {
 #ifdef WITH_ALSA
-		"[-a alsapcmdevice]",
+		"[--alsa <dev>]",
 #endif
 #ifdef WITH_SNDFILE
-		"[-f inputwavfile]",
+		"[--sndfile <file.wav>]",
 #endif
 	};
 
@@ -116,8 +116,8 @@ static void print_available_ins(void)
 			if (i < end-1)
 				fprintf(stderr, " | ");
 		}
-		fprintf(stderr, " f1 [f2] .. [fN] ]\n\n");
-		fprintf(stderr, " f1 [f2] .. [fN] are given in decimal MHz, e.g. 131.525");
+		fprintf(stderr, " <f1> [<f2> [...]] ]\n\n");
+		fprintf(stderr, " <f1> [<f2> [...]] are given in decimal MHz, e.g. 131.525");
 	}
 }
 
@@ -128,63 +128,64 @@ static void usage(void)
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, "(libacars %s)\n", LA_VERSION);
 #endif
-	fprintf(stderr, "\nUsage: acarsdec  [-t time] [-A] [-b 'labels,..'] [-e] [-i station_id] [--statsd host=ip,port=1234] --output FORMAT:DESTINATION:PARAMS [--output ...]");
+	fprintf(stderr, "\nUsage: acarsdec  [-t secs] [-A] [-b 'labels,..'] [-e] [-i station_id] [--statsd host=ip,port=1234] --output FORMAT:DESTINATION:PARAMS [--output ...]");
 #ifdef HAVE_LIBACARS
 	fprintf(stderr, " [--skip-reassembly]");
 #endif
 	print_available_ins();
 	fprintf(stderr,
 		"\n\n"
-		" -i stationid\t\t: station id used in acarsdec network format.\n"
+		" -i <stationid>\t\t: station id used in acarsdec network format (default: hostname)\n"
 		" -A\t\t\t: don't output uplink messages (ie : only aircraft messages)\n"
 		" -e\t\t\t: don't output empty messages (ie : _d,Q0, etc ...)\n"
-		" -b filter\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n"
-		" -t time\t\t: set forget time (TTL) in seconds for flight routes (affects monitor and routejson, default=600s)\n"
+		" -b <filter>\t\t: filter output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n"
+		" -t <seconds>\t\t: set forget time (TTL) to <seconds> for flight routes (affects monitor and routejson, default: 600)\n"
 #ifdef HAVE_LIBACARS
 		" --skip-reassembly\t: disable reassembling fragmented ACARS messages\n"
 #endif
-		" --statsd host=myhost,port=1234\t: enable statsd reporting to host 'myhost' on port '1234'\n"
-		"\n Use \"--output help\" for available output options\n");
+		" --statsd host=<myhost>,port=<1234>\t: enable statsd reporting to host <myhost> on port <1234>\n"
+		"\n Use \"--output help\" for available output options\n"
+		"\n Available inputs:\n");
 
 #ifdef WITH_ALSA
-	fprintf(stderr, "\n -a alsapcmdevice\t: decode from soundcard input alsapcmdevice (ie: hw:0,0)\n");
+	fprintf(stderr, "\n --alsa <alsadevice>\t: decode from soundcard input <alsadevice> (ie: hw:0,0)\n");
 #endif
 #ifdef WITH_SNDFILE
-	fprintf(stderr, "\n -f inputwavfile\t: decode from a wav file at %uHz sampling rate\n", INTRATE);
+	fprintf(stderr, "\n --sndfile <file.wav>\t: decode from <file.wav> at %uHz sampling rate\n", INTRATE);
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
 		"\n rtlopts:\n"
-		" -r rtldevice\t\t: decode from rtl dongle number or S/N rtldevice\n"
-		" -g gain\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n"
-		" -p ppm\t\t\t: set rtl ppm frequency correction (default: 0)\n"
-		" -m rateMult\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
-		" -B bias\t\t: Enable (1) or Disable (0) the bias tee (default is 0)\n"
-		" -c freq\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n");
+		" --rtlsdr <device>\t: decode from rtl dongle number <device> or S/N <device>\n"
+		" -g <gain>\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n"
+		" -p <ppm>\t\t: set rtl ppm frequency correction (default: 0)\n"
+		" -m <rateMult>\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
+		" -B <bias>\t\t: enable (1) or disable (0) the bias tee (default is 0)\n"
+		" -c <freq>\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
 		"\n airspyopts:\n"
-		" -s airspydevice\t: decode from airspy dongle number or hex serial number\n"
-		" -g linearity_gain\t: set linearity gain [0-21] (default: 18)\n");
+		" --airspy <device>\t: decode from airspy dongle number <device> or hex serial <device>\n"
+		" -g <linearity_gain>\t: set linearity gain [0-21] (default: 18)\n");
 #endif
 #ifdef WITH_SDRPLAY
 	fprintf(stderr,
 		"\n sdrplayopts:\n"
-		" -s\t\t: decode from sdrplay\n"
-		" -L lnaState\t: set the lnaState (depends on the device)\n"
-		" -G GRdB\t\t: gain reduction in dB's, range 20 .. 59 (default: -100 is autogain)\n"
-		" -c freq\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n");
+		" --sdrplay\t\t: decode from sdrplay\n"
+		" -L <lnaState>\t: set the lnaState (depends on the device)\n"
+		" -G <GRdB>\t\t: gain reduction in dB's, range 20 .. 59 (default: -100 is autogain)\n"
+		" -c <freq>\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n");
 #endif
 #ifdef WITH_SOAPY
 	fprintf(stderr,
 		"\n soapyopts:\n"
-		" -d devicestring\t: decode from a SoapySDR device located by devicestring\n"
-		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n"
-		" -p ppm\t\t\t: set ppm frequency correction (default: 0)\n"
-		" -c freq\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n"
-		" -m rateMult\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
-		" --antenna antenna\t: set antenna port to use (default: soapy default)\n");
+		" --soapysdr <params>\t: decode from a SoapySDR designed by device_string <params>\n"
+		" -g <gain>\t\t: set gain in db (-10 will result in AGC; default is AGC)\n"
+		" -p <ppm>\t\t: set ppm frequency correction (default: 0)\n"
+		" -c <freq>\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n"
+		" -m <rateMult>\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
+		" -a <antenna>\t\t: set antenna port to use (default: soapy default)\n");
 #endif
 	exit(1);
 }
@@ -269,11 +270,28 @@ int main(int argc, char **argv)
 	unsigned int n;
 	struct sigaction sigact;
 	struct option long_opts[] = {
+#ifdef WITH_ALSA
+		{ "alsa", required_argument, NULL, IN_ALSA },
+#endif
+#ifdef WITH_SNDFILE
+		{ "sndfile", required_argument, NULL, IN_SNDFILE },
+#endif
+#ifdef WITH_RTL
+		{ "rtlsdr", required_argument, NULL, IN_RTL },
+#endif
+#ifdef WITH_AIR
+		{ "airspy", required_argument, NULL, IN_AIR },
+#endif
+#ifdef WITH_SDRPLAY
+		{ "sdrplay", no_argument, NULL, IN_SDRPLAY },
+#endif
+#ifdef WITH_SOAPY
+		{ "soapysdr", required_argument, NULL, IN_SOAPY },
+#endif
 		{ "verbose", no_argument, NULL, 'v' },
-		{ "skip-reassembly", no_argument, NULL, 1 },
-		{ "antenna", required_argument, NULL, 2 },
-		{ "output", required_argument, NULL, 3 },
-		{ "statsd", required_argument, NULL, 4 },
+		{ "skip-reassembly", no_argument, NULL, -1 },
+		{ "output", required_argument, NULL, -2 },
+		{ "statsd", required_argument, NULL, -3 },
 		{ NULL, 0, NULL, 0 }
 	};
 	char sys_hostname[HOST_NAME_MAX + 1];
@@ -285,14 +303,19 @@ int main(int argc, char **argv)
 	R.idstation = strdup(sys_hostname);
 
 	res = 0;
-	while ((c = getopt_long(argc, argv, "hva:r:f:d:s:St:g:m:Aep:c:i:L:G:b:B:", long_opts, NULL)) != EOF) {
+	while ((c = getopt_long(argc, argv, "hvt:g:m:a:Aep:c:i:L:G:b:B:", long_opts, NULL)) != EOF) {
 		switch (c) {
-		case 3:
+#ifdef HAVE_LIBACARS
+		case -1:
+			R.skip_reassembly = 1;
+			break;
+#endif
+		case -2:
 			res = setup_output(optarg);
 			if (res)
 				exit(res);
 			break;
-		case 4:
+		case -3:
 			statsdarg = optarg;
 			break;
 		case 'v':
@@ -304,13 +327,8 @@ int main(int argc, char **argv)
 		case 'b':
 			lblf = optarg;
 			break;
-#ifdef HAVE_LIBACARS
-		case 1:
-			R.skip_reassembly = 1;
-			break;
-#endif
 #ifdef WITH_ALSA
-		case 'a':
+		case IN_ALSA:
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_ALSA;
@@ -318,7 +336,7 @@ int main(int argc, char **argv)
 			break;
 #endif
 #ifdef WITH_SNDFILE
-		case 'f':
+		case IN_SNDFILE:
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_SNDFILE;
@@ -335,7 +353,7 @@ int main(int argc, char **argv)
 			R.rateMult = (unsigned)atoi(optarg);
 			break;
 #ifdef WITH_RTL
-		case 'r':
+		case IN_RTL:
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_RTL;
@@ -346,7 +364,7 @@ int main(int argc, char **argv)
 			break;
 #endif
 #ifdef WITH_SDRPLAY
-		case 'S':
+		case IN_SDRPLAY:
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_SDRPLAY;
@@ -359,18 +377,18 @@ int main(int argc, char **argv)
 			break;
 #endif
 #ifdef WITH_SOAPY
-		case 2:
-			R.antenna = optarg;
-			break;
-		case 'd':
+		case IN_SOAPY:
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_SOAPY;
 			inarg = optarg;
 			break;
+		case 'a':
+			R.antenna = optarg;
+			break;
 #endif
 #ifdef WITH_AIR
-		case 's':
+		case IN_AIR:
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_AIR;
