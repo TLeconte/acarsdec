@@ -25,6 +25,8 @@
 
 #define MAXNBFRAMES 4096
 
+#define ERRPFX	"ERROR: ALSA: "
+
 static snd_pcm_t *capture_handle;
 int initAlsa(char *optarg)
 {
@@ -34,34 +36,34 @@ int initAlsa(char *optarg)
 
 	if ((err = snd_pcm_open(&capture_handle, optarg,
 				SND_PCM_STREAM_CAPTURE, 0)) < 0) {
-		fprintf(stderr, "Alsa cannot open audio device %s (%s)\n",
+		fprintf(stderr, ERRPFX "cannot open audio device %s (%s)\n",
 			optarg, snd_strerror(err));
 		return 1;
 	}
 
 	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
 		fprintf(stderr,
-			"Alsa cannot allocate hardware parameter structure (%s)\n",
+			ERRPFX "cannot allocate hardware parameter structure (%s)\n",
 			snd_strerror(err));
 		return 1;
 	}
 
 	if ((err = snd_pcm_hw_params_any(capture_handle, hw_params)) < 0) {
 		fprintf(stderr,
-			"Alsa cannot initialize hardware parameter structure (%s)\n",
+			ERRPFX "cannot initialize hardware parameter structure (%s)\n",
 			snd_strerror(err));
 		return 1;
 	}
 
 	if ((err = snd_pcm_hw_params_set_access(capture_handle, hw_params,
 						SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
-		fprintf(stderr, "Alsa cannot set access type (%s)\n",
+		fprintf(stderr, ERRPFX "cannot set access type (%s)\n",
 			snd_strerror(err));
 		return 1;
 	}
 
 	if ((err = snd_pcm_hw_params_set_format(capture_handle, hw_params, SND_PCM_FORMAT_FLOAT)) < 0) {
-		fprintf(stderr, "Alsa cannot set sample format (%s)\n",
+		fprintf(stderr, ERRPFX "cannot set sample format (%s)\n",
 			snd_strerror(err));
 		return 1;
 	}
@@ -70,20 +72,20 @@ int initAlsa(char *optarg)
 	Fs = INTRATE;
 	n = 1;
 	if ((err = snd_pcm_hw_params_set_rate_near(capture_handle, hw_params, &Fs, &n)) < 0) {
-		fprintf(stderr, "Alsa cannot set sample rate (%s)\n",
+		fprintf(stderr, ERRPFX "cannot set sample rate (%s)\n",
 			snd_strerror(err));
 		return 1;
 	}
 	if (snd_pcm_hw_params_get_channels(hw_params, &R.nbch) != 0) {
-		fprintf(stderr, "Alsa cannot get number of channels\n");
+		fprintf(stderr, ERRPFX "cannot get number of channels\n");
 		return 1;
 	}
 	if (R.nbch > 1) {
-		fprintf(stderr, "Alsa too much channels : %d\n", R.nbch);
+		fprintf(stderr, ERRPFX "too many channels : %d\n", R.nbch);
 		return 1;
 	}
 	if ((err = snd_pcm_hw_params(capture_handle, hw_params)) < 0) {
-		fprintf(stderr, "Alsa cannot set parameters (%s)\n",
+		fprintf(stderr, ERRPFX "cannot set parameters (%s)\n",
 			snd_strerror(err));
 		return 1;
 	}
@@ -91,7 +93,7 @@ int initAlsa(char *optarg)
 
 	if ((err = snd_pcm_prepare(capture_handle)) < 0) {
 		fprintf(stderr,
-			"Alsa cannot prepare audio interface for use (%s)\n",
+			ERRPFX "cannot prepare audio interface for use (%s)\n",
 			snd_strerror(err));
 		return 1;
 	}
@@ -110,7 +112,7 @@ int runAlsaSample(void)
 		r = snd_pcm_readi(capture_handle, R.channels[0].dm_buffer, MAXNBFRAMES);
 		if (r <= 0) {
 			fprintf(stderr,
-				"Alsa cannot read from interface (%s)\n",
+				ERRPFX "cannot read from interface (%s)\n",
 				snd_strerror(r));
 			return -1;
 		}

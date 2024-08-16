@@ -25,6 +25,9 @@
 #include "msk.h"
 
 #define MAXNBFRAMES 4096
+
+#define ERRPFX	"ERROR: SNDFILE: "
+
 static SNDFILE *insnd;
 
 int initSoundfile(char *optarg)
@@ -35,7 +38,7 @@ int initSoundfile(char *optarg)
 	infsnd.format = 0;
 	insnd = sf_open(optarg, SFM_READ, &infsnd);
 	if (insnd == NULL) {
-		fprintf(stderr, "could not open %s\n", optarg);
+		fprintf(stderr, ERRPFX "could not open '%s'\n", optarg);
 		return (1);
 	}
 
@@ -47,7 +50,7 @@ int initSoundfile(char *optarg)
 	R.nbch = infsnd.channels;
 
 	if (infsnd.samplerate != INTRATE) {
-		fprintf(stderr, "unsupported sample rate : %d (must be %d)\n", infsnd.samplerate, INTRATE);
+		fprintf(stderr, ERRPFX "unsupported sample rate : %d (must be %d)\n", infsnd.samplerate, INTRATE);
 		return (1);
 	}
 

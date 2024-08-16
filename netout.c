@@ -32,6 +32,9 @@
 #include "acarsdec.h"
 #include "netout.h"
 
+#define ERRPFX	"ERROR: UDP: "
+#define WARNPFX	"WARNING: UDP: "
+
 // params is "host=xxx,port=yyy"
 netout_t *Netoutinit(char *params)
 {
@@ -62,10 +65,10 @@ netout_t *Netoutinit(char *params)
 		port = "5555";
 
 	if (R.verbose)
-		fprintf(stderr, "Attempting to resolve '%s:%s'.\n", addr, port);
+		fprintf(stderr, "UDP: Attempting to resolve '%s:%s'.\n", addr, port);
 
 	if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
-		fprintf(stderr, "Invalid/unknown error '%s' resolving '%s:%s', retrying later.\n", gai_strerror(rv), addr, port);
+		fprintf(stderr, ERRPFX "Invalid/unknown error '%s' resolving '%s:%s'\n", gai_strerror(rv), addr, port);
 		return NULL;
 	}
 
@@ -76,7 +79,7 @@ netout_t *Netoutinit(char *params)
 	}
 
 	if (!p) {
-		fprintf(stderr, "failed to resolve: '%s:%s'\n", addr, port);
+		fprintf(stderr, ERRPFX "failed to resolve: '%s:%s'\n", addr, port);
 		goto fail;
 	}
 
@@ -104,7 +107,7 @@ void Netwrite(const void *buf, size_t count, netout_t *net)
 
 	res = sendto(net->sockfd, buf, count, 0, (struct sockaddr *)&net->netOutputAddr, net->netOutputAddrLen);
 	if (R.verbose && res < 0)
-		fprintf(stderr, "error on sendto(): %s, ignoring.\n", strerror(errno));
+		fprintf(stderr, WARNPFX "error on sendto(): %s, ignoring.\n", strerror(errno));
 }
 
 void Netexit(netout_t *net)

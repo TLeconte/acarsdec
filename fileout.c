@@ -33,6 +33,8 @@
 #include "acarsdec.h"
 #include "fileout.h"
 
+#define ERRPFX	"ERROR: FILE: "
+
 static FILE *open_outfile(fileout_t *fout)
 {
 	char *filename = NULL;
@@ -50,13 +52,13 @@ static FILE *open_outfile(fileout_t *fout)
 			fmt = "_%Y%m%d";
 
 		tlen = strftime(suffix, sizeof(suffix), fmt, &fout->current_tm);
-		if (tlen == 0) {
-			fprintf(stderr, "*open_outfile(): strfime returned 0\n");
+		if (tlen == 0 && R.verbose) {
+			fprintf(stderr, ERRPFX "open_outfile(): strfime returned 0\n");
 			return NULL;
 		}
 		filename = malloc(fout->prefix_len + tlen + 2);
 		if (filename == NULL) {
-			perror("open_outfile()");
+			perror(ERRPFX "open_outfile()");
 			return NULL;
 		}
 		sprintf(filename, "%s%s%s", fout->filename_prefix, suffix, fout->extension ? fout->extension : "");
@@ -65,7 +67,7 @@ static FILE *open_outfile(fileout_t *fout)
 	}
 
 	if ((fout->F = fopen(filename, "a+")) == NULL)
-		fprintf(stderr, "Could not open output file %s: %s\n", filename, strerror(errno));
+		fprintf(stderr, ERRPFX "could not open output file '%s': %s\n", filename, strerror(errno));
 
 	free(filename);
 	return fout->F;
@@ -145,7 +147,7 @@ static FILE *Fileoutrotate(fileout_t *fout)
 void Filewrite(const char *buf, size_t buflen, fileout_t *fout)
 {
 	if ((ROTATE_NONE != fout->rotate) && !Fileoutrotate(fout))
-		errx(1, "failed to rotate output file %s", fout->filename_prefix);
+		errx(1, ERRPFX "failed to rotate output file '%s'", fout->filename_prefix);
 
 	fwrite(buf, buflen, 1, fout->F);
 	fprintf(fout->F, "\n");

@@ -16,6 +16,9 @@
 #include "acarsdec.h"
 #include "lib.h"
 
+#define ERRPFX	"ERROR: SOAPYSDR: "
+#define WARNPFX	"WARNING: SOAPYSDR: "
+
 static SoapySDRDevice *dev = NULL;
 static SoapySDRStream *stream = NULL;
 static int soapyExit = 0;
@@ -26,13 +29,13 @@ int initSoapy(char *optarg)
 	unsigned int Fc;
 
 	if (optarg == NULL) {
-		fprintf(stderr, "Need device string (ex: driver=rtltcp,rtltcp=127.0.0.1) after -d\n");
+		fprintf(stderr, ERRPFX "Need device string (ex: driver=rtltcp,rtltcp=127.0.0.1) after --soapysdr\n");
 		exit(1);
 	}
 
 	dev = SoapySDRDevice_makeStrArgs(optarg);
 	if (dev == NULL) {
-		fprintf(stderr, "ERROR: opening SoapySDR device using string \"%s\": %s\n", optarg, SoapySDRDevice_lastError());
+		fprintf(stderr, ERRPFX "opening SoapySDR device using string \"%s\": %s\n", optarg, SoapySDRDevice_lastError());
 		return -1;
 	}
 
@@ -41,22 +44,22 @@ int initSoapy(char *optarg)
 			fprintf(stderr, "Tuner gain: AGC\n");
 		r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 1);
 		if (r != 0)
-			fprintf(stderr, "WARNING: Failed to turn on AGC: %s\n", SoapySDRDevice_lastError());
+			fprintf(stderr, WARNPFX "Failed to turn on AGC: %s\n", SoapySDRDevice_lastError());
 	} else {
 		r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 0);
 		if (r != 0)
-			fprintf(stderr, "WARNING: Failed to turn off AGC: %s\n", SoapySDRDevice_lastError());
+			fprintf(stderr, WARNPFX "Failed to turn off AGC: %s\n", SoapySDRDevice_lastError());
 		if (R.verbose)
 			fprintf(stderr, "Setting gain to: %f\n", R.gain);
 		r = SoapySDRDevice_setGain(dev, SOAPY_SDR_RX, 0, R.gain);
 		if (r != 0)
-			fprintf(stderr, "WARNING: Failed to set gain: %s\n", SoapySDRDevice_lastError());
+			fprintf(stderr, WARNPFX "Failed to set gain: %s\n", SoapySDRDevice_lastError());
 	}
 
 	if (R.ppm != 0) {
 		r = SoapySDRDevice_setFrequencyCorrection(dev, SOAPY_SDR_RX, 0, R.ppm);
 		if (r != 0)
-			fprintf(stderr, "WARNING: Failed to set freq correction: %s\n", SoapySDRDevice_lastError());
+			fprintf(stderr, WARNPFX "Failed to set freq correction: %s\n", SoapySDRDevice_lastError());
 	}
 
 	Fc = find_centerfreq(R.minFc, R.maxFc, R.rateMult);
@@ -72,7 +75,7 @@ int initSoapy(char *optarg)
 		fprintf(stderr, "Setting center freq. to %uHz\n", Fc);
 	r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, 0, Fc, NULL);
 	if (r != 0) {
-		fprintf(stderr, "ERROR: Failed to set frequency: %s\n", SoapySDRDevice_lastError());
+		fprintf(stderr, ERRPFX "Failed to set frequency: %s\n", SoapySDRDevice_lastError());
 		return r;
 	}
 
@@ -80,13 +83,13 @@ int initSoapy(char *optarg)
 		fprintf(stderr, "Setting sample rate: %.4f MS/s\n", INTRATE * R.rateMult / 1e6);
 	r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, 0, INTRATE * R.rateMult);
 	if (r != 0) {
-		fprintf(stderr, "ERROR: Failed to set sample rate: %s\n", SoapySDRDevice_lastError());
+		fprintf(stderr, ERRPFX "Failed to set sample rate: %s\n", SoapySDRDevice_lastError());
 		return r;
 	}
 
 	if (R.antenna) {
 		if (SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, 0, R.antenna) != 0) {
-			fprintf(stderr, "ERROR: SoapySDRDevice_setAntenna failed (check antenna validity)\n");
+			fprintf(stderr, ERRPFX "SoapySDRDevice_setAntenna failed (check antenna validity)\n");
 			return 1;
 		}
 	}
@@ -105,12 +108,12 @@ int runSoapySample(void)
 
 	stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, SOAPY_SDR_CF32, NULL, 0, NULL);
 	if (!stream) {
-		fprintf(stderr, "WARNING: Failed to setup SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+		fprintf(stderr, ERRPFX "Failed to setup SoapySDR stream: %s\n", SoapySDRDevice_lastError());
 		return 1;
 	}
 
 	if (SoapySDRDevice_activateStream(dev, stream, 0, 0, 0)) {
-		fprintf(stderr, "WARNING: Failed to activate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+		fprintf(stderr, ERRPFX "Failed to activate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
 		return 1;
 	}
 
@@ -124,7 +127,7 @@ int runSoapySample(void)
 		if (res < 0) {
 			if (res == SOAPY_SDR_OVERFLOW)
 				continue;
-			fprintf(stderr, "WARNING: Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
+			fprintf(stderr, ERRPFX "Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
 			return 1;
 		}
 
@@ -142,16 +145,16 @@ int runSoapyClose(void)
 		if (stream) {
 			res = SoapySDRDevice_deactivateStream(dev, stream, 0, 0);
 			if (res != 0)
-				fprintf(stderr, "WARNING: Failed to deactivate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+				fprintf(stderr, WARNPFX "Failed to deactivate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
 
 			res = SoapySDRDevice_closeStream(dev, stream);
 			if (res != 0)
-				fprintf(stderr, "WARNING: Failed to close SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+				fprintf(stderr, WARNPFX "Failed to close SoapySDR stream: %s\n", SoapySDRDevice_lastError());
 			stream = NULL;
 		}
 		res = SoapySDRDevice_unmake(dev);
 		if (res != 0)
-			fprintf(stderr, "WARNING: Failed to close SoapySDR device: %s\n", SoapySDRDevice_lastError());
+			fprintf(stderr, WARNPFX "Failed to close SoapySDR device: %s\n", SoapySDRDevice_lastError());
 		dev = NULL;
 	}
 

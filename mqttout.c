@@ -26,6 +26,9 @@
 #include "acarsdec.h"
 #include "mqttout.h"
 
+#define ERRPFX	"ERROR: MQTT: "
+#define WARNPFX	"WARNING: MQTT: "
+
 // params is "uri=protocol://host:port,uri=protocol://host:port,user=username,passwd=password,topic=mytopic
 mqttout_t *MQTTinit(char *params)
 {
@@ -51,14 +54,14 @@ mqttout_t *MQTTinit(char *params)
 			passwd = sep;
 		else if (!strcmp("uri", param)) {
 			if (url > &urls[14])
-				fprintf(stderr, "too many MQTT urls provided, ignoring '%s'\n", sep);
+				fprintf(stderr, WARNPFX "too many urls provided, ignoring '%s'\n", sep);
 			else
 				*url++ = sep;
 		}
 	}
 
 	if (!urls[0]) {
-		fprintf(stderr, "MQTT: no URI provided\n");
+		fprintf(stderr, ERRPFX "no URI provided\n");
 		return NULL;
 	}
 
@@ -84,7 +87,7 @@ mqttout_t *MQTTinit(char *params)
 		conn_opts.serverURIs = urls;
 
 	if ((rc = MQTTAsync_connect(mqpriv->client, &conn_opts)) != MQTTASYNC_SUCCESS) {
-		fprintf(stderr, "MQTT: failed to connect\n");
+		fprintf(stderr, ERRPFX "failed to connect\n");
 		goto fail;
 	}
 
@@ -109,7 +112,7 @@ fail:
 void MQTTwrite(const void *buf, size_t buflen, mqttout_t *mqtt)
 {
 	if (MQTTAsync_send(mqtt->client, mqtt->msgtopic, buflen, buf, 0, 0, NULL) != MQTTASYNC_SUCCESS)
-		fprintf(stderr, "failed to send MQTT\n");
+		fprintf(stderr, WARNPFX "failed to send, ignoring.\n");
 }
 
 void MQTTexit(mqttout_t *mqtt)

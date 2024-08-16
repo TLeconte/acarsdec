@@ -36,6 +36,9 @@
 
 #define RTLMULTMAX 320U // this is well beyond the rtl-sdr capabilities
 
+#define ERRPFX	"ERROR: RTLSDR: "
+#define WARNPFX	"WARNING: RTLSDR: "
+
 static rtlsdr_dev_t *dev = NULL;
 
 /* function verbose_device_search by Kyle Keen
@@ -49,7 +52,7 @@ int verbose_device_search(char *s)
 
 	device_count = rtlsdr_get_device_count();
 	if (!device_count) {
-		fprintf(stderr, "No supported devices found.\n");
+		fprintf(stderr, ERRPFX "No supported devices found.\n");
 		return -1;
 	}
 	if (R.verbose)
@@ -111,7 +114,7 @@ find_serial:
 			fprintf(stderr, "Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
-	fprintf(stderr, "No matching devices found.\n");
+	fprintf(stderr, ERRPFX "No matching devices found.\n");
 	return -1;
 }
 
@@ -149,19 +152,22 @@ int initRtl(char *optarg)
 	unsigned int Fc;
 
 	if (optarg == NULL) {
-		fprintf(stderr, "Need device name or index (ex: 0) after -r\n");
+		fprintf(stderr, ERRPFX "Need device name or index (ex: 0) after --rtlsdr\n");
 		exit(1);
 	}
+
 	dev_index = verbose_device_search(optarg);
+	if (dev_index < 0)
+		exit(1);
 
 	if (R.rateMult > RTLMULTMAX) {
-		fprintf(stderr, "rateMult can't be larger than %d\n", RTLMULTMAX);
+		fprintf(stderr, ERRPFX "rateMult can't be larger than %d\n", RTLMULTMAX);
 		return 1;
 	}
 
 	r = rtlsdr_open(&dev, dev_index);
 	if (r < 0) {
-		fprintf(stderr, "Failed to open rtlsdr device\n");
+		fprintf(stderr, ERRPFX "Failed to open device\n");
 		return r;
 	}
 
@@ -178,12 +184,12 @@ int initRtl(char *optarg)
 		r = rtlsdr_set_tuner_gain(dev, (int)(R.gain * 10.0F));
 	}
 	if (r < 0)
-		fprintf(stderr, "WARNING: Failed to set gain.\n");
+		fprintf(stderr, WARNPFX "Failed to set gain.\n");
 
 	if (R.ppm != 0) {
 		r = rtlsdr_set_freq_correction(dev, R.ppm);
 		if (r < 0)
-			fprintf(stderr, "WARNING: Failed to set freq. correction\n");
+			fprintf(stderr, WARNPFX "Failed to set freq. correction\n");
 	}
 
 	Fc = find_centerfreq(R.minFc, R.maxFc, R.rateMult);
@@ -195,34 +201,32 @@ int initRtl(char *optarg)
 		return r;
 
 	if (R.verbose)
-		fprintf(stderr, "Set center freq. to %uHz\n", Fc);
-
+		fprintf(stderr, "Setting center freq. to %uHz\n", Fc);
 	r = rtlsdr_set_center_freq(dev, Fc);
 	if (r < 0) {
-		fprintf(stderr, "WARNING: Failed to set center freq.\n");
+		fprintf(stderr, ERRPFX "Failed to set center freq.\n");
 		return 1;
 	}
 
 	fprintf(stderr, "Setting sample rate: %.4f MS/s\n", INTRATE * R.rateMult / 1e6);
 	r = rtlsdr_set_sample_rate(dev, INTRATE * R.rateMult);
 	if (r < 0) {
-		fprintf(stderr, "WARNING: Failed to set sample rate.\n");
+		fprintf(stderr, ERRPFX "Failed to set sample rate.\n");
 		return 1;
 	}
 
 	r = rtlsdr_reset_buffer(dev);
 	if (r < 0) {
-		fprintf(stderr, "WARNING: Failed to reset buffers.\n");
+		fprintf(stderr, ERRPFX "Failed to reset buffers.\n");
 		return 1;
 	}
 
-	r = rtlsdr_set_bias_tee(dev, R.bias);
 	if (R.verbose)
-		fprintf(stderr, "Set Bias Tee to %d\n", R.bias);
-	if (r < 0) {
-		fprintf(stderr, "WARNING: Failed to set bias tee\n");
-		return 1;
-	}
+		fprintf(stderr, "Setting bias tee to %d\n", R.bias);
+	r = rtlsdr_set_bias_tee(dev, R.bias);
+	if (r < 0)
+		fprintf(stderr, WARNPFX "Failed to set bias tee\n");
+
 	return 0;
 }
 
@@ -255,7 +259,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	float complex phasors[mult];
 
 	if (nread % 2) {
-		fprintf(stderr, "ERROR: rtlsdr: incomplete read\n");
+		fprintf(stderr, ERRPFX "incomplete read\n");
 		return;
 	}
 
@@ -301,7 +305,7 @@ int runRtlClose(void)
 		dev = NULL;
 	}
 	if (res)
-		fprintf(stderr, "rtlsdr_close: %d\n", res);
+		fprintf(stderr, WARNPFX "rtlsdr_close: %d\n", res);
 
 	return res;
 }

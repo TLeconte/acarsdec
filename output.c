@@ -219,7 +219,7 @@ int setup_output(char *outarg)
 	argv[2] = outarg;
 
 	if (!argv[0] || '\0' == *argv[0] || !argv[1] || '\0' == *argv[1]) {
-		fprintf(stderr, "Not enough output arguments\n");
+		fprintf(stderr, "ERROR: Not enough output arguments\n");
 		return -1;	// not enough arguments
 	}
 
@@ -244,7 +244,7 @@ int setup_output(char *outarg)
 	}
 
 	if (!validate_output(output)) {
-		fprintf(stderr, "Invalid output configuration: %s:%s\n", argv[0], argv[1]);
+		fprintf(stderr, "ERROR: Invalid output configuration: %s:%s\n", argv[0], argv[1]);
 		return -1;	// invalid output config
 	}
 

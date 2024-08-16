@@ -31,6 +31,9 @@
 #define STATSD_UDP_BUFSIZE	1432	///< udp buffer size. Untold rule seems to be that the datagram must not be fragmented.
 #define STATSD_NAMESPACE	"acarsdec."
 
+#define ERRPFX	"ERROR: STATSD: "
+#define WARNPFX	"WARNING: STATSD: "
+
 static struct {
 	char *namespace;		///< statsd namespace prefix (dot-terminated)
 	struct sockaddr_storage ai_addr;
@@ -65,7 +68,7 @@ int statsd_init(char *params, const char *idstation)
 	}
 
 	if (!host || !port) {
-		fprintf(stderr, "invalid statsd parameters\n");
+		fprintf(stderr, ERRPFX "invalid parameters\n");
 		return -1;
 	}
 
@@ -77,7 +80,7 @@ int statsd_init(char *params, const char *idstation)
 
 	ret = getaddrinfo(host, port, &hints, &result);
 	if (ret) {
-		fprintf(stderr, "statsd: getaddrinfo: %s\n", gai_strerror(ret));
+		fprintf(stderr, ERRPFX "getaddrinfo: %s\n", gai_strerror(ret));
 		return -1;
 	}
 
@@ -89,7 +92,7 @@ int statsd_init(char *params, const char *idstation)
 	}
 
 	if (!rp) {
-		fprintf(stderr, "statsd: Could not reach server\n");
+		fprintf(stderr, ERRPFX "Could not reach server\n");
 		goto cleanup;
 	}
 
@@ -167,7 +170,7 @@ int statsd_update(const char *pfx, const struct statsd_metric * const metrics, c
 	for (i = 0; i < nmetrics; i++) {
 #ifdef DEBUG
 		if ((statsd_validate(metrics[i].name) != 0)) {
-			fprintf(stderr, "statsd: ignoring invalid name \"%s\"", metrics[i].name);
+			fprintf(stderr, WARNPFX "ignoring invalid name \"%s\"", metrics[i].name);
 			continue;
 		}
 #endif
@@ -249,7 +252,7 @@ cleanup:
 	// we only check for sendto() errors here
 	sent = sendto(statsd_runtime.sockfd, sbuffer, STATSD_UDP_BUFSIZE - avail, 0, (struct sockaddr *)&statsd_runtime.ai_addr, statsd_runtime.ai_addrlen);
 	if (-1 == sent)
-		perror("statsd");
+		perror(ERRPFX);
 
 	return ret;
 }

@@ -34,6 +34,9 @@
 #define SDRPLAY_MULT 160
 #define SDRPLAY_INRATE (INTRATE * SDRPLAY_MULT)
 
+#define ERRPFX	"ERROR: SDRplay: "
+#define WARNPFX	"WARNING: SDRplay: "
+
 extern void *compute_thread(void *arg);
 
 static int hwVersion;
@@ -83,13 +86,13 @@ int initSdrplay(void)
 	float ver;
 	result = mir_sdr_ApiVersion(&ver);
 	if (ver != MIR_SDR_API_VERSION) {
-		fprintf(stderr, "wrong api version %f %d\n", ver, result);
+		fprintf(stderr, ERRPFX "wrong api version %f %d\n", ver, result);
 		return -1;
 	}
 
 	mir_sdr_GetDevices(devDesc, &numofDevs, (uint32_t)4);
 	if (numofDevs == 0) {
-		fprintf(stderr, "Sorry, no device found\n");
+		fprintf(stderr, ERRPFX "Sorry, no device found\n");
 		exit(2);
 	}
 
@@ -98,7 +101,7 @@ int initSdrplay(void)
 	fprintf(stderr, "%s %s\n", devDesc[deviceIndex].DevNm, devDesc[deviceIndex].SerNo);
 	err = mir_sdr_SetDeviceIdx(deviceIndex);
 	if (err != mir_sdr_Success) {
-		fprintf(stderr, "Cannot start with device\n");
+		fprintf(stderr, ERRPFX "Cannot start with device\n");
 		return 1;
 	}
 
@@ -169,14 +172,14 @@ int runSdrplaySample(void)
 				    NULL);
 
 	if (result != mir_sdr_Success) {
-		fprintf(stderr, "Error %d on streamInit\n", result);
+		fprintf(stderr, ERRPFX "Error %d on streamInit\n", result);
 		return -1;
 	}
 	if (R.GRdB == -100) {
 		result = mir_sdr_AgcControl(mir_sdr_AGC_100HZ,
 					    -30, 0, 0, 0, 0, R.lnaState);
 		if (result != mir_sdr_Success)
-			fprintf(stderr, "Error %d on AgcControl\n", result);
+			fprintf(stderr, ERRPFX "Error %d on AgcControl\n", result);
 	}
 
 	mir_sdr_SetPpm((float)R.ppm);
