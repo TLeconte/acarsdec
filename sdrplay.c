@@ -34,9 +34,6 @@
 #define SDRPLAY_MULT 160
 #define SDRPLAY_INRATE (INTRATE * SDRPLAY_MULT)
 
-static float complex *D;
-static unsigned int *counter;
-
 extern void *compute_thread(void *arg);
 
 static int hwVersion;
@@ -79,16 +76,9 @@ int initSdrplay(void)
 	if (Fc == 0)
 		return 1;
 
-	r = channels_init_sdr(Fc, SDRPLAY_MULT, DMBUFSZ, 1.0F);	// XXX REVIEW, scale doesn't seem right
+	r = channels_init_sdr(Fc, SDRPLAY_MULT, DMBUFSZ, 32768.0F);
 	if (r)
 		return r;
-
-	D = calloc(R.nbch, sizeof(*D));
-	counter = calloc(R.nbch, sizeof(*counter));
-	if (!D || !counter) {
-		perror(NULL);
-		return 1;
-	}
 
 	float ver;
 	result = mir_sdr_ApiVersion(&ver);
@@ -133,28 +123,19 @@ static void myStreamCallback(int16_t *xi,
 			     uint32_t hwRemoved,
 			     void *cbContext)
 {
-	unsigned int i, n, local_ind;
+	float complex phasors[SDRPLAY_MULT];
+	unsigned int i, lim;
 
-	for (n = 0; n < R.nbch; n++) {
-		local_ind = current_index;
-		channel_t *ch = &(R.channels[n]);
-		for (i = 0; i < numSamples; i++) {
+	while (numSamples) {
+		lim = numSamples < SDRPLAY_MULT ? numSamples : SDRPLAY_MULT;	// mult-sized chunks
+		for (i = 0; i < lim; i++) {
 			float r = ((float)(xi[i]));
 			float g = ((float)(xq[i]));
-			float complex v = r + g * I;
-			D[n] += v * ch->oscillator[local_ind++];
-			if (local_ind >= SDRPLAY_MULT) {
-				ch->dm_buffer[counter[n]++] = cabsf(D[n]) / 4;
-				local_ind = 0;
-				D[n] = 0;
-				if (counter[n] >= DMBUFSZ) {
-					demodMSK(ch, DMBUFSZ);
-					counter[n] = 0;
-				}
-			}
+			phasors[i] = r + g * I;
+			channels_mix_phasors(phasors, lim, SDRPLAY_MULT);
 		}
+		numSamples -= lim;
 	}
-	current_index = (current_index + numSamples) % SDRPLAY_MULT;
 }
 
 static void myGainChangeCallback(uint32_t gRdB,
@@ -207,7 +188,5 @@ int runSdrplaySample(void)
 		sleep(2);
 
 	mir_sdr_ReleaseDeviceIdx();
-	free(counter);
-	free(D);
 	return 0;
 }
