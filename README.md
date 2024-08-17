@@ -1,13 +1,13 @@
 # ACARSDEC
 
-Acarsdec is a multi-channels acars decoder with built-in rtl_sdr, soapysdr, airspy or sdrplay device support.
-Since 3.0, it can work with a database backend: [acarsserv](https://github.com/TLeconte/acarsserv) to store received acars messages.
+acarsdec is a multi-channels ACARS decoder with built-in rtl_sdr, soapysdr, airspy or sdrplay device support.
+Since 3.0, it can work with a database backend: [acarsserv](https://github.com/TLeconte/acarsserv) to store received ACARS messages.
 
 ## Features
 
- * Arbitrary number of channels decoded simultaneously (limited by bandwidth and CPU power)
+ * arbitrary number of channels decoded simultaneously (limited by bandwidth and CPU power)
  * error detection AND correction
- * input via WAV sound file, ALSA soundcard, or [rtl_sdr](https://sdr.osmocom.org/trac/wiki/rtl-sdr),
+ * input via either WAV sound file, ALSA soundcard, [rtl_sdr](https://sdr.osmocom.org/trac/wiki/rtl-sdr),
    [SoapySDR](https://github.com/pothosware/SoapySDR/wiki), [airspy](https://airspy.com/)
    or [sdrplay](https://www.sdrplay.com) software defined radios (SDR)
  * multiple simultaneous outputs via file, UDP or MQTT
@@ -15,31 +15,103 @@ Since 3.0, it can work with a database backend: [acarsserv](https://github.com/T
  * decoding of ARINC-622 ATS applications (ADS-C, CPDLC) via [libacars](https://github.com/szpajder/libacars) library
  * statistics reporting via StatsD-compliant interface
 
-Multi-channel decoding is particularly useful with SDR devices,
-it enables simultaneous monitoring of different frequencies with low cost hardware.
+## License
+
+GPLv2-only - http://www.gnu.org/licenses/gpl-2.0.html
+
+Copyright: (C) 2015-2022 Thierry Leconte 2015-2022, (C) 2024 Thibaut VARENE
+
+> This program is free software; you can redistribute it and/or
+> modify it under the terms of the GNU General Public License
+> version 2, as published by the Free Software Foundation.
+>
+> This program is distributed in the hope that it will be useful,
+> but WITHOUT ANY WARRANTY; without even the implied warranty of
+> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See LICENSE.md for details
+
+## Compilation
+
+### Dependencies
+
+acarsdec requires CMake, pkg-config and a C compiler.
+
+It depends on some optional external libraries :
+ * librtlsdr for RTL-based SDR input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
+ * libsoapysdr for SoapySDR input (https://github.com/pothosware/SoapySDR)
+ * libairspy for airspy SDR input (https://github.com/airspy/airspyone_host)
+ * libmirsdrapi-rsp for sdrplay software radio input
+ * libsndfile for WAV input (https://github.com/libsndfile/libsndfile)
+ * libasound for ALSA input (https://github.com/alsa-project/alsa-lib)
+ * libacars for decoding ATS applications (https://github.com/szpajder/libacars)
+ * libcjson for JSON output support (https://github.com/DaveGamble/cJSON)
+ * paho-mqtt3a (and libcjson) for MQTT output support (https://github.com/eclipse/paho.mqtt.c)
+
+### Building
+
+```
+mkdir build
+cd build
+cmake .. -DCMAKE_C_FLAGS="-march=native"
+make
+```
+
+All optional libraries will be autodected, a summary of what is enabled will be printed by cmake.
+
+The `-DCMAKE_C_FLAGS="-march=native"` argument to cmake will produce an `acarsdec` executable
+that is optimized for the machine it was built on (and may not run correctly on other devices).
+It can be ommitted for a platform-generic build (with possibly reduced performance).
+ 
+#### Raspberry Pi builds
+
+It seems that the compile option `-march=native` may be problematic on Raspberry Pi.
+
+In that case, one can use the following cmake parameter instead in the above procedure:
+
+ * for PI 2B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a7 -mfpu=neon-vfpv4"`
+ * for PI 3B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a53 -mfpu=neon-fp-armv8"`
+ * for PI 4B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a72 -mfpu=neon-fp-armv8"`
+
+### Installing
+
+```
+sudo make install
+```
 
 ## Usage
 
-### Common options:
+acarsdec operation can be controlled via multiple command line parameters
+(the availability of which depends on which optional libraries have been enabled at build time),
+they are detailed below:
+
+### Common options
 
 ```
- -i <stationid>	station id used in statsd reports and network destinations (defaults to hostname)
+ -i <stationid>	station id used in statsd reports and network destinations (default: hostname)
  -A		don't output uplink messages (ie : only aircraft messages)
  -e		don't output empty messages (ie : _d,Q0, etc ...)
  -b <filter>	filter output by label (ex: -b "H1:Q0" : only output messages  with label H1 or Q0)
- -t <seconds>	set forget time (TTL) in seconds for monitor mode (default=600s)
+ -t <seconds>	set forget time (TTL) in seconds for monitor mode (default: 600)
 
- [--statsd host=myhost,port=1234]
+ --statsd host=HOST,port=1234		enable statsd reporting to host "HOST" (name or IP) on port "1234"
  --output FORMAT:DESTINATION:DESTPARAMS (see below for supported output formats and destinations. DESTPARAMS are coma-separated: ',')
 ```
 
-Multiple instances of `--output` can be enabled. At least one is required.
-Not all combinations of format and destination are valid, acarsdec will complain if an invalid combination is chosen.
+If libacars is enabled, the following extra option is available:
 
-One (and only one) input source must also be selected, see below.
+```
+ --skip-reassembly	disable reassembling fragmented ACARS messages
+```
+
+Multiple instances of `--output` can be used. At least one is required.
+See `--output help` for a list of supported formats and destinations.
+Not all combinations of formats and destinations are valid, acarsdec will complain if an invalid combination is chosen.
+
+One (and **only one**) input source must also be selected, see below.
 Options (including frequencies) can be provided in any order.
 
-#### Supported output formats:
+#### Supported output formats
 
 - `oneline` for single line text decoding
 - `full` for full text decoding
@@ -51,7 +123,7 @@ With CJSON support enabled:
 - `json` for JSON output
 - `routejson` for flight route output in JSON format
 
-#### Supported destinations:
+#### Supported destinations
 
 ##### `file` output
 
@@ -100,13 +172,16 @@ DESTPARAMS are:
  --airspy <device>	decode from airspy dongle number <device> or hex serial <device>
  -g <linearity_gain>	set linearity gain [0-21] (default: 18)
 ```
+ 
+Note: acarsdec will try to set the R820T tuner bandwidth to suit given frequencies.
+See https://tleconte.github.io/R820T/r820IF.html
 
 #### SDRplay
 
 ```
  --sdrplay 		decode from sdrplay
  -L <lnaState>		set the lnaState (depends on the device)
- -G <GRdB		gain reduction in dB's, range 20 .. 59 (default: -100 is autogain)
+ -G <GRdB>		gain reduction in dB's, range 20 .. 59 (default: -100 is autogain)
  -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
 
 ```
@@ -122,7 +197,7 @@ DESTPARAMS are:
  -a <antenna>		set antenna port to use (default: soapy default)\n");
 ```
 
-The SDR sources above expect a list of frequencies `<f1> [<f2> [...]]` to decode from expressed in decimal MHz,
+All SDR sources described above expect a list of frequencies `<f1> [<f2> [...]]` to decode from, expressed in decimal MHz
 e.g. `131.525 131.725 131.825`.
 
 #### WAV sound file
@@ -258,58 +333,3 @@ sending statsd data to host "statsd.lan" port "8125":
      Mach speed: 0.7765
      Vertical speed: -16 ft/min
 ```
-
-## Compilation
-
-acarsdec needs cmake, pkg-config and a C compiler.
-
-It depends on some optional external libraries :
- * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
- * libairspy for airspy software radio input 
- * libmirsdrapi-rsp for sdrplay software radio input 
- * libsndfile for soundfile input/output
- * libacars for decoding ATS applications (https://github.com/szpajder/libacars)
- * libcjson for JSON output support (https://github.com/DaveGamble/cJSON)
- * paho-mqtt3a (and libcjson) for MQTT output support (https://github.com/eclipse/paho.mqtt.c)
-
-### Building
-
-```
-mkdir build
-cd build
-cmake .. -DCMAKE_C_FLAGS="-march=native"
-make
-sudo make install
-```
-
-This will produce an `acarsdec` executable that is optimized for the machine it was built on
-(by specifiying `-DCMAKE_C_FLAGS="-march=native"`). 
-
-Notes : 
- * Airspy version will set the R820T tuner bandwidth to suit given frequencies. See : (https://tleconte.github.io/R820T/r820IF.html)
- * All optional libraries will be autodected at build time, a summary of what is enabled will be printed by cmake.
- 
-#### Raspberry Pi builds
-
-It seems that the compile option `-march=native` may be problematic on Raspberry Pi.
-
-In that case, one can use the following cmake parameter instead in the above procedure:
-
- * for PI 2B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a7 -mfpu=neon-vfpv4"`
- * for PI 3B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a53 -mfpu=neon-fp-armv8"`
- * for PI 4B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a72 -mfpu=neon-fp-armv8")"`
-
-
-## License
-
-GPLv2-only - http://www.gnu.org/licenses/gpl-2.0.html
-
-Copyright: (C) 2015-2022 Thierry Leconte 2015-2022, (C) 2024 Thibaut VARENE
-
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU General Public License
- version 2, as published by the Free Software Foundation.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
