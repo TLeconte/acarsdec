@@ -39,8 +39,6 @@
 static rtlsdr_dev_t *dev = NULL;
 static unsigned int rtlInBufSize = 0;
 
-#define RTLOUTBUFSZ 1024U
-
 /* function verbose_device_search by Kyle Keen
  * from http://cgit.osmocom.org/rtl-sdr/tree/src/convenience/convenience.c
  */
@@ -162,7 +160,7 @@ int initRtl(char *optarg)
 		return 1;
 	}
 
-	rtlInBufSize = RTLOUTBUFSZ * R.rateMult * 2;
+	rtlInBufSize = DMBUFSZ * R.rateMult * 2;
 
 	r = rtlsdr_open(&dev, dev_index);
 	if (r < 0) {
@@ -195,7 +193,7 @@ int initRtl(char *optarg)
 	if (Fc == 0)
 		return 1;
 
-	r = channels_init_sdr(Fc, R.rateMult, RTLOUTBUFSZ, 127.5F);
+	r = channels_init_sdr(Fc, R.rateMult, 127.5F);
 	if (r)
 		return r;
 
@@ -298,7 +296,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 
 	for (n = 0; n < R.nbch; n++) {
 		channel_t *ch = &(R.channels[n]);
-		demodMSK(ch, RTLOUTBUFSZ);
+		demodMSK(ch, DMBUFSZ);
 	}
 }
 

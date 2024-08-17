@@ -241,7 +241,7 @@ int initAirspy(char *optarg)
 		double AMFreq, Ph;
 
 		ch->oscillator = malloc(AIRMULT * sizeof(*ch->oscillator));
-		ch->dm_buffer = malloc(512 * sizeof(*ch->dm_buffer));
+		ch->dm_buffer = malloc(DMBUFSZ * sizeof(*ch->dm_buffer));
 		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
 			perror(NULL);
 			airspy_close(device);

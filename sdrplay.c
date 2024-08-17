@@ -79,7 +79,7 @@ int initSdrplay(void)
 	if (Fc == 0)
 		return 1;
 
-	r = channels_init_sdr(Fc, SDRPLAY_MULT, 512, 1.0F);	// XXX REVIEW, scale doesn't seem right
+	r = channels_init_sdr(Fc, SDRPLAY_MULT, DMBUFSZ, 1.0F);	// XXX REVIEW, scale doesn't seem right
 	if (r)
 		return r;
 
@@ -147,8 +147,8 @@ static void myStreamCallback(int16_t *xi,
 				ch->dm_buffer[counter[n]++] = cabsf(D[n]) / 4;
 				local_ind = 0;
 				D[n] = 0;
-				if (counter[n] >= 512) {
-					demodMSK(ch, 512);
+				if (counter[n] >= DMBUFSZ) {
+					demodMSK(ch, DMBUFSZ);
 					counter[n] = 0;
 				}
 			}

@@ -20,8 +20,6 @@ static SoapySDRDevice *dev = NULL;
 static SoapySDRStream *stream = NULL;
 static int soapyExit = 0;
 
-#define SOAPYOUTBUFSZ 1024U
-
 int initSoapy(char *optarg)
 {
 	int r;
@@ -66,7 +64,7 @@ int initSoapy(char *optarg)
 	if (Fc == 0)
 		return 1;
 
-	r = channels_init_sdr(Fc, R.rateMult, SOAPYOUTBUFSZ, 1.0F);
+	r = channels_init_sdr(Fc, R.rateMult, 1.0F);
 	if (r)
 		return r;
 
@@ -154,9 +152,9 @@ int runSoapySample(void)
 			if (++ind >= R.rateMult)
 				ind = 0;
 
-			if (counter >= SOAPYOUTBUFSZ) {
+			if (counter >= DMBUFSZ) {
 				for (n = 0; n < R.nbch; n++)
-					demodMSK(&R.channels[n], SOAPYOUTBUFSZ);
+					demodMSK(&R.channels[n], DMBUFSZ);
 				counter = 0;
 			}
 		}

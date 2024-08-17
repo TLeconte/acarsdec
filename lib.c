@@ -118,7 +118,7 @@ unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned in
 #endif
 }
 
-int channels_init_sdr(unsigned int Fc, unsigned int multiplier, unsigned int bufsz, float scale)
+int channels_init_sdr(unsigned int Fc, unsigned int multiplier, float scale)
 {
 	unsigned int n, ind;
 	float correctionPhase;
@@ -130,7 +130,7 @@ int channels_init_sdr(unsigned int Fc, unsigned int multiplier, unsigned int buf
 		ch->D = 0;
 
 		ch->oscillator = malloc(multiplier * sizeof(*ch->oscillator));
-		ch->dm_buffer = malloc(bufsz * sizeof(*ch->dm_buffer));
+		ch->dm_buffer = malloc(DMBUFSZ * sizeof(*ch->dm_buffer));
 		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
 			perror(NULL);
 			return 1;
