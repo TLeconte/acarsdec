@@ -120,11 +120,11 @@ int runSoapySample(void)
 	while (!soapyExit) {
 		flags = 0;
 		res = SoapySDRDevice_readStream(dev, stream, bufs, SOAPYINBUFSZ, &flags, &timens, 10000000);
-		if (res == 0) {
+		if (unlikely(res == 0)) {
 			usleep(500);
 			continue; // retry
 		}
-		if (res < 0) {
+		if (unlikely(res < 0)) {
 			if (res == SOAPY_SDR_OVERFLOW)
 				continue;
 			fprintf(stderr, ERRPFX "Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());

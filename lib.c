@@ -138,22 +138,22 @@ void channels_mix_phasors(const float complex *restrict phasors, unsigned int le
 	unsigned int n, k = 0;
 	float complex d, *restrict oscillator;
 
-	if (!len)
+	if (unlikely(!len))
 		return;
 
-	if (!D) {
+	if (unlikely(!D)) {
 		D = calloc(nbch, sizeof(*D));
 		if (!D)
 			err(EX_OSERR, NULL);
 	}
 
 	// realign to multiplier stride if necessary
-	if (ind) {
+	if (unlikely(ind)) {
 		for (k = 0; ind < multiplier && k < len; k++, ind++) {
 			for (n = 0; n < nbch; n++)
 				D[n] += phasors[k] * R.channels[n].oscillator[ind];
 		}
-		if (multiplier == ind) {
+		if (likely(multiplier == ind)) {
 			channels_push_and_demod_sample(D);
 			ind = 0;
 		}
@@ -166,14 +166,14 @@ void channels_mix_phasors(const float complex *restrict phasors, unsigned int le
 
 	// then use a vectorized loop for the remainder of the buffer
 	while (len) {
-		unsigned int lim = len < multiplier ? len : multiplier;	// process multiplier-sized chunks
+		unsigned int lim = unlikely(len < multiplier) ? len : multiplier;	// process multiplier-sized chunks
 		for (n = 0; n < nbch; n++) {
 			oscillator = R.channels[n].oscillator;
 			for (d = 0, k = 0; k < lim; k++)		// vectorizable
 				d += phasors[k] * oscillator[k];
 			D[n] = d;	// update static variable outside of loop
 		}
-		if (multiplier == lim)
+		if (likely(multiplier == lim))
 			channels_push_and_demod_sample(D);
 		else	// partial write
 			ind = lim;

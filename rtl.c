@@ -264,7 +264,7 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	}
 
 	while (nread) {
-		unsigned int lim = nread/2 < mult ? nread/2 : mult;	// mult-sized chunks
+		unsigned int lim = unlikely(nread/2 < mult) ? nread/2 : mult;	// mult-sized chunks
 		// compute rateMult-oversampled, full-scale phasor
 		// this loops consumes at most mult*2 bytes of rtlinbuff
 		for (unsigned int ind = 0; ind < lim; ind++) {

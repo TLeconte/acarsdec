@@ -40,6 +40,14 @@
 
 #define ARRAY_SIZE(x)	(sizeof(x) / sizeof(x[0]))
 
+#ifdef __GNUC__
+ #define likely(x)	__builtin_expect(!!(x), 1)
+ #define unlikely(x)	__builtin_expect(!!(x), 0)
+#else
+ #define likely(x)	(x)
+ #define unlikely(x)	(x)
+#endif
+
 typedef struct mskblk_s {
 	struct mskblk_s *prev;
 	struct timeval tv;
