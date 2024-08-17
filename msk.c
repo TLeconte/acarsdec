@@ -12,7 +12,7 @@
  *   GNU Library General Public License for more details.
  *
  */
-#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

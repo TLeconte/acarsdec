@@ -1,7 +1,5 @@
 // 2024 changes (C) 2024 Thibaut VARENE
 
-#define _GNU_SOURCE
-
 #include <complex.h>
 #include <math.h>
 #include <signal.h>

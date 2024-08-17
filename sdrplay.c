@@ -20,7 +20,6 @@
  *	J van Katwijk, Lazy Chair Computing (J.vanKatwijk@gmail.com)
  */
 
-#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
