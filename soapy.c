@@ -18,8 +18,7 @@
 #define WARNPFX	"WARNING: SOAPYSDR: "
 
 static SoapySDRDevice *dev = NULL;
-static SoapySDRStream *stream = NULL;
-static int soapyExit = 0;
+static volatile int soapyExit = 0;
 
 int initSoapy(char *optarg)
 {
@@ -96,22 +95,28 @@ int runSoapySample(void)
 {
 	float complex soapyInBuf[SOAPYINBUFSZ];
 	void *bufs[] = { soapyInBuf };
+	SoapySDRStream *stream;
 
-	int res, flags = 0;
+	int res = 0, flags = 0;
 	long long timens = 0;
+
+	if (!dev)
+		return 1;	// cannot happen after initSoapy returns 0
 
 	stream = SoapySDRDevice_setupStream(dev, SOAPY_SDR_RX, SOAPY_SDR_CF32, NULL, 0, NULL);
 	if (!stream) {
 		fprintf(stderr, ERRPFX "Failed to setup SoapySDR stream: %s\n", SoapySDRDevice_lastError());
-		return 1;
+		res = 1;
+		goto faildev;
 	}
 
 	if (SoapySDRDevice_activateStream(dev, stream, 0, 0, 0)) {
 		fprintf(stderr, ERRPFX "Failed to activate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
-		return 1;
+		res = 1;
+		goto failstream;
 	}
 
-	while (!soapyExit) {
+	while (likely(!soapyExit)) {
 		flags = 0;
 		res = SoapySDRDevice_readStream(dev, stream, bufs, SOAPYINBUFSZ, &flags, &timens, 10000000);
 		if (unlikely(res == 0)) {
@@ -122,35 +127,26 @@ int runSoapySample(void)
 			if (res == SOAPY_SDR_OVERFLOW)
 				continue;
 			fprintf(stderr, ERRPFX "Failed to read SoapySDR stream (%d): %s\n", res, SoapySDRDevice_lastError());
-			return 1;
+			break;
 		}
 
 		channels_mix_phasors(soapyInBuf, res, R.rateMult);
 	}
-	return 0;
-}
 
-int runSoapyClose(void)
-{
-	int res = 0;
-	soapyExit = 1;
-
-	if (dev) {
-		if (stream) {
-			res = SoapySDRDevice_deactivateStream(dev, stream, 0, 0);
-			if (res != 0)
-				fprintf(stderr, WARNPFX "Failed to deactivate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
-
-			res = SoapySDRDevice_closeStream(dev, stream);
-			if (res != 0)
-				fprintf(stderr, WARNPFX "Failed to close SoapySDR stream: %s\n", SoapySDRDevice_lastError());
-			stream = NULL;
-		}
-		res = SoapySDRDevice_unmake(dev);
-		if (res != 0)
-			fprintf(stderr, WARNPFX "Failed to close SoapySDR device: %s\n", SoapySDRDevice_lastError());
-		dev = NULL;
-	}
+	if (SoapySDRDevice_deactivateStream(dev, stream, 0, 0) != 0)
+		fprintf(stderr, WARNPFX "Failed to deactivate SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+failstream:
+	if (SoapySDRDevice_closeStream(dev, stream) != 0)
+		fprintf(stderr, WARNPFX "Failed to close SoapySDR stream: %s\n", SoapySDRDevice_lastError());
+faildev:
+	if (SoapySDRDevice_unmake(dev) != 0)
+		fprintf(stderr, WARNPFX "Failed to close SoapySDR device: %s\n", SoapySDRDevice_lastError());
+	dev = NULL;
 
 	return res;
+}
+
+void runSoapyCancel(void)
+{
+	soapyExit = 1;
 }

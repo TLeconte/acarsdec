@@ -200,7 +200,7 @@ static void sigintHandler(int signum)
 	runRtlCancel();
 #endif
 #ifdef WITH_SOAPY
-	runSoapyClose();
+	runSoapyCancel();
 #endif
 }
 
