@@ -90,6 +90,7 @@ int initSoapy(char *optarg)
 #define SOAPYINBUFSZ 4096U
 int runSoapySample(void)
 {
+	const unsigned int mult = R.rateMult;
 	float complex soapyInBuf[SOAPYINBUFSZ];
 	void *bufs[] = { soapyInBuf };
 	SoapySDRStream *stream;
@@ -127,7 +128,7 @@ int runSoapySample(void)
 			break;
 		}
 
-		channels_mix_phasors(soapyInBuf, res, R.rateMult);
+		channels_mix_phasors(soapyInBuf, res, mult);
 	}
 
 	if (SoapySDRDevice_deactivateStream(dev, stream, 0, 0) != 0)
