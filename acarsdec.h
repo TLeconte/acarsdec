@@ -93,14 +93,22 @@ typedef struct output_s {
 typedef struct {
 	channel_t *channels;
 	unsigned int nbch;
-
-	enum { IN_NONE = 0, IN_ALSA, IN_SNDFILE, IN_RTL, IN_AIR, IN_SDRPLAY, IN_SOAPY } inmode;
 	bool verbose;
+
+	// used only in output
 	bool airflt;
 	bool emptymsg;
 	bool statsd;
+	output_t *outputs;
+	char *idstation;
 	int mdly;
+#ifdef HAVE_LIBACARS
+	int skip_reassembly;
+#endif
 
+	enum { IN_NONE = 0, IN_ALSA, IN_SNDFILE, IN_RTL, IN_AIR, IN_SDRPLAY, IN_SOAPY } inmode;
+
+	// used only during setup
 	float gain;
 	int ppm;
 	int bias;
@@ -109,17 +117,9 @@ typedef struct {
 	int GRdB;
 	unsigned int Fc, minFc, maxFc;
 
-#ifdef HAVE_LIBACARS
-	int skip_reassembly;
-#endif
-
 #ifdef WITH_SOAPY
 	char *antenna;
 #endif
-
-	char *idstation;
-
-	output_t *outputs;
 } runtime_t;
 
 extern runtime_t R;
