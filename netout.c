@@ -64,8 +64,7 @@ netout_t *Netoutinit(char *params)
 	if (port == NULL)
 		port = "5555";
 
-	if (R.verbose)
-		fprintf(stderr, "UDP: Attempting to resolve '%s:%s'.\n", addr, port);
+	vprerr("UDP: Attempting to resolve '%s:%s'.\n", addr, port);
 
 	if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
 		fprintf(stderr, ERRPFX "Invalid/unknown error '%s' resolving '%s:%s'\n", gai_strerror(rv), addr, port);
@@ -106,8 +105,8 @@ void Netwrite(const void *buf, size_t count, netout_t *net)
 		return;
 
 	res = sendto(net->sockfd, buf, count, 0, (struct sockaddr *)&net->netOutputAddr, net->netOutputAddrLen);
-	if (R.verbose && res < 0)
-		fprintf(stderr, WARNPFX "error on sendto(): %s, ignoring.\n", strerror(errno));
+	if (res < 0)
+		vprerr(WARNPFX "error on sendto(): %s, ignoring.\n", strerror(errno));
 }
 
 void Netexit(netout_t *net)

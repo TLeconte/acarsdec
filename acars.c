@@ -102,8 +102,7 @@ static void *blk_thread(void *arg)
 		unsigned short crc;
 		int pr[MAXPERR];
 
-		if (R.verbose)
-			fprintf(stderr, "blk_starting\n");
+		vprerr("blk_starting\n");
 
 		/* get a message */
 		pthread_mutex_lock(&blkq_mtx);
@@ -123,16 +122,14 @@ static void *blk_thread(void *arg)
 
 		chn = blk->chn;
 
-		if (R.verbose)
-			fprintf(stderr, "get message #%d\n", chn+1);
+		vprerr("get message #%d\n", chn+1);
 
 		if (R.statsd)
 			statsd_inc_per_channel(chn, "decoder.msg.count");
 
 		/* handle message */
 		if (blk->len < 13) {
-			if (R.verbose)
-				fprintf(stderr, "#%d too short\n", chn+1);
+			vprerr("#%d too short\n", chn+1);
 			if (R.statsd)
 				statsd_inc_per_channel(chn, "decoder.errors.too_short");
 			free(blk);
@@ -154,15 +151,14 @@ static void *blk_thread(void *arg)
 			}
 		}
 		if (pn > MAXPERR) {
-			if (R.verbose)
-				fprintf(stderr, "#%d too many parity errors: %d\n", chn+1, pn);
+			vprerr("#%d too many parity errors: %d\n", chn+1, pn);
 			if (R.statsd)
 				statsd_inc_per_channel(chn, "decoder.errors.parity_excess");
 			free(blk);
 			continue;
 		}
-		if (pn > 0 && R.verbose)
-			fprintf(stderr, "#%d parity error(s): %d\n", chn+1, pn);
+		if (pn > 0)
+			vprerr("#%d parity error(s): %d\n", chn+1, pn);
 		blk->err = pn;
 
 		/* crc check */
@@ -172,8 +168,7 @@ static void *blk_thread(void *arg)
 		update_crc(crc, blk->crc[0]);
 		update_crc(crc, blk->crc[1]);
 		if (crc) {
-			if (R.verbose)
-				fprintf(stderr, "#%d crc error\n", chn+1);
+			vprerr("#%d crc error\n", chn+1);
 			if (R.statsd)
 				statsd_inc_per_channel(chn, "decoder.errors.crc");
 		}
@@ -181,23 +176,19 @@ static void *blk_thread(void *arg)
 		/* try to fix error */
 		if (pn) {
 			if (fixprerr(blk, crc, pr, pn) == 0) {
-				if (R.verbose)
-					fprintf(stderr, "#%d not able to fix errors\n", chn+1);
+				vprerr("#%d not able to fix errors\n", chn+1);
 				free(blk);
 				continue;
 			}
-			if (R.verbose)
-				fprintf(stderr, "#%d errors fixed\n", chn+1);
+			vprerr("#%d errors fixed\n", chn+1);
 		} else {
 			if (crc) {
 				if (fixdberr(blk, crc) == 0) {
-					if (R.verbose)
-						fprintf(stderr, "#%d not able to fix errors\n", chn+1);
+					vprerr("#%d not able to fix errors\n", chn+1);
 					free(blk);
 					continue;
 				}
-				if (R.verbose)
-					fprintf(stderr, "#%d errors fixed\n", chn+1);
+				vprerr("#%d errors fixed\n", chn+1);
 			}
 		}
 
@@ -328,10 +319,7 @@ void decodeAcars(channel_t *ch)
 			ch->blk->err++;
 
 			if (ch->blk->err > MAXPERR + 1) {
-				if (R.verbose)
-					fprintf(stderr,
-						"#%d too many parity errors\n",
-						ch->chn + 1);
+				vprerr("#%d too many parity errors\n", ch->chn + 1);
 				resetAcars(ch);
 				return;
 			}
@@ -342,9 +330,7 @@ void decodeAcars(channel_t *ch)
 			return;
 		}
 		if (ch->blk->len > 20 && r == DLE) {
-			if (R.verbose)
-				fprintf(stderr, "#%d miss txt end\n",
-					ch->chn + 1);
+			vprerr("#%d miss txt end\n", ch->chn + 1);
 			ch->blk->len -= 3;
 			ch->blk->crc[0] = ch->blk->txt[ch->blk->len];
 			ch->blk->crc[1] = ch->blk->txt[ch->blk->len + 1];
@@ -352,8 +338,7 @@ void decodeAcars(channel_t *ch)
 			goto putmsg_lbl;
 		}
 		if (ch->blk->len > 240) {
-			if (R.verbose)
-				fprintf(stderr, "#%d too long\n", ch->chn + 1);
+			vprerr("#%d too long\n", ch->chn + 1);
 			resetAcars(ch);
 			return;
 		}
@@ -370,8 +355,7 @@ void decodeAcars(channel_t *ch)
 putmsg_lbl:
 		ch->blk->lvl = 10 * log10(ch->MskLvlSum / ch->MskBitCount);
 
-		if (R.verbose)
-			fprintf(stderr, "put message #%d\n", ch->chn + 1);
+		vprerr("put message #%d\n", ch->chn + 1);
 
 		pthread_mutex_lock(&blkq_mtx);
 		ch->blk->prev = NULL;

@@ -48,6 +48,8 @@
  #define unlikely(x)	(x)
 #endif
 
+#define vprerr(fmt, ...)	do { if (unlikely(R.verbose)) fprintf(stderr, fmt, ## __VA_ARGS__); } while(0)
+
 typedef struct mskblk_s {
 	struct mskblk_s *prev;
 	struct timeval tv;

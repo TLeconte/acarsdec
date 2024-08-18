@@ -52,8 +52,8 @@ static FILE *open_outfile(fileout_t *fout)
 			fmt = "_%Y%m%d";
 
 		tlen = strftime(suffix, sizeof(suffix), fmt, &fout->current_tm);
-		if (tlen == 0 && R.verbose) {
-			fprintf(stderr, ERRPFX "open_outfile(): strfime returned 0\n");
+		if (tlen == 0) {
+			vprerr(ERRPFX "open_outfile(): strfime returned 0\n");
 			return NULL;
 		}
 		filename = malloc(fout->prefix_len + tlen + 2);

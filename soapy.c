@@ -38,8 +38,7 @@ int initSoapy(char *optarg)
 	}
 
 	if (R.gain <= -10.0) {
-		if (R.verbose)
-			fprintf(stderr, "Tuner gain: AGC\n");
+		vprerr("Tuner gain: AGC\n");
 		r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 1);
 		if (r != 0)
 			fprintf(stderr, WARNPFX "Failed to turn on AGC: %s\n", SoapySDRDevice_lastError());
@@ -47,8 +46,7 @@ int initSoapy(char *optarg)
 		r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 0);
 		if (r != 0)
 			fprintf(stderr, WARNPFX "Failed to turn off AGC: %s\n", SoapySDRDevice_lastError());
-		if (R.verbose)
-			fprintf(stderr, "Setting gain to: %f\n", R.gain);
+		vprerr("Setting gain to: %f\n", R.gain);
 		r = SoapySDRDevice_setGain(dev, SOAPY_SDR_RX, 0, R.gain);
 		if (r != 0)
 			fprintf(stderr, WARNPFX "Failed to set gain: %s\n", SoapySDRDevice_lastError());
@@ -69,16 +67,14 @@ int initSoapy(char *optarg)
 	if (r)
 		return r;
 
-	if (R.verbose)
-		fprintf(stderr, "Setting center freq. to %uHz\n", Fc);
+	vprerr("Setting center freq. to %uHz\n", Fc);
 	r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, 0, Fc, NULL);
 	if (r != 0) {
 		fprintf(stderr, ERRPFX "Failed to set frequency: %s\n", SoapySDRDevice_lastError());
 		return r;
 	}
 
-	if (R.verbose)
-		fprintf(stderr, "Setting sample rate: %.4f MS/s\n", INTRATE * R.rateMult / 1e6);
+	vprerr("Setting sample rate: %.4f MS/s\n", INTRATE * R.rateMult / 1e6);
 	r = SoapySDRDevice_setSampleRate(dev, SOAPY_SDR_RX, 0, INTRATE * R.rateMult);
 	if (r != 0) {
 		fprintf(stderr, ERRPFX "Failed to set sample rate: %s\n", SoapySDRDevice_lastError());

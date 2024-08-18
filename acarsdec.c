@@ -513,8 +513,7 @@ int main(int argc, char **argv)
 	}
 #endif
 
-	if (R.verbose)
-		fprintf(stderr, "Decoding %d channels\n", R.nbch);
+	vprerr("Decoding %d channels\n", R.nbch);
 
 	/* main decoding  */
 	switch (R.inmode) {

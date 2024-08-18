@@ -54,16 +54,13 @@ int verbose_device_search(char *s)
 		fprintf(stderr, ERRPFX "No supported devices found.\n");
 		return -1;
 	}
-	if (R.verbose)
-		fprintf(stderr, "Found %d device(s):\n", device_count);
 
+	vprerr("Found %d device(s):\n", device_count);
 	for (i = 0; i < device_count; i++) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		if (R.verbose)
-			fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor, product, serial);
+		vprerr("  %d:  %s, %s, SN: %s\n", i, vendor, product, serial);
 	}
-	if (R.verbose)
-		fprintf(stderr, "\n");
+	vprerr("\n");
 
 	/* does string look like an exact serial number */
 	if (strlen(s) == 8)
@@ -71,8 +68,7 @@ int verbose_device_search(char *s)
 	/* does string look like raw id number */
 	device = (int)strtol(s, &s2, 0);
 	if (s2[0] == '\0' && device >= 0 && device < device_count) {
-		if (R.verbose)
-			fprintf(stderr, "Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
+		vprerr("Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 find_serial:
@@ -83,8 +79,7 @@ find_serial:
 			continue;
 		}
 		device = i;
-		if (R.verbose)
-			fprintf(stderr, "Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
+		vprerr("Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	/* does string prefix match a serial */
@@ -94,8 +89,7 @@ find_serial:
 			continue;
 
 		device = i;
-		if (R.verbose)
-			fprintf(stderr, "Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
+		vprerr("Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	/* does string suffix match a serial */
@@ -109,8 +103,7 @@ find_serial:
 			continue;
 
 		device = i;
-		if (R.verbose)
-			fprintf(stderr, "Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
+		vprerr("Using device %d: %s\n", device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	fprintf(stderr, ERRPFX "No matching devices found.\n");
@@ -171,15 +164,13 @@ int initRtl(char *optarg)
 	}
 
 	if (R.gain > 52.0F || R.gain <= -10.0F) {
-		if (R.verbose)
-			fprintf(stderr, "Tuner gain: AGC\n");
+		vprerr("Tuner gain: AGC\n");
 		r = rtlsdr_set_tuner_gain_mode(dev, 0);
 	} else {
 		rtlsdr_set_tuner_gain_mode(dev, 1);
 		R.gain = nearest_gain((int)(R.gain * 10.0F));
 		R.gain /= 10.0F;
-		if (R.verbose)
-			fprintf(stderr, "Tuner gain: %.1f\n", R.gain);
+		vprerr("Tuner gain: %.1f\n", R.gain);
 		r = rtlsdr_set_tuner_gain(dev, (int)(R.gain * 10.0F));
 	}
 	if (r < 0)
@@ -199,8 +190,7 @@ int initRtl(char *optarg)
 	if (r)
 		return r;
 
-	if (R.verbose)
-		fprintf(stderr, "Setting center freq. to %uHz\n", Fc);
+	vprerr("Setting center freq. to %uHz\n", Fc);
 	r = rtlsdr_set_center_freq(dev, Fc);
 	if (r < 0) {
 		fprintf(stderr, ERRPFX "Failed to set center freq.\n");
@@ -220,8 +210,7 @@ int initRtl(char *optarg)
 		return 1;
 	}
 
-	if (R.verbose)
-		fprintf(stderr, "Setting bias tee to %d\n", R.bias);
+	vprerr("Setting bias tee to %d\n", R.bias);
 	r = rtlsdr_set_bias_tee(dev, R.bias);
 	if (r < 0)
 		fprintf(stderr, WARNPFX "Failed to set bias tee\n");

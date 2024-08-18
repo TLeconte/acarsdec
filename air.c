@@ -134,23 +134,17 @@ int initAirspy(char *optarg)
 
 	if ((optarg != argF) && (errno == 0)) {
 		if ((airspy_serial < airspy_device_count)) {
-			if (R.verbose) {
-				fprintf(stderr, "Attempting to open airspy device slot #%lu with serial %016lx.\n", airspy_serial, airspy_device_list[airspy_serial]);
-			}
+			vprerr("Attempting to open airspy device slot #%lu with serial %016lx.\n", airspy_serial, airspy_device_list[airspy_serial]);
 			result = airspy_open_sn(&device, airspy_device_list[airspy_serial]);
 		} else {
-			if (R.verbose) {
-				fprintf(stderr, "Attempting to open airspy serial 0x%016lx\n", airspy_serial);
-			}
+			vprerr("Attempting to open airspy serial 0x%016lx\n", airspy_serial);
 			result = airspy_open_sn(&device, airspy_serial);
 		}
 	}
 
 	if (device == NULL) {
 		for (n = 0; n < airspy_device_count; n++) {
-			if (R.verbose) {
-				fprintf(stderr, "Attempting to open airspy device #%d.\n", n);
-			}
+			vprerr("Attempting to open airspy device #%d.\n", n);
 			result = airspy_open_sn(&device, airspy_device_list[n]);
 			if (result == AIRSPY_SUCCESS)
 				break;
@@ -207,8 +201,7 @@ int initAirspy(char *optarg)
 
 	free(supported_samplerates);
 
-	if (R.verbose)
-		fprintf(stderr, "Using %d sampling rate\n", AIRINRATE);
+	vprerr("Using %d sampling rate\n", AIRINRATE);
 
 	result = airspy_set_samplerate(device, i);
 	if (result != AIRSPY_SUCCESS) {
@@ -239,8 +232,7 @@ int initAirspy(char *optarg)
 		airspy_exit();
 		return -1;
 	}
-	if (R.verbose)
-		fprintf(stderr, "Set freq. to %d hz\n", Fc);
+	vprerr("Set freq. to %d hz\n", Fc);
 
 	/* computes mixers osc. */
 	for (n = 0; n < R.nbch; n++) {
