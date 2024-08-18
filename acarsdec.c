@@ -193,14 +193,12 @@ static void usage(void)
 static void sigintHandler(int signum)
 {
 	fprintf(stderr, "Received signal %s, terminating process\n", strsignal(signum));
+	R.running = 0;
 #if defined(DEBUG) && defined(WITH_SNDFILE)
 	SndWriteClose();
 #endif
 #ifdef WITH_RTL
 	runRtlCancel();
-#endif
-#ifdef WITH_SOAPY
-	runSoapyCancel();
 #endif
 }
 
@@ -512,7 +510,9 @@ int main(int argc, char **argv)
 	}
 #endif
 
-	vprerr("Decoding %d channels\n", R.nbch);
+	fprintf(stderr, "Starting, decoding %d channels\n", R.nbch);
+
+	R.running = 1;
 
 	/* main decoding  */
 	switch (R.inmode) {
@@ -552,6 +552,8 @@ int main(int argc, char **argv)
 	}
 
 	fprintf(stderr, "exiting ...\n");
+
+	R.running = 0;
 
 	deinitAcars();
 

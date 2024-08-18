@@ -93,18 +93,19 @@ typedef struct output_s {
 typedef struct {
 	channel_t *channels;
 	unsigned int nbch;
+	volatile bool running;
 	bool verbose;
 
 	// used only in output
 	bool airflt;
 	bool emptymsg;
 	bool statsd;
+#ifdef HAVE_LIBACARS
+	bool skip_reassembly;
+#endif
+	int mdly;
 	output_t *outputs;
 	char *idstation;
-	int mdly;
-#ifdef HAVE_LIBACARS
-	int skip_reassembly;
-#endif
 
 	enum { IN_NONE = 0, IN_ALSA, IN_SNDFILE, IN_RTL, IN_AIR, IN_SDRPLAY, IN_SOAPY } inmode;
 

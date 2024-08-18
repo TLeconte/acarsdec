@@ -329,9 +329,11 @@ int runAirspySample(void)
 		return -1;
 	}
 
-	while (airspy_is_streaming(device) == AIRSPY_TRUE) {
+	while (R.running && airspy_is_streaming(device) == AIRSPY_TRUE) {
 		sleep(2);
 	}
+
+	airspy_stop_rx(device);
 
 	free(chD);
 

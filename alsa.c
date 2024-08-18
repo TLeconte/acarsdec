@@ -129,6 +129,7 @@ int runAlsaSample(void)
 
 		demodMSK(&(R.channels[0]), r);
 
-	} while (1);
+	} while (R.running);
+	
 	return 0;
 }

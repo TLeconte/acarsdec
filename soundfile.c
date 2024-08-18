@@ -86,7 +86,8 @@ int runSoundfileSample(void)
 			demodMSK(&(R.channels[n]), len);
 		}
 
-	} while (1);
+	} while (R.running);
+	
 	return 0;
 }
 

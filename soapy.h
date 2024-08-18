@@ -3,6 +3,5 @@
 
 int initSoapy(char *optarg);
 int runSoapySample(void);
-void runSoapyCancel(void);
 
 #endif /* soapy_h */

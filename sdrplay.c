@@ -186,7 +186,7 @@ int runSdrplaySample(void)
 	mir_sdr_SetDcTrackTime(63);
 	//
 	mir_sdr_DCoffsetIQimbalanceControl(0, 1);
-	while (1)
+	while (R.running)
 		sleep(2);
 
 	mir_sdr_ReleaseDeviceIdx();

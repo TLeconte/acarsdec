@@ -18,7 +18,6 @@
 #define WARNPFX	"WARNING: SOAPYSDR: "
 
 static SoapySDRDevice *dev = NULL;
-static volatile int soapyExit = 0;
 
 int initSoapy(char *optarg)
 {
@@ -114,7 +113,7 @@ int runSoapySample(void)
 		goto failstream;
 	}
 
-	while (likely(!soapyExit)) {
+	while (likely(R.running)) {
 		flags = 0;
 		res = SoapySDRDevice_readStream(dev, stream, bufs, SOAPYINBUFSZ, &flags, &timens, 10000000);
 		if (unlikely(res == 0)) {
@@ -142,9 +141,4 @@ faildev:
 	dev = NULL;
 
 	return res;
-}
-
-void runSoapyCancel(void)
-{
-	soapyExit = 1;
 }
