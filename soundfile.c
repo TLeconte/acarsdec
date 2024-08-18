@@ -42,17 +42,17 @@ int initSoundfile(char *optarg)
 		return (1);
 	}
 
+	if (infsnd.samplerate != INTRATE) {
+		fprintf(stderr, ERRPFX "unsupported sample rate : %d (must be %d)\n", infsnd.samplerate, INTRATE);
+		return (1);
+	}
+
 	R.channels = calloc(infsnd.channels, sizeof(*R.channels));
 	if (!R.channels) {
 		perror(NULL);
 		return -1;
 	}
 	R.nbch = infsnd.channels;
-
-	if (infsnd.samplerate != INTRATE) {
-		fprintf(stderr, ERRPFX "unsupported sample rate : %d (must be %d)\n", infsnd.samplerate, INTRATE);
-		return (1);
-	}
 
 	for (n = 0; n < R.nbch; n++) {
 		R.channels[n].dm_buffer = malloc(sizeof(*R.channels[n].dm_buffer) * MAXNBFRAMES);
