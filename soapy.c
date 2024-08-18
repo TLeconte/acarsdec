@@ -25,10 +25,12 @@ int initSoapy(char *optarg)
 	int r;
 	unsigned int Fc;
 
-	if (optarg == NULL) {
-		fprintf(stderr, ERRPFX "Need device string (ex: driver=rtltcp,rtltcp=127.0.0.1) after --soapysdr\n");
+	if (!optarg)
+		return 1;	// cannot happen after getopt()
+
+	Fc = find_centerfreq(R.minFc, R.maxFc, R.rateMult);
+	if (!Fc)
 		return 1;
-	}
 
 	dev = SoapySDRDevice_makeStrArgs(optarg);
 	if (dev == NULL) {
@@ -54,22 +56,17 @@ int initSoapy(char *optarg)
 	if (R.ppm != 0) {
 		r = SoapySDRDevice_setFrequencyCorrection(dev, SOAPY_SDR_RX, 0, R.ppm);
 		if (r != 0)
-			fprintf(stderr, WARNPFX "Failed to set freq correction: %s\n", SoapySDRDevice_lastError());
+			fprintf(stderr, WARNPFX "Failed to set frequency correction: %s\n", SoapySDRDevice_lastError());
 	}
-
-	Fc = find_centerfreq(R.minFc, R.maxFc, R.rateMult);
-
-	if (Fc == 0)
-		return 1;
 
 	r = channels_init_sdr(Fc, R.rateMult, 1.0F);
 	if (r)
 		return r;
 
-	vprerr("Setting center freq. to %uHz\n", Fc);
+	vprerr("Setting center freq: %.4f MHz\n", Fc / 1e6);
 	r = SoapySDRDevice_setFrequency(dev, SOAPY_SDR_RX, 0, Fc, NULL);
 	if (r != 0) {
-		fprintf(stderr, ERRPFX "Failed to set frequency: %s\n", SoapySDRDevice_lastError());
+		fprintf(stderr, ERRPFX "Failed to set center frequency: %s\n", SoapySDRDevice_lastError());
 		return r;
 	}
 
@@ -82,7 +79,7 @@ int initSoapy(char *optarg)
 
 	if (R.antenna) {
 		if (SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, 0, R.antenna) != 0) {
-			fprintf(stderr, ERRPFX "SoapySDRDevice_setAntenna failed (check antenna validity)\n");
+			fprintf(stderr, ERRPFX "Failed to set antenna (check antenna validity)\n");
 			return 1;
 		}
 	}
