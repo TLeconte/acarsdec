@@ -43,7 +43,7 @@ static rtlsdr_dev_t *dev = NULL;
 /* function verbose_device_search by Kyle Keen
  * from http://cgit.osmocom.org/rtl-sdr/tree/src/convenience/convenience.c
  */
-int verbose_device_search(char *s)
+static int verbose_device_search(char *s)
 {
 	int i, device_count, device, offset;
 	char *s2;
@@ -110,7 +110,7 @@ find_serial:
 	return -1;
 }
 
-int nearest_gain(int target_gain)
+static int nearest_gain(int target_gain)
 {
 	int i, err1, err2, count, close_gain;
 	int *gains;
@@ -143,22 +143,24 @@ int initRtl(char *optarg)
 	int dev_index;
 	unsigned int Fc;
 
-	if (optarg == NULL) {
-		fprintf(stderr, ERRPFX "Need device name or index (ex: 0) after --rtlsdr\n");
-		return 1;
-	}
-
-	dev_index = verbose_device_search(optarg);
-	if (dev_index < 0)
-		return 1;
+	if (!optarg)
+		return 1;	// cannot happen with getopt()
 
 	if (R.rateMult > RTLMULTMAX) {
 		fprintf(stderr, ERRPFX "rateMult can't be larger than %d\n", RTLMULTMAX);
 		return 1;
 	}
 
+	Fc = find_centerfreq(R.minFc, R.maxFc, R.rateMult);
+	if (!Fc)
+		return 1;
+
+	dev_index = verbose_device_search(optarg);
+	if (dev_index < 0)
+		return 1;
+
 	r = rtlsdr_open(&dev, dev_index);
-	if (r < 0) {
+	if (r) {
 		fprintf(stderr, ERRPFX "Failed to open device\n");
 		return r;
 	}
@@ -167,52 +169,49 @@ int initRtl(char *optarg)
 		vprerr("Tuner gain: AGC\n");
 		r = rtlsdr_set_tuner_gain_mode(dev, 0);
 	} else {
-		rtlsdr_set_tuner_gain_mode(dev, 1);
-		R.gain = nearest_gain((int)(R.gain * 10.0F));
-		R.gain /= 10.0F;
-		vprerr("Tuner gain: %.1f\n", R.gain);
-		r = rtlsdr_set_tuner_gain(dev, (int)(R.gain * 10.0F));
+		int gain = nearest_gain((int)(R.gain * 10.0F));
+		r = rtlsdr_set_tuner_gain_mode(dev, 1);
+		if (!r) {
+			vprerr("Tuner gain: %.1f\n", gain / 10.0F);
+			r = rtlsdr_set_tuner_gain(dev, gain);
+		}
 	}
-	if (r < 0)
+	if (r)
 		fprintf(stderr, WARNPFX "Failed to set gain.\n");
 
 	if (R.ppm != 0) {
 		r = rtlsdr_set_freq_correction(dev, R.ppm);
-		if (r < 0)
-			fprintf(stderr, WARNPFX "Failed to set freq. correction\n");
+		if (r)
+			fprintf(stderr, WARNPFX "Failed to set frequency correction\n");
 	}
-
-	Fc = find_centerfreq(R.minFc, R.maxFc, R.rateMult);
-	if (Fc == 0)
-		return 1;
 
 	r = channels_init_sdr(Fc, R.rateMult, 127.5F);
 	if (r)
 		return r;
 
-	vprerr("Setting center freq. to %uHz\n", Fc);
+	vprerr("Setting center freq: %.4f MHz\n", Fc / 1e6);
 	r = rtlsdr_set_center_freq(dev, Fc);
-	if (r < 0) {
-		fprintf(stderr, ERRPFX "Failed to set center freq.\n");
+	if (r) {
+		fprintf(stderr, ERRPFX "Failed to set center frequency.\n");
 		return 1;
 	}
 
 	fprintf(stderr, "Setting sample rate: %.4f MS/s\n", INTRATE * R.rateMult / 1e6);
 	r = rtlsdr_set_sample_rate(dev, INTRATE * R.rateMult);
-	if (r < 0) {
+	if (r) {
 		fprintf(stderr, ERRPFX "Failed to set sample rate.\n");
 		return 1;
 	}
 
 	r = rtlsdr_reset_buffer(dev);
-	if (r < 0) {
+	if (r) {
 		fprintf(stderr, ERRPFX "Failed to reset buffers.\n");
 		return 1;
 	}
 
 	vprerr("Setting bias tee to %d\n", R.bias);
 	r = rtlsdr_set_bias_tee(dev, R.bias);
-	if (r < 0)
+	if (r)
 		fprintf(stderr, WARNPFX "Failed to set bias tee\n");
 
 	return 0;
