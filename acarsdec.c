@@ -192,7 +192,7 @@ static void usage(void)
 
 static void sigintHandler(int signum)
 {
-	fprintf(stderr, "Received signal %s, exiting.\n", strsignal(signum));
+	fprintf(stderr, "Received signal %s, terminating process\n", strsignal(signum));
 #if defined(DEBUG) && defined(WITH_SNDFILE)
 	SndWriteClose();
 #endif
@@ -202,7 +202,6 @@ static void sigintHandler(int signum)
 #ifdef WITH_SOAPY
 	runSoapyClose();
 #endif
-	exit(0);
 }
 
 static int parse_freqs(char **argv, const int argind)

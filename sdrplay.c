@@ -92,7 +92,7 @@ int initSdrplay(void)
 	mir_sdr_GetDevices(devDesc, &numofDevs, (uint32_t)4);
 	if (numofDevs == 0) {
 		fprintf(stderr, ERRPFX "Sorry, no device found\n");
-		exit(2);
+		return 2;
 	}
 
 	deviceIndex = 0;

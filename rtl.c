@@ -145,12 +145,12 @@ int initRtl(char *optarg)
 
 	if (optarg == NULL) {
 		fprintf(stderr, ERRPFX "Need device name or index (ex: 0) after --rtlsdr\n");
-		exit(1);
+		return 1;
 	}
 
 	dev_index = verbose_device_search(optarg);
 	if (dev_index < 0)
-		exit(1);
+		return 1;
 
 	if (R.rateMult > RTLMULTMAX) {
 		fprintf(stderr, ERRPFX "rateMult can't be larger than %d\n", RTLMULTMAX);

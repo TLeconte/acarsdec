@@ -28,7 +28,7 @@ int initSoapy(char *optarg)
 
 	if (optarg == NULL) {
 		fprintf(stderr, ERRPFX "Need device string (ex: driver=rtltcp,rtltcp=127.0.0.1) after --soapysdr\n");
-		exit(1);
+		return 1;
 	}
 
 	dev = SoapySDRDevice_makeStrArgs(optarg);
