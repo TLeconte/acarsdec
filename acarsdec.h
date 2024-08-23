@@ -77,7 +77,8 @@ typedef struct {
 	int chn;
 	unsigned int Fr;		// channel frequency (in Hz)
 
-	enum { WSYN, SYN2, SOH1, TXT, CRC1, CRC2, END } Acarsstate;
+	enum { PREKEY, SYNC, SOH1, TXT, CRC1, CRC2, END } Acarsstate;
+	int count;
 	int nbits;
 	unsigned char outbits;
 } channel_t;

@@ -1,5 +1,6 @@
 /*
  *  Copyright (c) 2015 Thierry Leconte
+ *  Copyright (c) 2024 Thibaut VARENE
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -240,7 +241,7 @@ int initAcars(channel_t *ch)
 
 	ch->outbits = 0;
 	ch->nbits = 8;
-	ch->Acarsstate = WSYN;
+	ch->Acarsstate = PREKEY;
 
 	ch->blk = NULL;
 
@@ -249,43 +250,102 @@ int initAcars(channel_t *ch)
 
 static void resetAcars(channel_t *ch)
 {
-	ch->Acarsstate = WSYN;
+	ch->Acarsstate = PREKEY;
 	ch->MskDf = 0;
-	ch->nbits = 1;
+	ch->nbits = 8;
+	ch->count = 0;
 }
+
+// ACARS is LSb first
 
 void decodeAcars(channel_t *ch)
 {
 	unsigned char r = ch->outbits;
+	//vprerr("#%d r: %x, count: %d, st: %d\n", ch->chn+1, r, ch->count, ch->Acarsstate);
 
 	switch (ch->Acarsstate) {
-	case WSYN:
-		if (r == SYN) {
-			ch->Acarsstate = SYN2;
-			ch->nbits = 8;
-			return;
+	case PREKEY:
+		if (ch->count >= 12 && 0xFF != r) {	// we have our first non-0xFF byte after a sequence - XXX REVISIT: expect at least 16: adjust count depending on how fast the MSK PLL locks
+			unsigned char q = ~r;	// avoid type promotion in calling ffs(~r)
+			int l = ffs(q);		// find the first (LSb) 0 in r
+
+			vprerr("#%d synced, count: %d, r: %x, fz: %d\n", ch->chn+1, ch->count, r, l);
+			ch->count = 0;
+			ch->Acarsstate = SYNC;
+
+			// after the 0xFF sequence we expect a possibly shifted '+'|0x80, aka 0xAB: 10101011
+			if (l < 3) {
+				/*
+				 if the first zero is in position 1 or 2, assume we have already eaten into the '+', attempt sync on next symbol.
+				 NB we could check if we could reconstruct a '+' by shifting left, but that's too much effort for too little gain ;P
+				 3 possible cases: 0x.5 (0xAB>>1): shift 7 more bits; 0x.A (0xAB>>2): shift 6 more bits; else error.
+				 can't check entire byte as high nibble contains bits from next one. error unhandled, will be caught by SYNC:
+				 ch->nbits = ((r & 0xF) == 0x5) ? 7 : 6;
+				 in fact, this can be rewritten without branch simply by considering the value of the first bit:
+				 */
+				ch->nbits = 6 | (r & 0x01);	// 6 or 7
+				ch->count = 1;	// skip '+', check '*'
+			}
+			else if (l > 3)
+				ch->nbits = l-3;	// shift enough bits to leave 2 '1' before the first zero
+			else	// it looks like we've stopped dead on '+', jump into next state
+				goto synced;
 		}
-		if (r == (unsigned char)~SYN) {
-			ch->MskS ^= 2;
-			ch->Acarsstate = SYN2;
+		else {	// otherwise eat bytes until we get a sequence of more than 16 consecutive 0xFF or 0x00
 			ch->nbits = 8;
-			return;
+			switch (r) {
+			case 0x00:
+				if (--ch->count <= -10) {
+					// we really are hearing 0xFF, only inverted
+					vprerr("#%d: inverting polarity\n", ch->chn+1);
+					ch->MskS ^= 2;	// inverted polarity
+					ch->count = -ch->count;
+				}
+				break;
+			case 0xFF:
+				ch->count++;
+				break;
+			default:
+				ch->count = 0;
+				break;
+			}
 		}
-		ch->nbits = 1;
+
 		return;
 
-	case SYN2:
-		if (r == SYN) {
-			ch->Acarsstate = SOH1;
-			ch->nbits = 8;
+	case SYNC:
+synced:
+		switch (ch->count) {
+		case 0:	// expect '+' with parity bit set
+			if (('+'|0x80) != r) {
+				vprerr("#%d: didn't get '+': %x\n", ch->chn+1, r);
+				resetAcars(ch);
+				return;
+			}
+			break;
+		case 1:	// expect '*'
+			if ('*' != r) {
+				vprerr("#%d: didn't get '*': %x\n", ch->chn+1, r);
+				resetAcars(ch);
+				return;
+			}
+			break;
+		case 2:	// expect SYN
+		case 3:	// expect SYN
+			if (SYN != r) {
+				vprerr("#%d: didn't get SYN: %x\n", ch->chn+1, r);
+				resetAcars(ch);
+				return;
+			}
+			if (3 == ch->count)
+				ch->Acarsstate = SOH1;
+			break;
+		default:	// cannot happen
+			resetAcars(ch);
 			return;
 		}
-		if (r == (unsigned char)~SYN) {
-			ch->MskS ^= 2;
-			ch->nbits = 8;
-			return;
-		}
-		resetAcars(ch);
+		ch->nbits = 8;
+		ch->count++;
 		return;
 
 	case SOH1:
