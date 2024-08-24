@@ -269,7 +269,7 @@ void decodeAcars(channel_t *ch)
 			unsigned char q = ~r;	// avoid type promotion in calling ffs(~r)
 			int l = ffs(q);		// find the first (LSb) 0 in r
 
-			vprerr("#%d synced, count: %d, r: %x, fz: %d\n", ch->chn+1, ch->count, r, l);
+			vprerr("#%d synced, count: %d, r: %x, fz: %d, lvl: %5.1f\n", ch->chn+1, ch->count, r, l, 10 * log10(ch->MskLvl));
 			ch->count = 0;
 			ch->Acarsstate = SYNC;
 
