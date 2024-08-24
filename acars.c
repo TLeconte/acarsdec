@@ -356,8 +356,6 @@ synced:
 			ch->blk->chn = ch->chn;
 			ch->blk->len = 0;
 			ch->blk->err = 0;
-			ch->MskLvlSum = 0;
-			ch->MskBitCount = 0;
 			return;
 		}
 		vprerr("#%d didn't get SOH: %x\n", ch->chn+1, r);
@@ -397,7 +395,7 @@ synced:
 	case CRC2:
 		ch->blk->crc[1] = r;
 putmsg_lbl:
-		ch->blk->lvl = 10 * log10(ch->MskLvlSum / ch->MskBitCount);
+		ch->blk->lvl = 10 * log10(ch->MskLvl);
 
 		vprerr("put message #%d\n", ch->chn + 1);
 

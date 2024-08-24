@@ -53,6 +53,7 @@ int initMsk(channel_t *ch)
 	return 0;
 }
 
+// ACARS is LSb first
 static inline void putbit(float v, channel_t *ch)
 {
 	ch->outbits >>= 1;
@@ -114,8 +115,10 @@ void demodMSK(channel_t *ch, int len)
 			/* normalize */
 			lvl = cabsf(v);
 			v /= lvl + 1e-8;
-			ch->MskLvlSum += lvl * lvl / 4;
-			ch->MskBitCount++;
+
+			/* update level exp moving average. Average over last 16*8 bits */
+			lvl = lvl * lvl / 4;
+			ch->MskLvl = ch->MskLvl - (1.0/128.0 * (ch->MskLvl - lvl));
 
 			if (ch->MskS & 1) {
 				vo = cimagf(v);
