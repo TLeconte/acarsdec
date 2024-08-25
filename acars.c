@@ -34,12 +34,12 @@
 #define DEL 0x7f
 
 /* message queue */
-static pthread_mutex_t blkq_mtx;
-static pthread_cond_t blkq_wcd;
-static msgblk_t *blkq_s, *blkq_e;
+static pthread_mutex_t blkq_mtx = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t blkq_wcd = PTHREAD_COND_INITIALIZER;
+static msgblk_t *blkq_s = NULL, *blkq_e = NULL;
 static pthread_t blkth_id;
 
-static int acars_shutdown;
+static int acars_shutdown = 1;
 
 #include "syndrom.h"
 
@@ -240,14 +240,9 @@ static void resetAcars(channel_t *ch)
 
 int initAcars(channel_t *ch)
 {
-	if (ch->chn == 0) {
-		/* init global message queue */
-		pthread_mutex_init(&blkq_mtx, NULL);
-		pthread_cond_init(&blkq_wcd, NULL);
-		blkq_e = blkq_s = NULL;
-		pthread_create(&blkth_id, NULL, blk_thread, NULL);
-
+	if (acars_shutdown) {
 		acars_shutdown = 0;
+		pthread_create(&blkth_id, NULL, blk_thread, NULL);
 	}
 
 	resetAcars(ch);
