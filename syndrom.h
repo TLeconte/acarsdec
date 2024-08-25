@@ -54,7 +54,7 @@ const unsigned short crc_ccitt_table[256] = {
 	0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab, 0xa022, 0x92b9, 0x8330,
 	0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78
 };
-#define update_crc(crc,c) crc= (crc>> 8)^crc_ccitt_table[(crc^(c))&0xff];
+#define update_crc16(crc,c) ((crc)>>8)^crc_ccitt_table[((crc)^(c))&0xff];
 
 
 static const unsigned short syndrom[]={

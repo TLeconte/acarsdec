@@ -168,9 +168,9 @@ static void *blk_thread(void *arg)
 		/* crc check */
 		crc = 0;
 		for (i = 0; i < blk->len; i++)
-			update_crc(crc, blk->txt[i]);
-		update_crc(crc, blk->crc[0]);
-		update_crc(crc, blk->crc[1]);
+			crc = update_crc16(crc, blk->txt[i]);
+		crc = update_crc16(crc, blk->crc[0]);
+		crc = update_crc16(crc, blk->crc[1]);
 		if (crc) {
 			vprerr("#%d crc error\n", chn+1);
 			if (R.statsd)
