@@ -69,7 +69,7 @@ typedef struct {
 	float complex *inb;
 	double MskPhi;
 	double MskDf;
-	double MskLvl;
+	float MskLvl;
 	float MskClk;
 	unsigned int MskS, idx;
 
