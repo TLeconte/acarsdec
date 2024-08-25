@@ -194,14 +194,11 @@ static void *blk_thread(void *arg)
 		pn = 0;
 		for (i = 0; i < blk->len; i++) {
 			if (parity8(blk->txt[i]) == 0) {
-				pn++;
+				vprerr("#%d parity check failed\n", chn+1);
+				free(blk);
+				continue;
 			}
 			blk->txt[i] &= 0x7f;
-		}
-		if (pn) {
-			fprintf(stderr, "#%d parity check problem\n", chn+1);
-			free(blk);
-			continue;
 		}
 
 		if (R.statsd) {
