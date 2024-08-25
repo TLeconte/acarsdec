@@ -312,13 +312,13 @@ void decodeAcars(channel_t *ch)
 synced:
 		switch (ch->count) {
 		case 0:	// expect '+' with parity bit set
-			if (('+'|0x80) != r) {
+			if (unlikely(('+'|0x80) != r)) {
 				vprerr("#%d didn't get '+': %x\n", ch->chn+1, r);
 				goto fail;
 			}
 			break;
 		case 1:	// expect '*'
-			if ('*' != r) {
+			if (unlikely('*' != r)) {
 				vprerr("#%d didn't get '*': %x\n", ch->chn+1, r);
 				goto fail;
 			}
@@ -327,7 +327,7 @@ synced:
 			ch->Acarsstate = SOH1;
 			// fallthrough
 		case 2:	// expect SYN
-			if (SYN != r) {
+			if (unlikely(SYN != r)) {
 				vprerr("#%d didn't get SYN: %x\n", ch->chn+1, r);
 				goto fail;
 			}
@@ -339,10 +339,10 @@ synced:
 		return;
 
 	case SOH1:
-		if (r == SOH) {
+		if (likely(r == SOH)) {
 			if (ch->blk == NULL) {
 				ch->blk = malloc(sizeof(*ch->blk));
-				if (ch->blk == NULL) {
+				if (unlikely(ch->blk == NULL)) {
 					perror(NULL);
 					break;	// fail
 				}
@@ -358,18 +358,16 @@ synced:
 		break;	// else fail
 
 	case TXT:
-		ch->blk->txt[ch->blk->len++] = r;
-		if (parity8(r) == 0) {
-			if (++ch->blk->err > MAXPERR + 1) {
-				vprerr("#%d too many parity errors\n", ch->chn + 1);
-				break;	// fail
-			}
+		if (unlikely(ch->blk->len > 240)) {
+			vprerr("#%d too long\n", ch->chn + 1);
+			break;	// fail
 		}
+		ch->blk->txt[ch->blk->len++] = r;
 		if (r == ETX || r == ETB) {
 			ch->Acarsstate = CRC1;
 			return;
 		}
-		if (ch->blk->len > 20 && r == DEL) {
+		if (unlikely(r == DEL && ch->blk->len > 20)) {
 			vprerr("#%d miss txt end\n", ch->chn + 1);
 			ch->blk->len -= 3;
 			ch->blk->crc[0] = ch->blk->txt[ch->blk->len];
@@ -377,9 +375,11 @@ synced:
 			ch->Acarsstate = END;
 			goto putmsg_lbl;
 		}
-		if (ch->blk->len > 240) {
-			vprerr("#%d too long\n", ch->chn + 1);
-			break;	// fail
+		if (unlikely(parity8(r) == 0)) {
+			if (++ch->blk->err > MAXPERR + 1) {
+				vprerr("#%d too many parity errors\n", ch->chn + 1);
+				break;	// fail
+			}
 		}
 		return;
 
