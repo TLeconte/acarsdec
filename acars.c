@@ -374,7 +374,7 @@ synced:
 			ch->blk->len -= 3;
 			ch->blk->crc[0] = ch->blk->txt[ch->blk->len];
 			ch->blk->crc[1] = ch->blk->txt[ch->blk->len + 1];
-			ch->Acarsstate = CRC2;
+			ch->Acarsstate = END;
 			goto putmsg_lbl;
 		}
 		if (ch->blk->len > 240) {
@@ -390,6 +390,13 @@ synced:
 
 	case CRC2:
 		ch->blk->crc[1] = r;
+		ch->Acarsstate = END;
+		return;
+
+	case END:
+		if (unlikely(r != DEL))
+			vprerr("#%d didn't get DEL: %x\n", ch->chn+1, r);	// ignored
+
 putmsg_lbl:
 		ch->blk->lvl = 10 * log10(ch->MskLvl);
 
@@ -406,10 +413,6 @@ putmsg_lbl:
 		pthread_mutex_unlock(&blkq_mtx);
 
 		ch->blk = NULL;
-		ch->Acarsstate = END;
-		return;
-
-	case END:
 		break;	// reset
 	}
 
