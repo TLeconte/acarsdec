@@ -147,7 +147,7 @@ static void *blk_thread(void *arg)
 		/* parity check */
 		pn = 0;
 		for (i = 0; i < blk->len; i++) {
-			if ((numbits[(unsigned char)(blk->txt[i])] & 1) == 0) {
+			if (parity8(blk->txt[i]) == 0) {
 				if (pn < MAXPERR) {
 					pr[pn] = i;
 				}
@@ -199,8 +199,9 @@ static void *blk_thread(void *arg)
 		/* redo parity checking and removing */
 		pn = 0;
 		for (i = 0; i < blk->len; i++) {
-			if ((numbits[(unsigned char)(blk->txt[i])] & 1) == 0)
+			if (parity8(blk->txt[i]) == 0) {
 				pn++;
+			}
 			blk->txt[i] &= 0x7f;
 		}
 		if (pn) {
@@ -358,7 +359,7 @@ synced:
 
 	case TXT:
 		ch->blk->txt[ch->blk->len++] = r;
-		if ((numbits[(unsigned char)r] & 1) == 0) {
+		if (parity8(r) == 0) {
 			if (++ch->blk->err > MAXPERR + 1) {
 				vprerr("#%d too many parity errors\n", ch->chn + 1);
 				break;	// fail

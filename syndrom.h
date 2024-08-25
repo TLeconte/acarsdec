@@ -12,6 +12,14 @@ static const unsigned char  numbits[256]={
 3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,4,5,5,6,5,6,6,7,5,6,6,7,6,7,7,8
 };
 
+#ifdef __GNUC__
+ #define popcount8(x)	__builtin_popcount((x))		// NB compiler sign-extends: doesn't matter for parity check
+ #define parity8(x)	__builtin_parity((x))
+#else
+ #define popcount8(x)	numbits[(unsigned char)(x)]
+ #define parity8(x)	(popcount8((x)) & 1)
+#endif
+
 const unsigned short crc_ccitt_table[256] = {
 	0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
 	0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
