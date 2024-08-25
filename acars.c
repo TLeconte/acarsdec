@@ -36,7 +36,7 @@
 /* message queue */
 static pthread_mutex_t blkq_mtx = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t blkq_wcd = PTHREAD_COND_INITIALIZER;
-static msgblk_t *blkq_s = NULL, *blkq_e = NULL;
+static msgblk_t *blkq_h = NULL;
 static pthread_t blkth_id;
 
 static int acars_shutdown = 1;
@@ -108,9 +108,9 @@ static void *blk_thread(void *arg)
 
 		vprerr("blk_starting\n");
 
-		/* get a message */
+		/* pop a message */
 		pthread_mutex_lock(&blkq_mtx);
-		while ((blkq_e == NULL) && !acars_shutdown)
+		while ((blkq_h == NULL) && !acars_shutdown)
 			pthread_cond_wait(&blkq_wcd, &blkq_mtx);
 
 		if (acars_shutdown) {
@@ -118,10 +118,8 @@ static void *blk_thread(void *arg)
 			break;
 		}
 
-		blk = blkq_e;
-		blkq_e = blk->prev;
-		if (blkq_e == NULL)
-			blkq_s = NULL;
+		blk = blkq_h;
+		blkq_h = blk->prev;
 		pthread_mutex_unlock(&blkq_mtx);
 
 		chn = blk->chn;
@@ -403,12 +401,8 @@ putmsg_lbl:
 		vprerr("put message #%d\n", ch->chn + 1);
 
 		pthread_mutex_lock(&blkq_mtx);
-		ch->blk->prev = NULL;
-		if (blkq_s)
-			blkq_s->prev = ch->blk;
-		blkq_s = ch->blk;
-		if (blkq_e == NULL)
-			blkq_e = blkq_s;
+		ch->blk->prev = blkq_h;
+		blkq_h = ch->blk;
 		pthread_cond_signal(&blkq_wcd);
 		pthread_mutex_unlock(&blkq_mtx);
 
