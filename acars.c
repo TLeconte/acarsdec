@@ -367,12 +367,6 @@ synced:
 			ch->Acarsstate = END;
 			goto putmsg_lbl;
 		}
-		if (unlikely(parity8(r) == 0)) {
-			if (++ch->blk->err > MAXPERR + 1) {
-				vprerr("#%d too many parity errors\n", ch->chn + 1);
-				break;	// fail
-			}
-		}
 		return;
 
 	case CRC1:
