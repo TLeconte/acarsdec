@@ -159,9 +159,6 @@ static void *blk_thread(void *arg)
 			free(blk);
 			continue;
 		}
-		if (pn > 0)
-			vprerr("#%d parity error(s): %d\n", chn+1, pn);
-		blk->err = pn;
 
 		/* crc check */
 		crc = 0;
@@ -169,30 +166,29 @@ static void *blk_thread(void *arg)
 			crc = update_crc16(crc, blk->txt[i]);
 		crc = update_crc16(crc, blk->crc[0]);
 		crc = update_crc16(crc, blk->crc[1]);
-		if (crc) {
-			vprerr("#%d crc error\n", chn+1);
-			if (R.statsd)
-				statsd_inc_per_channel(chn, "decoder.errors.crc");
-		}
 
-		/* try to fix error */
+		/* try to fix errors: parity or crc */
 		if (pn) {
+			vprerr("#%d parity error(s): %d\n", chn+1, pn);
 			if (fixprerr(blk, crc, pr, pn) == 0) {
 				vprerr("#%d not able to fix errors\n", chn+1);
 				free(blk);
 				continue;
 			}
 			vprerr("#%d errors fixed\n", chn+1);
-		} else {
-			if (crc) {
-				if (fixdberr(blk, crc) == 0) {
-					vprerr("#%d not able to fix errors\n", chn+1);
-					free(blk);
-					continue;
-				}
-				vprerr("#%d errors fixed\n", chn+1);
-			}
 		}
+		else if (crc) {
+			vprerr("#%d crc error\n", chn+1);
+			if (R.statsd)
+				statsd_inc_per_channel(chn, "decoder.errors.crc");
+			if (fixdberr(blk, crc) == 0) {
+				vprerr("#%d not able to fix errors\n", chn+1);
+				free(blk);
+				continue;
+			}
+			vprerr("#%d errors fixed\n", chn+1);
+		}
+		blk->err = pn;
 
 		/* redo parity checking and removing */
 		pn = 0;
