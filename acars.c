@@ -134,8 +134,7 @@ static void *blk_thread(void *arg)
 			vprerr("#%d too short\n", chn+1);
 			if (R.statsd)
 				statsd_inc_per_channel(chn, "decoder.errors.too_short");
-			free(blk);
-			continue;
+			goto fail;
 		}
 
 		/* force STX/ETX */
@@ -156,8 +155,7 @@ static void *blk_thread(void *arg)
 			vprerr("#%d too many parity errors: %d\n", chn+1, pn);
 			if (R.statsd)
 				statsd_inc_per_channel(chn, "decoder.errors.parity_excess");
-			free(blk);
-			continue;
+			goto fail;
 		}
 
 		/* crc check */
@@ -172,8 +170,7 @@ static void *blk_thread(void *arg)
 			vprerr("#%d parity error(s): %d\n", chn+1, pn);
 			if (fixprerr(blk, crc, pr, pn) == 0) {
 				vprerr("#%d not able to fix errors\n", chn+1);
-				free(blk);
-				continue;
+				goto fail;
 			}
 			vprerr("#%d errors fixed\n", chn+1);
 		}
@@ -183,8 +180,7 @@ static void *blk_thread(void *arg)
 				statsd_inc_per_channel(chn, "decoder.errors.crc");
 			if (fixdberr(blk, crc) == 0) {
 				vprerr("#%d not able to fix errors\n", chn+1);
-				free(blk);
-				continue;
+				goto fail;
 			}
 			vprerr("#%d errors fixed\n", chn+1);
 		}
@@ -195,8 +191,7 @@ static void *blk_thread(void *arg)
 		for (i = 0; i < blk->len; i++) {
 			if (parity8(blk->txt[i]) == 0) {
 				vprerr("#%d parity check failed\n", chn+1);
-				free(blk);
-				continue;
+				goto fail;
 			}
 			blk->txt[i] &= 0x7f;
 		}
@@ -215,7 +210,7 @@ static void *blk_thread(void *arg)
 		}
 
 		outputmsg(blk);
-
+fail:
 		free(blk);
 
 	} while (1);
