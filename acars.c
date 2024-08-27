@@ -193,14 +193,16 @@ static void *blk_thread(void *arg)
 		blk->err = pn;
 
 		/* redo parity checking and removing */
-		pn = 0;
-		for (i = 0; i < blk->len; i++) {
-			if (parity8(blk->txt[i]) == 0) {
-				vprerr("#%d parity check failed\n", chn+1);
-				goto fail;
-			}
+		bool pfail = 0;
+		for (i = 0; i < blk->len; i++) {	// vectorizable (in clang at least)
+			pfail |= !parity8(blk->txt[i]);
 			blk->txt[i] &= 0x7f;
 		}
+		if (pfail) {
+			vprerr("#%d parity check failed\n", chn+1);
+			goto fail;
+		}
+
 
 		if (R.statsd) {
 			char pfx[16];
