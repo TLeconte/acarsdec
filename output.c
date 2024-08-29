@@ -505,7 +505,7 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 	fl = flight_head;
 	flp = NULL;
 	while (fl) {
-		if (strcmp(msg->addr, fl->addr) == 0)
+		if (memcmp(msg->addr, fl->addr, sizeof(fl->addr)) == 0)
 			break;
 		flp = fl;
 		fl = fl->next;
@@ -517,11 +517,11 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 			perror(NULL);
 			return (NULL);
 		}
-		strncpy(fl->addr, msg->addr, 8);
+		memcpy(fl->addr, msg->addr, sizeof(fl->addr));
 		fl->ts = tv;
 	}
 
-	strncpy(fl->fid, msg->fid, 7);
+	memcpy(fl->fid, msg->fid, sizeof(fl->fid));
 	fl->tl = tv;
 	fl->chm |= (1 << chn);
 	fl->nbm += 1;
