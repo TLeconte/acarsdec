@@ -753,12 +753,13 @@ void outputmsg(const msgblk_t *blk)
 
 	msg.mode = blk->txt.d.mode;
 
+	// XXX NB we wouldn't need these nul-terminated copies if cJSON_AddStringToObject could specify string length
+
 	for (i = 0; i < sizeof(blk->txt.d.addr); i++) {
 		if (blk->txt.d.addr[i] != '.')	// skip leading dots -- XXX libacars/dumpvdl2 doesn't
 			break;
 	}
 	memcpy(msg.addr, blk->txt.d.addr+i, sizeof(blk->txt.d.addr)-i);
-	msg.addr[sizeof(msg.addr)-i] = '\0';
 
 	/* ACK/NAK */
 	msg.ack = blk->txt.d.ack;
@@ -768,7 +769,6 @@ void outputmsg(const msgblk_t *blk)
 	memcpy(&msg.label, blk->txt.d.label, sizeof(blk->txt.d.label));
 	if (msg.label[1] == 0x7f)
 		msg.label[1] = 'd';
-	msg.label[2] = '\0';
 
 	msg.bid = blk->txt.d.bid;
 
@@ -803,7 +803,6 @@ void outputmsg(const msgblk_t *blk)
 			/* message no */
 			for (i = 0; i < 4 && i < text_len; i++)	// XXX revisit global length check + memcpy
 				msg.no[i] = msg.txt[i];
-			msg.no[i] = '\0';
 
 			msg.txt += i;
 			text_len -= i;
@@ -812,13 +811,11 @@ void outputmsg(const msgblk_t *blk)
 			/* to store the MSN separately as prefix and seq character. */
 			for (i = 0; i < 3; i++)
 				msg.msn[i] = msg.no[i];
-			msg.msn[3] = '\0';
 			msg.msn_seq = msg.no[3];
 #endif
 			/* Flight id */
 			for (i = 0; i < 6 && i < text_len; i++)
 				msg.fid[i] = msg.txt[i];
-			msg.fid[i] = '\0';
 
 			outflg = 1;
 
