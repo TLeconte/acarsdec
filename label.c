@@ -387,8 +387,6 @@ static int label_8s(char *txt, oooi_t *oooi)
 
 int DecodeLabel(acarsmsg_t *msg, oooi_t *oooi)
 {
-	memset(oooi, 0, sizeof(*oooi));
-
 	switch (msg->label[0]) {
 	case '1':
 		switch (msg->label[1]) {

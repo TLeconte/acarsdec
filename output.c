@@ -387,7 +387,7 @@ static int fmt_date(struct timeval tv, char *buf, size_t bufsz)
 
 static int fmt_msg(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
 {
-	oooi_t oooi;
+	oooi_t oooi = {0};
 	int len = 0;
 
 #if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
@@ -574,7 +574,7 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 #ifdef HAVE_CJSON
 static int fmt_json(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
 {
-	oooi_t oooi;
+	oooi_t oooi = {0};
 #if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
 	float freq = R.channels[chn].Fr / 1000000.0;
 #else
