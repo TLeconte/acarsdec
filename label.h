@@ -16,7 +16,7 @@ typedef struct {
 	char fid[7];
 	char sublabel[3];
 	char mfi[3];
-	char bs, be;
+	char be;
 	char *txt;
 	int err;
 	float lvl;

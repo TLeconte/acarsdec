@@ -762,9 +762,6 @@ void outputmsg(const msgblk_t *blk)
 	msg.reasm_status = LA_REASM_SKIPPED; // default value (valid for message with empty text)
 #endif
 
-	/* txt start  */
-	msg.bs = blk->txt.d.sot;
-
 	if (R.airflt && !down)
 		return;
 	if (label_filter(msg.label) == 0)
@@ -772,7 +769,7 @@ void outputmsg(const msgblk_t *blk)
 
 	int text_len = blk_textlen(blk);
 
-	if (text_len && msg.bs != 0x03) {
+	if (text_len && blk->txt.d.sot != 0x03) {
 		msg.txt = blk->txt.d.text;
 
 		/* txt end */
