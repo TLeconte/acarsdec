@@ -448,7 +448,7 @@ static int fmt_msg(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_
 		if (oooi.gin[0])
 			len += snprintf(buf + len, bufsz - len, "Gate in Time : %s\n", oooi.gin);
 		if (oooi.woff[0])
-			len += snprintf(buf + len, bufsz - len, "Wheels off Tme : %s\n", oooi.woff);
+			len += snprintf(buf + len, bufsz - len, "Wheels off Time : %s\n", oooi.woff);
 		if (oooi.won[0])
 			len += snprintf(buf + len, bufsz - len, "Wheels on Time : %s\n", oooi.won);
 	}
