@@ -1,32 +1,7 @@
 #ifndef label_h
 #define label_h
 
-#ifdef HAVE_LIBACARS
-#include <libacars/libacars.h>
-#include <libacars/reassembly.h>
-#endif
-
-typedef struct {
-	char mode;
-	char addr[8];
-	char ack;
-	char label[3];
-	char bid;
-	char no[5];
-	char fid[7];
-	char sublabel[3];
-	char mfi[3];
-	char be;
-	char *txt;
-	int err;
-	float lvl;
-#ifdef HAVE_LIBACARS
-	char msn[4];
-	char msn_seq;
-	la_proto_node *decoded_tree;
-	la_reasm_status reasm_status;
-#endif
-} acarsmsg_t;
+#include "acarsdec.h"
 
 typedef struct {
 	char da[5];

@@ -76,6 +76,28 @@ typedef struct mskblk_s {
 #define blk_textlen(blkp)	(blkp->txtlen - offsetof(struct txtdata_s, text))
 
 typedef struct {
+	char mode;
+	char addr[sizeof(((struct txtdata_s *)0)->addr)+1];
+	char ack;
+	char label[sizeof(((struct txtdata_s *)0)->label)+1];
+	char bid;
+	char no[5];
+	char fid[7];
+	char sublabel[3];
+	char mfi[3];
+	char be;
+	char *txt;
+	int err;
+	float lvl;
+#ifdef HAVE_LIBACARS
+	char msn[4];
+	char msn_seq;
+	la_proto_node *decoded_tree;
+	la_reasm_status reasm_status;
+#endif
+} acarsmsg_t;
+
+typedef struct {
 	msgblk_t *blk;
 	float complex *oscillator;
 
