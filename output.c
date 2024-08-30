@@ -800,27 +800,32 @@ void outputmsg(const msgblk_t *blk)
 		text_len--;
 
 		if (down) {
-			/* message no */
-			for (i = 0; i < 4 && i < text_len; i++)	// XXX revisit global length check + memcpy
-				msg.no[i] = msg.txt[i];
+			i = sizeof(msg.no) - 1;
+			if (text_len < i)
+				goto skip;
 
+			/* message no */
+			memcpy(msg.no, msg.txt, i);
 			msg.txt += i;
 			text_len -= i;
 #ifdef HAVE_LIBACARS
 			/* The 3-char prefix is used in reassembly hash table key, so we need */
 			/* to store the MSN separately as prefix and seq character. */
-			for (i = 0; i < 3; i++)
+			for (i = 0; i < sizeof(msg.msn)-1; i++)
 				msg.msn[i] = msg.no[i];
 			msg.msn_seq = msg.no[3];
 #endif
+			i = sizeof(msg.fid) - 1;
+			if (text_len < i)
+				goto skip;
+
 			/* Flight id */
-			for (i = 0; i < 6 && i < text_len; i++)
-				msg.fid[i] = msg.txt[i];
-
+			memcpy(msg.fid, msg.txt, i);
 			outflg = 1;
-
 			msg.txt += i;
 			text_len -= i;
+skip:
+			(void)i;	// nothing, goto target for end of if() block
 		}
 #ifdef HAVE_LIBACARS
 
