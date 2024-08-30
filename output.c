@@ -500,7 +500,6 @@ static flight_t *flight_head = NULL;
 static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 {
 	flight_t *fl, *fld, *flp;
-	oooi_t oooi;
 
 	fl = flight_head;
 	flp = NULL;
@@ -526,22 +525,7 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 	fl->chm |= (1 << chn);
 	fl->nbm += 1;
 
-	if (DecodeLabel(msg, &oooi)) {
-		if (oooi.da[0])
-			memcpy(fl->oooi.da, oooi.da, 5);
-		if (oooi.sa[0])
-			memcpy(fl->oooi.sa, oooi.sa, 5);
-		if (oooi.eta[0])
-			memcpy(fl->oooi.eta, oooi.eta, 5);
-		if (oooi.gout[0])
-			memcpy(fl->oooi.gout, oooi.gout, 5);
-		if (oooi.gin[0])
-			memcpy(fl->oooi.gin, oooi.gin, 5);
-		if (oooi.woff[0])
-			memcpy(fl->oooi.woff, oooi.woff, 5);
-		if (oooi.won[0])
-			memcpy(fl->oooi.won, oooi.won, 5);
-	}
+	DecodeLabel(msg, &fl->oooi);
 
 	if (flp) {
 		flp->next = fl->next;
