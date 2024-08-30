@@ -336,7 +336,7 @@ static int fmt_sv(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t
 		       R.idstation, chn + 1, tmp.tm_mday, tmp.tm_mon + 1,
 		       tmp.tm_year + 1900, tmp.tm_hour, tmp.tm_min, tmp.tm_sec,
 		       msg->err, (int)(msg->lvl), msg->mode, msg->addr, msg->ack, msg->label,
-		       msg->bid ? msg->bid : '.', msg->no, msg->fid, msg->txt);
+			msg->bid ? msg->bid : '.', msg->no, msg->fid, msg->txt ? msg->txt : "");
 }
 
 static int fmt_pp(acarsmsg_t *msg, char *buf, size_t bufsz)
@@ -347,7 +347,7 @@ static int fmt_pp(acarsmsg_t *msg, char *buf, size_t bufsz)
 	if (!msg || !buf)
 		return -1;
 
-	char *txt = strdup(msg->txt);
+	char *txt = strdup(msg->txt ? msg->txt : "");
 	for (pstr = txt; *pstr != 0; pstr++)
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
@@ -430,7 +430,7 @@ static int fmt_msg(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_
 	}
 
 	len += snprintf(buf + len, bufsz - len, "\n");
-	if (msg->txt[0])
+	if (msg->txt)
 		len += snprintf(buf + len, bufsz - len, "%s\n", msg->txt);
 	if (msg->be == 0x17)
 		len += snprintf(buf + len, bufsz - len, "ETB\n");
@@ -468,7 +468,7 @@ static int fmt_oneline(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, s
 	char *pstr;
 	int len;
 
-	strncpy(txt, msg->txt, 59);
+	strncpy(txt, msg->txt ? msg->txt : "", 59);
 	txt[59] = 0;
 	for (pstr = txt; *pstr != 0; pstr++)
 		if (*pstr == '\n' || *pstr == '\r')
@@ -619,7 +619,7 @@ static int fmt_json(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size
 			cJSON_AddStringToObject(json_obj, "msgno", msg->no);
 		}
 	}
-	if (msg->txt[0])
+	if (msg->txt)
 		cJSON_AddStringToObject(json_obj, "text", msg->txt);
 
 	if (msg->be == 0x17)
@@ -740,9 +740,9 @@ static int fmt_monitor(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, s
 
 void outputmsg(const msgblk_t *blk)
 {
+	uint8_t *reassembled_msg = NULL;
 	acarsmsg_t msg;
-	int i, k;
-	int outflg = 0;
+	int i, outflg = 0;
 	flight_t *fl = NULL;
 	output_t *out;
 
@@ -786,15 +786,27 @@ void outputmsg(const msgblk_t *blk)
 	if (label_filter(msg.label) == 0)
 		return;
 
-	/* txt end */
-	msg.be = blk->txt.raw[blk_textlen(blk) - 1];
+	int text_len = blk_textlen(blk);
 
-	if (msg.bs != 0x03) {
+	if (text_len && msg.bs != 0x03) {
+		msg.txt = blk->txt.d.text;
+
+		/* txt end */
+		msg.be = msg.txt[text_len - 1];
+
+		/* terminate text string before suffix (necessary for cJSON_AddStringToObject()
+		 msg.txt could be const without this. XXX keeping the warning as a reminder to revisit */
+		msg.txt[text_len - 1] = '\0';
+		text_len--;
+
 		if (down) {
 			/* message no */
-			for (i = 0; i < 4 && i < blk_textlen(blk) - 1; i++)
-				msg.no[i] = blk->txt.d.text[i];
+			for (i = 0; i < 4 && i < text_len; i++)	// XXX revisit global length check + memcpy
+				msg.no[i] = msg.txt[i];
 			msg.no[i] = '\0';
+
+			msg.txt += i;
+			text_len -= i;
 #ifdef HAVE_LIBACARS
 			/* The 3-char prefix is used in reassembly hash table key, so we need */
 			/* to store the MSN separately as prefix and seq character. */
@@ -803,23 +815,24 @@ void outputmsg(const msgblk_t *blk)
 			msg.msn[3] = '\0';
 			msg.msn_seq = msg.no[3];
 #endif
-			k = 4;
 			/* Flight id */
-			for (i = 0; i < 6 && k < blk_textlen(blk) - 1; i++, k++)
-				msg.fid[i] = blk->txt.d.text[k];
+			for (i = 0; i < 6 && i < text_len; i++)
+				msg.fid[i] = msg.txt[i];
 			msg.fid[i] = '\0';
 
 			outflg = 1;
+
+			msg.txt += i;
+			text_len -= i;
 		}
-		int txt_len = blk_textlen(blk) - k - 1;
 #ifdef HAVE_LIBACARS
 
 		// Extract sublabel and MFI if present
 		int offset = la_acars_extract_sublabel_and_mfi(msg.label, msg_dir,
-							       (const char *)blk->txt.d.text + k, txt_len, msg.sublabel, msg.mfi);
+							       msg.txt, text_len, msg.sublabel, msg.mfi);
 		if (offset > 0) {
-			k += offset;
-			txt_len -= offset;
+			msg.txt += offset;
+			text_len -= offset;
 		}
 
 		la_reasm_table *acars_rtable = NULL;
@@ -843,8 +856,8 @@ void outputmsg(const msgblk_t *blk)
 			msg.reasm_status = la_reasm_fragment_add(acars_rtable,
 								 &(la_reasm_fragment_info){
 									 .msg_info = &msg,
-									 .msg_data = (uint8_t *)(blk->txt.d.text + k),
-									 .msg_data_len = txt_len,
+									 .msg_data = (uint8_t *)msg.txt,
+									 .msg_data_len = text_len,
 									 .total_pdu_len = 0, // not used
 									 .seq_num = down ? msg.msn_seq - 'A' : msg.bid - 'A',
 									 .seq_num_first = down ? 0 : SEQ_FIRST_NONE,
@@ -854,27 +867,13 @@ void outputmsg(const msgblk_t *blk)
 									 .reasm_timeout = down ? acars_reasm_timeout_downlink : acars_reasm_timeout_uplink
 								});
 		}
-		uint8_t *reassembled_msg = NULL;
 		if (msg.reasm_status == LA_REASM_COMPLETE &&
 		    la_reasm_payload_get(acars_rtable, &msg, &reassembled_msg) > 0) {
 			// reassembled_msg is a newly allocated byte buffer, which is guaranteed to
 			// be NULL-terminated, so we can cast it to char * directly.
 			msg.txt = (char *)reassembled_msg;
-		} else {
-#endif // HAVE_LIBACARS
-			msg.txt = calloc(txt_len + 1, sizeof(char));
-			if (!msg.txt)
-				perror(NULL);
-			else if (txt_len > 0) {
-				memcpy(msg.txt, blk->txt.d.text + k, txt_len);
-			}
-#ifdef HAVE_LIBACARS
 		}
-#endif
-	} else { // empty message text
-		msg.txt = calloc(1, sizeof(char));
-		if (!msg.txt)
-			perror(NULL);
+#endif // HAVE_LIBACARS
 	}
 
 #ifdef HAVE_LIBACARS
@@ -952,8 +951,8 @@ void outputmsg(const msgblk_t *blk)
 		}
 	}
 
-	free(msg.txt);
 #ifdef HAVE_LIBACARS
 	la_proto_tree_destroy(msg.decoded_tree);
+	free(reassembled_msg);
 #endif
 }
