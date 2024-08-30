@@ -387,127 +387,128 @@ static int label_8s(char *txt, oooi_t *oooi)
 
 int DecodeLabel(acarsmsg_t *msg, oooi_t *oooi)
 {
-	int ov = 0;
-
 	memset(oooi, 0, sizeof(*oooi));
 
 	switch (msg->label[0]) {
 	case '1':
-		if (msg->label[1] == '0')
-			ov = label_10(msg->txt, oooi);
-		if (msg->label[1] == '1')
-			ov = label_11(msg->txt, oooi);
-		if (msg->label[1] == '2')
-			ov = label_12(msg->txt, oooi);
-		if (msg->label[1] == '5')
-			ov = label_15(msg->txt, oooi);
-		if (msg->label[1] == '7')
-			ov = label_17(msg->txt, oooi);
-		if (msg->label[1] == 'G')
-			ov = label_1G(msg->txt, oooi);
+		switch (msg->label[1]) {
+		case '0':
+			return label_10(msg->txt, oooi);
+		case '1':
+			return label_11(msg->txt, oooi);
+		case '2':
+			return label_12(msg->txt, oooi);
+		case '5':
+			return label_15(msg->txt, oooi);
+		case '7':
+			return label_17(msg->txt, oooi);
+		case 'G':
+			return label_1G(msg->txt, oooi);
+		default:
+			break;
+		}
 		break;
 	case '2':
-		if (msg->label[1] == '0')
-			ov = label_20(msg->txt, oooi);
-		if (msg->label[1] == '1')
-			ov = label_21(msg->txt, oooi);
-		if (msg->label[1] == '6')
-			ov = label_26(msg->txt, oooi);
-		if (msg->label[1] == 'N')
-			ov = label_2N(msg->txt, oooi);
-		if (msg->label[1] == 'Z')
-			ov = label_2Z(msg->txt, oooi);
+		switch (msg->label[1]) {
+		case '0':
+			return label_20(msg->txt, oooi);
+		case '1':
+			return label_21(msg->txt, oooi);
+		case '6':
+			return label_26(msg->txt, oooi);
+		case 'N':
+			return label_2N(msg->txt, oooi);
+		case 'Z':
+			return label_2Z(msg->txt, oooi);
+		default:
+			break;
+		}
 		break;
 	case '3':
-		if (msg->label[1] == '3')
-			ov = label_33(msg->txt, oooi);
-		if (msg->label[1] == '9')
-			ov = label_39(msg->txt, oooi);
+		switch (msg->label[1]) {
+		case '3':
+			return label_33(msg->txt, oooi);
+		case '9':
+			return label_39(msg->txt, oooi);
+		default:
+			break;
+		}
 		break;
 	case '4':
-		if (msg->label[1] == '4')
-			ov = label_44(msg->txt, oooi);
-		if (msg->label[1] == '5')
-			ov = label_45(msg->txt, oooi);
+		switch (msg->label[1]) {
+		case '4':
+			return label_44(msg->txt, oooi);
+		case '5':
+			return label_45(msg->txt, oooi);
+		default:
+			break;
+		}
 		break;
 	case '8':
-		if (msg->label[1] == '0')
-			ov = label_80(msg->txt, oooi);
-		if (msg->label[1] == '3')
-			ov = label_83(msg->txt, oooi);
-		if (msg->label[1] == 'D')
-			ov = label_8D(msg->txt, oooi);
-		if (msg->label[1] == 'E')
-			ov = label_8e(msg->txt, oooi);
-		if (msg->label[1] == 'S')
-			ov = label_8s(msg->txt, oooi);
+		switch (msg->label[1]) {
+		case '0':
+			return label_80(msg->txt, oooi);
+		case '3':
+			return label_83(msg->txt, oooi);
+		case 'D':
+			return label_8D(msg->txt, oooi);
+		case 'E':
+			return label_8e(msg->txt, oooi);
+		case 'S':
+			return label_8s(msg->txt, oooi);
+		default:
+			break;
+		}
 		break;
 	case 'R':
 		if (msg->label[1] == 'B')
-			ov = label_26(msg->txt, oooi);
+			return label_26(msg->txt, oooi);
 		break;
 	case 'Q':
 		switch (msg->label[1]) {
 		case '1':
-			ov = label_q1(msg->txt, oooi);
-			break;
+			return label_q1(msg->txt, oooi);
 		case '2':
-			ov = label_q2(msg->txt, oooi);
-			break;
+			return label_q2(msg->txt, oooi);
 		case 'A':
-			ov = label_qa(msg->txt, oooi);
-			break;
+			return label_qa(msg->txt, oooi);
 		case 'B':
-			ov = label_qb(msg->txt, oooi);
-			break;
+			return label_qb(msg->txt, oooi);
 		case 'C':
-			ov = label_qc(msg->txt, oooi);
-			break;
+			return label_qc(msg->txt, oooi);
 		case 'D':
-			ov = label_qd(msg->txt, oooi);
-			break;
+			return label_qd(msg->txt, oooi);
 		case 'E':
-			ov = label_qe(msg->txt, oooi);
-			break;
+			return label_qe(msg->txt, oooi);
 		case 'F':
-			ov = label_qf(msg->txt, oooi);
-			break;
+			return label_qf(msg->txt, oooi);
 		case 'G':
-			ov = label_qg(msg->txt, oooi);
-			break;
+			return label_qg(msg->txt, oooi);
 		case 'H':
-			ov = label_qh(msg->txt, oooi);
-			break;
+			return label_qh(msg->txt, oooi);
 		case 'K':
-			ov = label_qk(msg->txt, oooi);
-			break;
+			return label_qk(msg->txt, oooi);
 		case 'L':
-			ov = label_ql(msg->txt, oooi);
-			break;
+			return label_ql(msg->txt, oooi);
 		case 'M':
-			ov = label_qm(msg->txt, oooi);
-			break;
+			return label_qm(msg->txt, oooi);
 		case 'N':
-			ov = label_qn(msg->txt, oooi);
-			break;
+			return label_qn(msg->txt, oooi);
 		case 'P':
-			ov = label_qp(msg->txt, oooi);
-			break;
+			return label_qp(msg->txt, oooi);
 		case 'Q':
-			ov = label_qq(msg->txt, oooi);
-			break;
+			return label_qq(msg->txt, oooi);
 		case 'R':
-			ov = label_qr(msg->txt, oooi);
-			break;
+			return label_qr(msg->txt, oooi);
 		case 'S':
-			ov = label_qs(msg->txt, oooi);
-			break;
+			return label_qs(msg->txt, oooi);
 		case 'T':
-			ov = label_qt(msg->txt, oooi);
+			return label_qt(msg->txt, oooi);
+		default:
 			break;
 		}
 		break;
 	}
 
-	return ov;
+	return 0;
 }
