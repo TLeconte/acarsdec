@@ -91,7 +91,6 @@ typedef struct {
 	float lvl;
 #ifdef HAVE_LIBACARS
 	char msn[4];
-	char msn_seq;
 	la_proto_node *decoded_tree;
 	la_reasm_status reasm_status;
 #endif

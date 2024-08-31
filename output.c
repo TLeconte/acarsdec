@@ -752,6 +752,7 @@ void outputmsg(const msgblk_t *blk)
 
 	bool down = IS_DOWNLINK_BLK(msg.bid);
 #ifdef HAVE_LIBACARS
+	char msn_seq;
 	la_msg_dir msg_dir = down ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR;
 	msg.reasm_status = LA_REASM_SKIPPED; // default value (valid for message with empty text)
 #endif
@@ -788,7 +789,7 @@ void outputmsg(const msgblk_t *blk)
 			/* to store the MSN separately as prefix and seq character. */
 			for (i = 0; i < sizeof(msg.msn)-1; i++)
 				msg.msn[i] = msg.no[i];
-			msg.msn_seq = msg.no[3];
+			msn_seq = msg.no[3];
 #endif
 			i = sizeof(msg.fid) - 1;
 			if (text_len < i)
@@ -836,7 +837,7 @@ skip:
 									 .msg_data = (uint8_t *)msg.txt,
 									 .msg_data_len = text_len,
 									 .total_pdu_len = 0, // not used
-									 .seq_num = down ? msg.msn_seq - 'A' : msg.bid - 'A',
+									 .seq_num = down ? msn_seq - 'A' : msg.bid - 'A',
 									 .seq_num_first = down ? 0 : SEQ_FIRST_NONE,
 									 .seq_num_wrap = seq_num_wrap,
 									 .is_final_fragment = msg.be != 0x17, // ETB means "more fragments"
