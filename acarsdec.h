@@ -77,23 +77,23 @@ typedef struct mskblk_s {
 
 typedef struct {
 	char mode;
-	char addr[sizeof(((struct txtdata_s *)0)->addr)+1];
+	char addr[sizeof(((struct txtdata_s *)0)->addr)+1];	// null-terminated copy of addr
 	char ack;
-	char label[sizeof(((struct txtdata_s *)0)->label)+1];
+	char label[sizeof(((struct txtdata_s *)0)->label)+1];	// null-terminated copy of label
 	char bid;
-	char no[5];
-	char fid[7];
-	char sublabel[3];
-	char mfi[3];
+	char no[5];		// null-terminated
+	char fid[7];		// null-terminated
+	char sublabel[3];	// null-terminated
+	char mfi[3];		// null-terminated
 	char be;
-	char *txt;
+	char msn[4];		// only for libacars - null-terminated copy of msg.no[0-3]
 	int err;
 	float lvl;
 #ifdef HAVE_LIBACARS
-	char msn[4];
-	la_proto_node *decoded_tree;
 	la_reasm_status reasm_status;
+	la_proto_node *decoded_tree;
 #endif
+	char *txt;
 } acarsmsg_t;
 
 typedef struct {
