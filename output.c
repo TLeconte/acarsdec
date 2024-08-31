@@ -390,12 +390,10 @@ static int fmt_msg(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_
 	oooi_t oooi = {0};
 	int len = 0;
 
-#if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
 	if (R.inmode >= IN_RTL)
 		len += snprintf(buf + len, bufsz - len, "[#%1d (F:%3.3f L:%+5.1f E:%1d) ", chn + 1,
 			R.channels[chn].Fr / 1000000.0, msg->lvl, msg->err);
 	else
-#endif
 		len += snprintf(buf + len, bufsz - len, "[#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
 
 	if (R.inmode != IN_SNDFILE)
@@ -559,11 +557,7 @@ static flight_t *addFlight(acarsmsg_t *msg, int chn, struct timeval tv)
 static int fmt_json(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_t bufsz)
 {
 	oooi_t oooi = {0};
-#if defined(WITH_RTL) || defined(WITH_AIR) || defined(WITH_SOAPY)
 	float freq = R.channels[chn].Fr / 1000000.0;
-#else
-	float freq = 0;
-#endif
 	cJSON *json_obj;
 	int ok = 0;
 	char convert_tmp[8];
