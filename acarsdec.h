@@ -100,7 +100,7 @@ typedef struct {
 	msgblk_t *blk;
 	float complex *oscillator;
 
-	float *dm_buffer;		// INTRATE-sampled signal buffer
+	float *restrict dm_buffer;		// INTRATE-sampled signal buffer
 	float complex *inb;
 	double MskPhi;
 	double MskDf;

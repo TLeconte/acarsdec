@@ -67,27 +67,28 @@ int initSoundfile(char *optarg)
 
 int runSoundfileSample(void)
 {
-	int nbi, i;
-	unsigned int n;
-	float sndbuff[MAXNBFRAMES * R.nbch];
+	sf_count_t nbi;
+	unsigned int i, n;
+	const unsigned int nch = R.nbch;
+	float sndbuff[MAXNBFRAMES * nch];
 
 	do {
-		nbi = sf_read_float(insnd, sndbuff, MAXNBFRAMES * R.nbch);
+		nbi = sf_readf_float(insnd, sndbuff, MAXNBFRAMES);
 
-		if (nbi == 0) {
-			return -1;
+		if (!nbi)
+			goto out;
+
+		for (n = 0; n < nch; n++) {
+			for (i = 0; i < nbi; i++)
+				R.channels[n].dm_buffer[i] = sndbuff[n + i * nch];
 		}
-
-		for (n = 0; n < R.nbch; n++) {
-			int len = nbi / R.nbch;
-			for (i = 0; i < len; i++)
-				R.channels[n].dm_buffer[i] = sndbuff[n + i * R.nbch];
-
-			demodMSK(&(R.channels[n]), len);
-		}
-
+		for (n = 0; n < nch; n++)
+			demodMSK(&R.channels[n], nbi);
 	} while (R.running);
-	
+
+out:
+	sf_close(insnd);
+
 	return 0;
 }
 
