@@ -58,6 +58,10 @@ mqttout_t *MQTTinit(char *params)
 			else
 				*url++ = sep;
 		}
+		else {
+			fprintf(stderr, ERRPFX "unknown parameter '%s'\n", param);
+			return NULL;
+		}
 	}
 
 	if (!urls[0]) {

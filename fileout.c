@@ -89,6 +89,10 @@ fileout_t *Fileoutinit(char *params)
 			path = sep;
 		if (!strcmp("rotate", param))
 			rotate = sep;
+		else {
+			fprintf(stderr, ERRPFX "unknown parameter '%s'\n", param);
+			return NULL;
+		}
 	}
 
 	fout = calloc(1, sizeof(*fout));

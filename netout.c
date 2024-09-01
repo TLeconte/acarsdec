@@ -54,6 +54,10 @@ netout_t *Netoutinit(char *params)
 			addr = sep;
 		else if (!strcmp("port", param))
 			port = sep;
+		else {
+			fprintf(stderr, ERRPFX "unknown parameter '%s'\n", param);
+			return NULL;
+		}
 	}
 
 

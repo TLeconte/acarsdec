@@ -65,6 +65,10 @@ int statsd_init(char *params, const char *idstation)
 			host = sep;
 		else if (!strcmp("port", param))
 			port = sep;
+		else {
+			fprintf(stderr, ERRPFX "unknown parameter '%s'\n", param);
+			return -1;
+		}
 	}
 
 	if (!host || !port) {
