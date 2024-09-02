@@ -46,7 +46,10 @@ static int usage(void)
 		"examples:\n"
 		"   'file=data.raw,subtype=0x6' to process a single-channel, 32-bit cpu-endian float data\n"
 		"   'data.raw,subtype=2,channels=2,endian=little' to process a 2-channel, 16-bit little-endian PCM data\n"
-		);
+		"\n"
+		"NOTE: audio sample rate must be a multiple of %d Hz.\n"
+		"For raw audio, the rate multiplier can be specified via '-m' (default: 1)\n",
+		INTRATE);
 
 	return 1;
 }
@@ -104,7 +107,7 @@ int initSoundfile(char *optarg)
 			}
 		}
 		infsnd.channels = (int)nchs;
-		infsnd.samplerate = INTRATE;
+		infsnd.samplerate = INTRATE * R.rateMult;
 
 		unsigned long end = SF_ENDIAN_CPU;
 		if (endian) {
@@ -130,10 +133,11 @@ int initSoundfile(char *optarg)
 		return (1);
 	}
 
-	if (infsnd.samplerate != INTRATE) {
-		fprintf(stderr, ERRPFX "unsupported sample rate : %d (must be %d)\n", infsnd.samplerate, INTRATE);
+	if (infsnd.samplerate % INTRATE) {
+		fprintf(stderr, ERRPFX "unsupported sample rate: %d (must be a multiple of %d)\n", infsnd.samplerate, INTRATE);
 		return (1);
 	}
+	R.rateMult = infsnd.samplerate / INTRATE;
 
 	R.channels = calloc(infsnd.channels, sizeof(*R.channels));
 	if (!R.channels) {
@@ -156,19 +160,22 @@ int initSoundfile(char *optarg)
 int runSoundfileSample(void)
 {
 	sf_count_t nbi;
-	unsigned int i, n;
-	const unsigned int nch = R.nbch;
-	float sndbuff[MAXNBFRAMES * nch];
+	unsigned int i, j, n;
+	const unsigned int nch = R.nbch, mult = R.rateMult;
+	float sndbuff[MAXNBFRAMES * nch], d;
 
 	do {
-		nbi = sf_readf_float(insnd, sndbuff, MAXNBFRAMES);
+		nbi = sf_readf_float(insnd, sndbuff, MAXNBFRAMES) / mult;
 
 		if (!nbi)
 			goto out;
 
 		for (n = 0; n < nch; n++) {
-			for (i = 0; i < nbi; i++)
-				R.channels[n].dm_buffer[i] = sndbuff[n + i * nch];
+			for (i = 0; i < nbi; i++) {			// vectorizable
+				for (d = 0, j = 0; j < mult; j++)	// vectorizable
+					d += sndbuff[n + (i*mult + j) * nch];
+				R.channels[n].dm_buffer[i] = d / mult;
+			}
 		}
 		for (n = 0; n < nch; n++)
 			demodMSK(&R.channels[n], nbi);

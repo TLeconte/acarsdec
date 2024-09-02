@@ -59,7 +59,6 @@
 
 runtime_t R = {
 	.mdly = 600,
-	.rateMult = 160U,
 	.lnaState = 2,
 	.GRdB = 20,
 };
@@ -151,7 +150,8 @@ static void usage(void)
 	fprintf(stderr, "\n --alsa <alsadevice>\t: decode from soundcard input <alsadevice> (ie: hw:0,0)\n");
 #endif
 #ifdef WITH_SNDFILE
-	fprintf(stderr, "\n --sndfile <file.wav>\t: decode from <file.wav> at %uHz sampling rate\n", INTRATE);
+	fprintf(stderr, "\n --sndfile <file>\t: decode from <file> sampled at a multiple of %u Hz\n", INTRATE);
+	fprintf(stderr, " see \"--sndfile help\" for details\n");
 #endif
 #ifdef WITH_RTL
 	fprintf(stderr,
@@ -431,11 +431,15 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_SNDFILE
 	case IN_SNDFILE:
+		if (!R.rateMult)
+			R.rateMult = 1U;
 		res = initSoundfile(inarg);
 		break;
 #endif
 #ifdef WITH_RTL
 	case IN_RTL:
+		if (!R.rateMult)
+			R.rateMult = 160U;
 		if (!R.gain)
 			R.gain = -10;
 		res = initRtl(inarg);
@@ -450,11 +454,14 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_SDRPLAY
 	case IN_SDRPLAY:
+		R.rateMult = 160U;
 		res = initSdrplay();
 		break;
 #endif
 #ifdef WITH_SOAPY
 	case IN_SOAPY:
+		if (!R.rateMult)
+			R.rateMult = 160U;
 		if (!R.gain)
 			R.gain = -10;
 		res = initSoapy(inarg);
