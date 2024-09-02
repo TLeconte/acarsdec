@@ -7,7 +7,7 @@ Since 3.0, it can work with a database backend: [acarsserv](https://github.com/T
 
  * arbitrary number of channels decoded simultaneously (limited by bandwidth and CPU power)
  * error detection AND correction
- * input via either WAV sound file, ALSA soundcard, [rtl_sdr](https://sdr.osmocom.org/trac/wiki/rtl-sdr),
+ * input via either audio file (including raw audio), ALSA soundcard, [rtl_sdr](https://sdr.osmocom.org/trac/wiki/rtl-sdr),
    [SoapySDR](https://github.com/pothosware/SoapySDR/wiki), [airspy](https://airspy.com/)
    or [sdrplay](https://www.sdrplay.com) software defined radios (SDR)
  * multiple simultaneous outputs via file, UDP or MQTT
@@ -42,7 +42,7 @@ It depends on some optional external libraries :
  * libsoapysdr for SoapySDR input (https://github.com/pothosware/SoapySDR)
  * libairspy for airspy SDR input (https://github.com/airspy/airspyone_host)
  * libmirsdrapi-rsp for sdrplay software radio input
- * libsndfile for WAV input (https://github.com/libsndfile/libsndfile)
+ * libsndfile for audio input (https://github.com/libsndfile/libsndfile)
  * libasound for ALSA input (https://github.com/alsa-project/alsa-lib)
  * libacars for decoding ATS applications (https://github.com/szpajder/libacars)
  * libcjson for JSON output support (https://github.com/DaveGamble/cJSON)
@@ -200,11 +200,25 @@ See https://tleconte.github.io/R820T/r820IF.html
 All SDR sources described above expect a list of frequencies `<f1> [<f2> [...]]` to decode from, expressed in decimal MHz
 e.g. `131.525 131.725 131.825`.
 
-#### WAV sound file
+#### audio file
+
+All formats supported by libsndfile can be processed.
 
 ```
- --sndfile <file.wav>	decode from <file.wav>. Must be sampled at 12.5kHz
+ --sndfile <file>	decode from <file>, which must be a libsndfile supported format and sampled at a multiple of 12.5kHz
 ```
+
+To decode raw audio, extra parameters must be provided. Example:
+
+```
+ --sndfile <file>,subtype=<N>	decode single-channel raw in libsndfile-supported <N> subtype from <file> sampled at 12.5KHz.
+```
+
+For raw audio, the sample rate multiplier can be adjusted using `-m`. See `--sndfile help` for more details.
+
+libsndfile-supported subtypes are listed here: http://libsndfile.github.io/libsndfile/api.html#open
+
+NB: `<file>` can be `/dev/stdin` to process piped-in data.
 
 #### ALSA device
 
@@ -237,6 +251,10 @@ sending JSON to feed.acars.io:5550 with station ID "MY-STATION-ID",
 sending statsd data to host "statsd.lan" port "8125":
 
 `acarsdec -e -i MY-STATION-ID --output full:file --output json:udp:host=feed.acars.io,port=5550 -p 36 --rtlsdr 86000034 -g 48 131.550 130.825 130.850 131.525 131.725 131.825 131.850 --statsd host=statsd.lan,port=8125`
+
+Decoding raw CPU-endian single-channel PCM16 from stdin, providing one line per message on stdout:
+
+`acarsdec --sndfile file=/dev/stdin,subtype=0x02 --output oneline:file`
 
 ### Output formats examples
 
