@@ -60,6 +60,10 @@ netout_t *Netoutinit(char *params)
 		}
 	}
 
+	if (!addr) {
+		fprintf(stderr, ERRPFX "missing host parameter\n");
+		return NULL;
+	}
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
