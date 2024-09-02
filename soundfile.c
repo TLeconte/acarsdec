@@ -1,5 +1,6 @@
 /*
  *  Copyright (c) 2014 Thierry Leconte (f4dwv)
+ *  Copyright (c) 2024 Thibaut VARENE
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -20,6 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <sndfile.h>
 #include "acarsdec.h"
 #include "msk.h"
@@ -30,15 +32,101 @@
 
 static SNDFILE *insnd;
 
+static int usage(void)
+{
+	fprintf(stderr,
+		"sndfile input accepts as parameter:\n"
+		" - either a filename, for any file format supported by libsndfile\n"
+		" - or to process raw audio, a filename (optionally prefixed by 'file=') followed by a coma,\n"
+		"   and any of the following coma-separated extra arguments:\n"
+		"   'subtype=', 'channels=', 'endian='; where\n"
+		"   'subtype=' is followed by a number matching a supported libsndfile subtype (required);\n"
+		"   'channels=' is followed by a number representing the number of channels in the stream (default: 1);\n"
+		"   'endian=' is one of 'big', 'little', 'cpu' (default: cpu).\n"
+		"examples:\n"
+		"   'file=data.raw,subtype=0x6' to process a single-channel, 32-bit cpu-endian float data\n"
+		"   'data.raw,subtype=2,channels=2,endian=little' to process a 2-channel, 16-bit little-endian PCM data\n"
+		);
+
+	return 1;
+}
+
 int initSoundfile(char *optarg)
 {
-	SF_INFO infsnd;
+	char *stype = NULL, *chans = NULL, *endian = NULL, *fname = NULL;
+	struct params_s soundp[] = {
+		{ .name = "subtype", .valp = &stype, },
+		{ .name = "channels", .valp = &chans, },
+		{ .name = "endian", .valp = &endian, },
+		{ .name = "file", .valp = &fname, },
+	};
+	char *retp, *sep;
+	SF_INFO infsnd = {0};
 	unsigned int n;
 
-	infsnd.format = 0;
-	insnd = sf_open(optarg, SFM_READ, &infsnd);
+	do {
+		retp = parse_params(&optarg, soundp, ARRAY_SIZE(soundp));
+		if (retp) {
+			sep = strchr(retp, '=');
+			// backward compat: if we find a lone token, assume it's the filename if not already set
+			if (!sep && !fname)
+				fname = retp;
+			else {
+				fprintf(stderr, ERRPFX "invalid parameter '%s'\n", retp);
+				return -1;
+
+			}
+		}
+	} while (retp);
+
+	if (!fname) {
+		fprintf(stderr, ERRPFX "missing filename\n");
+		return -1;
+	}
+
+	if (!strcmp("help", fname))
+		return usage();
+
+	// if we have a subtype, assume we're dealing with raw input
+	if (stype) {
+		unsigned long sub = strtoul(stype, &stype, 0);
+		if ('\0' != *stype) {
+			fprintf(stderr, ERRPFX "invalid subtype value '%s'\n", stype);
+			return -1;
+		}
+
+		unsigned long nchs = 1;
+		if (chans) {
+			nchs = strtoul(chans, &chans, 0);
+			if ('\0' != *chans) {
+				fprintf(stderr, ERRPFX "invalid channels value '%s'\n", chans);
+				return -1;
+			}
+		}
+		infsnd.channels = (int)nchs;
+		infsnd.samplerate = INTRATE;
+
+		unsigned long end = SF_ENDIAN_CPU;
+		if (endian) {
+			if (!strcmp("little", endian))
+				end = SF_ENDIAN_LITTLE;
+			else if (!strcmp("big", endian))
+				end = SF_ENDIAN_BIG;
+			else if (!strcmp("cpu", endian))
+				end = SF_ENDIAN_CPU;
+			else {
+				fprintf(stderr, ERRPFX "invalid endian value '%s'\n", endian);
+				return -1;
+			}
+		}
+		infsnd.format = SF_FORMAT_RAW|(sub & SF_FORMAT_SUBMASK)|end;
+	}
+	else
+		infsnd.format = 0;
+
+	insnd = sf_open(fname, SFM_READ, &infsnd);
 	if (insnd == NULL) {
-		fprintf(stderr, ERRPFX "could not open '%s'\n", optarg);
+		fprintf(stderr, ERRPFX "could not open '%s'\n", fname);
 		return (1);
 	}
 
