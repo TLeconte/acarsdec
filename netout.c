@@ -38,26 +38,21 @@
 // params is "host=xxx,port=yyy"
 netout_t *Netoutinit(char *params)
 {
-	char *param, *sep;
 	char *addr = NULL;
 	char *port = NULL;
+	struct params_s netp[] = {
+		{ .name = "host", .valp = &addr, },
+		{ .name = "port", .valp = &port, },
+	};
+	char *retp;
 	struct addrinfo hints, *servinfo, *p;
 	int sockfd, rv;
 	netout_t *netpriv = NULL;
 
-	while ((param = strsep(&params, ","))) {
-		sep = strchr(param, '=');
-		if (!sep)
-			continue;
-		*sep++ = '\0';
-		if (!strcmp("host", param))
-			addr = sep;
-		else if (!strcmp("port", param))
-			port = sep;
-		else {
-			fprintf(stderr, ERRPFX "unknown parameter '%s'\n", param);
-			return NULL;
-		}
+	retp = parse_params(&params, netp, ARRAY_SIZE(netp));
+	if (retp) {
+		fprintf(stderr, ERRPFX "unknown parameter '%s'\n", retp);
+		return NULL;
 	}
 
 	if (!addr) {

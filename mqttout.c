@@ -35,34 +35,36 @@ mqttout_t *MQTTinit(char *params)
 	mqttout_t *mqpriv;
 	char *urls[15] = {};
 	char **url, *topic = NULL, *user = NULL, *passwd = NULL, *msgtopic = NULL;
-	char *param, *sep;
+	struct params_s mqttp[] = {
+		{ .name = "topic", .valp = &topic, },
+		{ .name = "user", .valp = &user, },
+		{ .name = "passwd", .valp = &passwd, },
+	};
+	char *retp, *sep;
 	int rc;
 	MQTTAsync_createOptions create_opts = MQTTAsync_createOptions_initializer;
 	MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
 
 	url = urls;
-	while ((param = strsep(&params, ","))) {
-		sep = strchr(param, '=');
-		if (!sep)
-			continue;
-		*sep++ = '\0';
-		if (!strcmp("topic", param))
-			topic = sep;
-		else if (!strcmp("user", param))
-			user = sep;
-		else if (!strcmp("passwd", param))
-			passwd = sep;
-		else if (!strcmp("uri", param)) {
-			if (url > &urls[14])
-				fprintf(stderr, WARNPFX "too many urls provided, ignoring '%s'\n", sep);
-			else
-				*url++ = sep;
+
+	do {
+		retp = parse_params(&params, mqttp, ARRAY_SIZE(mqttp));
+		if (retp) {
+			sep = strchr(retp, '=');	// guaranteed to exist due to parse_params()
+			*sep++ = '\0';
+			if (!strcmp("uri", retp)) {
+				if (url > &urls[14])
+					fprintf(stderr, WARNPFX "too many urls provided, ignoring '%s'\n", sep);
+				else
+					*url++ = sep;
+			}
+			else {
+				fprintf(stderr, ERRPFX "unknown parameter '%s'\n", retp);
+				return NULL;
+
+			}
 		}
-		else {
-			fprintf(stderr, ERRPFX "unknown parameter '%s'\n", param);
-			return NULL;
-		}
-	}
+	} while (retp);
 
 	if (!urls[0]) {
 		fprintf(stderr, ERRPFX "no URI provided\n");

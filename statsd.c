@@ -49,26 +49,20 @@ static struct {
  */
 int statsd_init(char *params, const char *idstation)
 {
-	const char *host = NULL, *port = NULL;
-	char *param, *sep;
+	char *host = NULL, *port = NULL, *retp;
+	struct params_s statsdp[] = {
+		{ .name = "host", .valp = &host, },
+		{ .name = "port", .valp = &port, },
+	};
 	int sockfd;
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
 	int ret;
 
-	while ((param = strsep(&params, ","))) {
-		sep = strchr(param, '=');
-		if (!sep)
-			continue;
-		*sep++ = '\0';
-		if (!strcmp("host", param))
-			host = sep;
-		else if (!strcmp("port", param))
-			port = sep;
-		else {
-			fprintf(stderr, ERRPFX "unknown parameter '%s'\n", param);
-			return -1;
-		}
+	retp = parse_params(&params, statsdp, ARRAY_SIZE(statsdp));
+	if (retp) {
+		fprintf(stderr, ERRPFX "unknown parameter '%s'\n", retp);
+		return -1;
 	}
 
 	if (!host || !port) {
@@ -111,9 +105,9 @@ int statsd_init(char *params, const char *idstation)
 		perror("statsd");
 		goto cleanup;
 	}
-	sep = stpcpy(statsd_runtime.namespace, STATSD_NAMESPACE);
+	retp = stpcpy(statsd_runtime.namespace, STATSD_NAMESPACE);
 	if (idstation) {
-		strcpy(sep, idstation);
+		strcpy(retp, idstation);
 		statsd_runtime.namespace[ret++] = '.';
 		statsd_runtime.namespace[ret] = '\0';
 	}

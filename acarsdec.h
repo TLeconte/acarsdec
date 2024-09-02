@@ -160,4 +160,11 @@ typedef struct {
 
 extern runtime_t R;
 
+struct params_s {
+	const char *const name;
+	char **valp;
+};
+
+char * parse_params(char **, struct params_s *, const int);
+
 #endif /* acarsdec_h */

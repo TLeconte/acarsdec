@@ -77,22 +77,18 @@ static FILE *open_outfile(fileout_t *fout)
 // optional "rotate=" parameter followed by "none" (default), "hourly", "daily"
 fileout_t *Fileoutinit(char *params)
 {
-	char *param, *sep, *path = NULL, *rotate = NULL;
+	char *path = NULL, *rotate = NULL;
+	struct params_s filep[] = {
+		{ .name = "path", .valp = &path, },
+		{ .name = "rotate", .valp = &rotate, },
+	};
+	char *retp;
 	fileout_t *fout;
 
-	while ((param = strsep(&params, ","))) {
-		sep = strchr(param, '=');
-		if (!sep)
-			continue;
-		*sep++ = '\0';
-		if (!strcmp("path", param))
-			path = sep;
-		if (!strcmp("rotate", param))
-			rotate = sep;
-		else {
-			fprintf(stderr, ERRPFX "unknown parameter '%s'\n", param);
-			return NULL;
-		}
+	retp = parse_params(&params, filep, ARRAY_SIZE(filep));
+	if (retp) {
+		fprintf(stderr, ERRPFX "unknown parameter '%s'\n", retp);
+		return NULL;
 	}
 
 	fout = calloc(1, sizeof(*fout));

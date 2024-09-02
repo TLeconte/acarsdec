@@ -561,3 +561,41 @@ int main(int argc, char **argv)
 
 	exit(res);
 }
+
+/**
+ * Parse a parameter string.
+ * Parameter string formatted like "param1=foo,param2=blah,param3=42"
+ * @paramsp pointer to params string input
+ * @sp pointer to struct containing expected parameters, the #valp member will be updated for each match
+ * @np array size of #sp
+ * @return NULL if the input has been succesfully exhausted (or was NULL), pointer to first unmatched token otherwise
+ * @note Behavior matching that of strsep(): *paramsp is updated to point to next token group or NULL if EOL
+ * If an unidentified parameter is found in the string, it is returned by the function, with the '=' separator restored
+ */
+char * parse_params(char **paramsp, struct params_s *sp, const int np)
+{
+	char *param, *sep;
+	int i;
+
+	while ((param = strsep(paramsp, ","))) {
+		sep = strchr(param, '=');
+		if (!sep)
+			continue;
+
+		*sep++ = '\0';
+
+		for (i = 0; i < np; i++) {
+			if (!strcmp(sp[i].name, param)) {
+				*sp[i].valp = sep;
+				break;
+			}
+		}
+
+		if (np == i) {		// unknown param
+			*--sep = '=';	// restore key-value separator for external processing
+			return param;
+		}
+	}
+
+	return NULL;
+}
