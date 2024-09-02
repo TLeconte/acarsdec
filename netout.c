@@ -51,7 +51,7 @@ netout_t *Netoutinit(char *params)
 
 	retp = parse_params(&params, netp, ARRAY_SIZE(netp));
 	if (retp) {
-		fprintf(stderr, ERRPFX "unknown parameter '%s'\n", retp);
+		fprintf(stderr, ERRPFX "invalid parameter '%s'\n", retp);
 		return NULL;
 	}
 

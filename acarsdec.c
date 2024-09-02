@@ -580,7 +580,7 @@ char * parse_params(char **paramsp, struct params_s *sp, const int np)
 	while ((param = strsep(paramsp, ","))) {
 		sep = strchr(param, '=');
 		if (!sep)
-			continue;
+			return param;
 
 		*sep++ = '\0';
 

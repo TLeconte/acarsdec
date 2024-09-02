@@ -61,7 +61,7 @@ int statsd_init(char *params, const char *idstation)
 
 	retp = parse_params(&params, statsdp, ARRAY_SIZE(statsdp));
 	if (retp) {
-		fprintf(stderr, ERRPFX "unknown parameter '%s'\n", retp);
+		fprintf(stderr, ERRPFX "invalid parameter '%s'\n", retp);
 		return -1;
 	}
 

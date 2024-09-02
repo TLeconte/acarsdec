@@ -50,7 +50,9 @@ mqttout_t *MQTTinit(char *params)
 	do {
 		retp = parse_params(&params, mqttp, ARRAY_SIZE(mqttp));
 		if (retp) {
-			sep = strchr(retp, '=');	// guaranteed to exist due to parse_params()
+			sep = strchr(retp, '=');
+			if (!sep)
+				goto unknown;
 			*sep++ = '\0';
 			if (!strcmp("uri", retp)) {
 				if (url > &urls[14])
@@ -59,7 +61,8 @@ mqttout_t *MQTTinit(char *params)
 					*url++ = sep;
 			}
 			else {
-				fprintf(stderr, ERRPFX "unknown parameter '%s'\n", retp);
+unknown:
+				fprintf(stderr, ERRPFX "invalid parameter '%s'\n", retp);
 				return NULL;
 
 			}

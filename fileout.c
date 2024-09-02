@@ -87,7 +87,7 @@ fileout_t *Fileoutinit(char *params)
 
 	retp = parse_params(&params, filep, ARRAY_SIZE(filep));
 	if (retp) {
-		fprintf(stderr, ERRPFX "unknown parameter '%s'\n", retp);
+		fprintf(stderr, ERRPFX "invalid parameter '%s'\n", retp);
 		return NULL;
 	}
 
