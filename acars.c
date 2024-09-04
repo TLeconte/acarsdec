@@ -343,6 +343,7 @@ synced:
 			}
 			gettimeofday(&(ch->blk->tv), NULL);
 			ch->Acarsstate = TXT;
+			ch->blk->lvl = 10 * log10(ch->MskLvl);
 			ch->blk->chn = ch->chn;
 			ch->blk->txtlen = 0;
 			ch->blk->err = 0;
@@ -386,7 +387,6 @@ synced:
 			vprerr("#%d didn't get DEL: %x\n", ch->chn+1, r);	// ignored
 
 putmsg_lbl:
-		ch->blk->lvl = 10 * log10(ch->MskLvl);
 
 		vprerr("put message #%d\n", ch->chn + 1);
 
