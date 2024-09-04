@@ -193,9 +193,9 @@ void initSndWrite(void)
 {
 	SF_INFO infsnd;
 
-	infsnd.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+	infsnd.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 	infsnd.samplerate = INTRATE;
-	infsnd.channels = 1;
+	infsnd.channels = R.nbch;
 	outsnd = sf_open("data.wav", SFM_WRITE, &infsnd);
 	if (outsnd == NULL) {
 		fprintf(stderr, "could not open data\n ");
@@ -203,9 +203,19 @@ void initSndWrite(void)
 	}
 }
 
-void SndWrite(float *in)
+void SndWrite(int len)
 {
-	sf_write_float(outsnd, in, 1);
+	const unsigned int nch = R.nbch;
+	float sndbuff[len * nch];
+	unsigned int i, n;
+
+	for (n = 0; n < nch; n++) {
+		for (i = 0; i < len; i++) {			// vectorizable
+			sndbuff[n + i * nch] = R.channels[n].dm_buffer[i];
+		}
+	}
+
+	sf_writef_float(outsnd, sndbuff, len);
 }
 
 void SndWriteClose(void)

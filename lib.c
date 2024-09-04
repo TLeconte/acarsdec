@@ -28,6 +28,9 @@
 #include "acarsdec.h"
 #include "lib.h"
 #include "msk.h"
+#if defined(DEBUG) && defined(WITH_SNDFILE)
+ #include "soundfile.h"
+#endif
 
 unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned int multiplier)
 {
@@ -111,6 +114,10 @@ static void channels_push_and_demod_sample(float complex *restrict D)
 		for (n = 0; n < nbch; n++)
 			demodMSK(&R.channels[n], DMBUFSZ);
 		counter = 0;
+
+#if defined(DEBUG) && defined(WITH_SNDFILE)
+		SndWrite(DMBUFSZ);
+#endif
 	}
 }
 

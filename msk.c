@@ -18,9 +18,6 @@
 #include <math.h>
 #include "acarsdec.h"
 #include "acars.h"
-#if defined(DEBUG) && defined(WITH_SNDFILE)
- #include "soundfile.h"
-#endif
 
 #define FLEN ((INTRATE / 1200) + 1)
 #define MFLTOVER 12U
@@ -90,10 +87,6 @@ void demodMSK(channel_t *ch, int len)
 
 		/* mixer */
 		in = ch->dm_buffer[n];
-#if defined(DEBUG) && defined(WITH_SNDFILE)
-		if (ch->chn == 1)
-			SndWrite(&in);
-#endif
 		ch->inb[idx] = in * cexp(-p * I);
 		idx = (idx + 1) % FLEN;
 

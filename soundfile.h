@@ -6,7 +6,7 @@ int runSoundfileSample(void);
 
 #ifdef DEBUG
 void initSndWrite(void);
-void SndWrite(float *in);
+void SndWrite(int len);
 void SndWriteClose(void);
 #endif
 
