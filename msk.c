@@ -122,22 +122,12 @@ void demodMSK(channel_t *ch, int len)
 
 			if (ch->MskS & 1) {
 				vo = cimagf(v);
-				if (vo >= 0)
-					dphi = -crealf(v);
-				else
-					dphi = crealf(v);
+				dphi = (vo >= 0) ? -crealf(v) : crealf(v);
 			} else {
 				vo = crealf(v);
-				if (vo >= 0)
-					dphi = cimagf(v);
-				else
-					dphi = -cimagf(v);
+				dphi = (vo >= 0) ? cimagf(v) : -cimagf(v);
 			}
-			if (ch->MskS & 2) {
-				putbit(-vo, ch);
-			} else {
-				putbit(vo, ch);
-			}
+			putbit((ch->MskS & 2) ? -vo : vo, ch);
 			ch->MskS++;
 
 			/* PLL filter */
