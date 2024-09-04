@@ -174,7 +174,7 @@ int runSoundfileSample(void)
 			for (i = 0; i < nbi; i++) {			// vectorizable
 				for (d = 0, j = 0; j < mult; j++)	// vectorizable
 					d += sndbuff[n + (i*mult + j) * nch];
-				R.channels[n].dm_buffer[i] = d / mult;
+				R.channels[n].dm_buffer[i] = d / mult / 2;	// normalize to half-scale for power readout
 			}
 		}
 		for (n = 0; n < nch; n++)

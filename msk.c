@@ -110,7 +110,7 @@ void demodMSK(channel_t *ch, int len)
 			v /= lvl + 1e-8;
 
 			/* update level exp moving average. Average over last 16*8 bits */
-			lvl = lvl * lvl / 4;
+			lvl = lvl * lvl;
 			ch->MskLvl = ch->MskLvl - (1.0F/128.0F * (ch->MskLvl - lvl));
 
 			if (ch->MskS & 1) {
