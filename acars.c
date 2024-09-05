@@ -213,6 +213,7 @@ static void *blk_thread(void *arg)
 				{ .type = STATSD_UCOUNTER, .name = "decoder.msg.good", .value.u = 1 },
 				{ .type = STATSD_LGAUGE, .name = "decoder.msg.errs", .value.l = blk->err },
 				{ .type = STATSD_FGAUGE, .name = "decoder.msg.lvl", .value.f = blk->lvl },
+				{ .type = STATSD_FGAUGE, .name = "decoder.msg.nf", .value.f = blk->nf },
 				{ .type = STATSD_LGAUGE, .name = "decoder.msg.len", .value.l = blk->txtlen },
 			};
 			// use the frequency if available, else the channel number
@@ -251,10 +252,14 @@ int initAcars(channel_t *ch)
 
 void decodeAcars(channel_t *ch)
 {
+	const float mag = ch->MskMag;
 	uint8_t r = ch->outbits;
 	//vprerr("#%d r: %x, count: %d, st: %d\n", ch->chn+1, r, ch->count, ch->Acarsstate);
 
 	ch->nbits = 8;	// by default we'll read another byte next
+
+	/* update power level exp moving average. Average over last 16 bytes */
+	ch->MskPwr = ch->MskPwr - (1.0F/16.0F * (ch->MskPwr - mag * mag));
 
 	switch (ch->Acarsstate) {
 	case PREKEY:
@@ -262,7 +267,7 @@ void decodeAcars(channel_t *ch)
 			uint8_t q = ~r;	// avoid type promotion in calling ffs(~r)
 			int l = ffs(q);		// find the first (LSb) 0 in r
 
-			vprerr("#%d synced, count: %d, r: %x, fz: %d, lvl: %5.1f\n", ch->chn+1, ch->count, r, l, 10 * log10(ch->MskLvl));
+			vprerr("#%d synced, count: %d, r: %x, fz: %d, lvl: %5.1f\n", ch->chn+1, ch->count, r, l, 10 * log10(ch->MskPwr));
 			ch->count = 0;
 			ch->Acarsstate = SYNC;
 
@@ -298,6 +303,8 @@ void decodeAcars(channel_t *ch)
 				ch->count++;
 				break;
 			default:
+				/* outside of msgs, update noise floor moving average: long term (10^4 'bytes') magnitude exp moving average */
+				ch->MskNF = ch->MskNF - (1e-4F * (ch->MskNF - mag));
 				ch->count = 0;
 				break;
 			}
@@ -346,7 +353,8 @@ synced:
 			}
 			gettimeofday(&(ch->blk->tv), NULL);
 			ch->Acarsstate = TXT;
-			ch->blk->lvl = 10 * log10(ch->MskLvl);
+			ch->blk->lvl = 10 * log10(ch->MskPwr);
+			ch->blk->nf = 20 * log10(ch->MskNF);
 			ch->blk->chn = ch->chn;
 			ch->blk->txtlen = 0;
 			ch->blk->err = 0;

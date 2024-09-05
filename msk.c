@@ -54,12 +54,10 @@ int initMsk(channel_t *ch)
 static inline void putbit(float v, channel_t *ch)
 {
 	ch->outbits >>= 1;
-	if (v > 0) {
+	if (v > 0)
 		ch->outbits |= 0x80;
-	}
 
-	ch->nbits--;
-	if (ch->nbits <= 0)
+	if (--ch->nbits == 0)
 		decodeAcars(ch);
 }
 
@@ -106,12 +104,11 @@ void demodMSK(channel_t *ch, int len)
 				v += h[o] * ch->inb[(j + idx) % FLEN];
 
 			/* normalize */
-			lvl = cabsf(v);
-			v /= lvl + 1e-8;
+			lvl = cabsf(v) + 1e-8F;
+			v /= lvl;
 
-			/* update level exp moving average. Average over last 16*8 bits */
-			lvl = lvl * lvl;
-			ch->MskLvl = ch->MskLvl - (1.0F/128.0F * (ch->MskLvl - lvl));
+			/* update magnitude exp moving average. Average over last 8 bits */
+			ch->MskMag = ch->MskMag - (1.0F/8.0F * (ch->MskMag - lvl));
 
 			if (ch->MskS & 1) {
 				vo = cimagf(v);

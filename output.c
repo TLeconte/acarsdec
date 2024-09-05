@@ -391,10 +391,10 @@ static int fmt_msg(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size_
 	int len = 0;
 
 	if (R.inmode >= IN_RTL)
-		len += snprintf(buf + len, bufsz - len, "[#%1d (F:%3.3f L:%+5.1f E:%1d) ", chn + 1,
-			R.channels[chn].Fr / 1000000.0, msg->lvl, msg->err);
+		len += snprintf(buf + len, bufsz - len, "[#%1d (F:%3.3f L:%+5.1f/%.1f E:%1d) ", chn + 1,
+			R.channels[chn].Fr / 1000000.0, msg->lvl, msg->nf, msg->err);
 	else
-		len += snprintf(buf + len, bufsz - len, "[#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
+		len += snprintf(buf + len, bufsz - len, "[#%1d (L:%+5.1f/%.1f E:%1d) ", chn + 1, msg->lvl, msg->nf, msg->err);
 
 	if (R.inmode != IN_SNDFILE)
 		len += fmt_date(tv, buf + len, bufsz - len);
@@ -472,7 +472,7 @@ static int fmt_oneline(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, s
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
 
-	len = snprintf(buf, bufsz, "#%1d (L:%+5.1f E:%1d) ", chn + 1, msg->lvl, msg->err);
+	len = snprintf(buf, bufsz, "#%1d (L:%+5.1f/%.1f E:%1d) ", chn + 1, msg->lvl, msg->nf, msg->err);
 
 	if (R.inmode != IN_SNDFILE)
 		len += fmt_date(tv, buf + len, bufsz - len);
@@ -575,6 +575,8 @@ static int fmt_json(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, size
 	cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
 	snprintf(convert_tmp, sizeof(convert_tmp), "%2.1f", msg->lvl);
 	cJSON_AddRawToObject(json_obj, "level", convert_tmp);
+	snprintf(convert_tmp, sizeof(convert_tmp), "%.1f", msg->nf);
+	cJSON_AddRawToObject(json_obj, "noise", convert_tmp);
 	cJSON_AddNumberToObject(json_obj, "error", msg->err);
 	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
 	cJSON_AddStringToObject(json_obj, "mode", convert_tmp);
@@ -727,6 +729,7 @@ void outputmsg(const msgblk_t *blk)
 	/* fill msg struct */
 	memset(&msg, 0, sizeof(msg));
 	msg.lvl = blk->lvl;
+	msg.nf = blk->nf;
 	msg.err = blk->err;
 
 	msg.mode = blk->txt.d.mode;

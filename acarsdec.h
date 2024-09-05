@@ -54,7 +54,7 @@
 typedef struct mskblk_s {
 	struct mskblk_s *prev;
 	struct timeval tv;
-	float lvl;
+	float lvl, nf;
 	uint8_t chn;	// there will never be 255 channels
 	uint8_t txtlen;
 	uint8_t err;
@@ -88,7 +88,7 @@ typedef struct {
 	char be;
 	char msn[4];		// only for libacars - null-terminated copy of msg.no[0-3]
 	int err;
-	float lvl;
+	float lvl, nf;
 #ifdef HAVE_LIBACARS
 	la_reasm_status reasm_status;
 	la_proto_node *decoded_tree;
@@ -104,7 +104,9 @@ typedef struct {
 	float complex *inb;
 	double MskPhi;
 	double MskDf;
-	float MskLvl;
+	float MskMag;				// signal magnitude moving average
+	float MskPwr;				// signal power moving average (average of magnitude squared)
+	float MskNF;				// noise floor moving average (average of magnitude outside of msg blocks)
 	float MskClk;
 	unsigned int MskS, idx;
 
