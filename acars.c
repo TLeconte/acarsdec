@@ -132,8 +132,11 @@ static void *blk_thread(void *arg)
 
 		vprerr("get message #%d\n", chn+1);
 
-		if (R.statsd)
+		if (R.statsd) {
 			statsd_inc_per_channel(chn, "decoder.msg.count");
+			if (blk->lvl > 1.0F)	// > 0dB
+				statsd_inc_per_channel(chn, "decoder.msg.loud");
+		}
 
 		/* handle message */
 		if (blk->txtlen < TXTMINLEN) {
