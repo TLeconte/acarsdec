@@ -98,10 +98,9 @@ typedef struct {
 
 typedef struct {
 	msgblk_t *blk;
-	float complex *oscillator;
-
-	float *restrict dm_buffer;		// INTRATE-sampled signal buffer
-	float complex *inb;
+	float complex *restrict oscillator;	// scaled oversampled INTRATE oscillator
+	float *restrict dm_buffer;		// INTRATE-sampled signal magnitude buffer
+	float complex *restrict inb;		// oversampled bit buffer
 	double MskPhi;
 	double MskDf;
 	float MskMag;				// signal magnitude moving average

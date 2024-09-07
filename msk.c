@@ -19,10 +19,14 @@
 #include "acarsdec.h"
 #include "acars.h"
 
-#define FLEN ((INTRATE / 1200) + 1)
+#define CEILING(x,y) (((x) + (y) - 1) / (y))
+
+#define MSKFREQCNTR 1800
+#define MSKFREQMARK 1200
+#define BITLEN CEILING(INTRATE, MSKFREQMARK)
 #define MFLTOVER 12U
-#define FLENO (FLEN * MFLTOVER + 1)
-static float h[FLENO];
+#define MFLTLEN (BITLEN * MFLTOVER + 1)
+static float h[MFLTLEN];
 
 int initMsk(channel_t *ch)
 {
@@ -34,15 +38,15 @@ int initMsk(channel_t *ch)
 	ch->MskDf = 0;
 
 	ch->idx = 0;
-	ch->inb = calloc(FLEN, sizeof(*ch->inb));
+	ch->inb = calloc(BITLEN, sizeof(*ch->inb));
 	if (ch->inb == NULL) {
 		perror(NULL);
 		return -1;
 	}
 
 	if (ch->chn == 0)
-		for (i = 0; i < FLENO; i++) {
-			h[i] = cosf(2.0 * M_PI * 600.0 / INTRATE / MFLTOVER * (signed)(i - (FLENO - 1) / 2));
+		for (i = 0; i < MFLTLEN; i++) {
+			h[i] = cosf(2.0 * M_PI * 600.0 / INTRATE / MFLTOVER * (signed)(i - (MFLTLEN - 1) / 2));
 			if (h[i] < 0)
 				h[i] = 0;
 		}
@@ -78,7 +82,7 @@ void demodMSK(channel_t *ch, int len)
 		unsigned int j, o;
 
 		/* VCO */
-		s = 1800.0 / INTRATE * 2.0 * M_PI + ch->MskDf;
+		s = (double)MSKFREQCNTR / INTRATE * 2.0 * M_PI + ch->MskDf;
 		p += s;
 		if (p >= 2.0 * M_PI)
 			p -= 2.0 * M_PI;
@@ -86,7 +90,7 @@ void demodMSK(channel_t *ch, int len)
 		/* mixer */
 		in = ch->dm_buffer[n];
 		ch->inb[idx] = in * cexp(-p * I);
-		idx = (idx + 1) % FLEN;
+		idx = (idx + 1) % BITLEN;
 
 		/* bit clock */
 		ch->MskClk += s;
@@ -100,8 +104,8 @@ void demodMSK(channel_t *ch, int len)
 			o = MFLTOVER * (ch->MskClk / s + 0.5);
 			if (o > MFLTOVER)
 				o = MFLTOVER;
-			for (v = 0, j = 0; j < FLEN; j++, o += MFLTOVER)
-				v += h[o] * ch->inb[(j + idx) % FLEN];
+			for (v = 0, j = 0; j < BITLEN; j++, o += MFLTOVER)
+				v += h[o] * ch->inb[(j + idx) % BITLEN];
 
 			/* normalize */
 			lvl = cabsf(v) + 1e-8F;
