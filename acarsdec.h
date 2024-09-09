@@ -36,7 +36,7 @@
 #define HOST_NAME_MAX 255
 #endif
 
-#define INTRATE 12500U	// 12.5kHz: ACARS is 2400Bd NRZI, AM 10kHz BW with a 1800Hz Fc, 1200Hz shift MSK.
+#define INTRATE 12000U	// 12kHz: ACARS is 2400Bd NRZI, AM 10kHz BW with a 1800Hz Fc, 1200Hz shift MSK.
 #define DMBUFSZ	1024U
 
 #define ARRAY_SIZE(x)	(sizeof(x) / sizeof(x[0]))

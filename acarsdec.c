@@ -239,7 +239,8 @@ static int parse_freqs(char **argv, const int argind)
 	ind = argind;
 	while ((argF = argv[ind])) {
 		ind++;
-		freq = (((unsigned int)(1000000 * atof(argF)) + INTRATE / 2) / INTRATE) * INTRATE;
+		// round freq to nearest kHz value
+		freq = (((unsigned int)(1000000 * atof(argF)) + 1000 / 2) / 1000) * 1000;
 		if (freq < 118000000 || freq > 138000000)
 			continue;
 
