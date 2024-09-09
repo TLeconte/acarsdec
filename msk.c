@@ -26,11 +26,14 @@
 #define BITLEN CEILING(INTRATE, MSKFREQMARK)
 #define MFLTOVER 12U
 #define MFLTLEN (BITLEN * MFLTOVER + 1)
+
 static float h[MFLTLEN];
+static float havgd[MFLTOVER + 1];	// filter average deviation for each start phase
 
 int initMsk(channel_t *ch)
 {
-	unsigned int i;
+	unsigned int i, j;
+	float flvl;
 
 	ch->MskPhi = ch->MskClk = 0;
 	ch->MskS = 0;
@@ -44,12 +47,21 @@ int initMsk(channel_t *ch)
 		return -1;
 	}
 
-	if (ch->chn == 0)
+	if (ch->chn == 0) {
+		/* precompute half-wave matched filter table, scaled to BITLEN */
 		for (i = 0; i < MFLTLEN; i++) {
-			h[i] = cosf(2.0 * M_PI * 600.0 / INTRATE / MFLTOVER * (signed)(i - (MFLTLEN - 1) / 2));
+			h[i] = cosf(2.0 * M_PI * 600.0 / INTRATE / MFLTOVER * (signed)(i - (MFLTLEN - 1) / 2)) / BITLEN;
 			if (h[i] < 0)
 				h[i] = 0;
 		}
+
+		/* precompute matched filter average deviation: positive half cosine wave integral should average to 2/π */
+		for (i = 0; i <= MFLTOVER; i++) {
+			for (flvl = 0, j = 0; j < BITLEN; j++)
+				flvl += h[i + j*MFLTOVER];
+			havgd[i] = (2.0 / M_PI) / flvl;
+		}
+	}
 
 	return 0;
 }
@@ -96,7 +108,7 @@ void demodMSK(channel_t *ch, int len)
 		ch->MskClk += s;
 		if (ch->MskClk >= 3 * M_PI / 2.0 - s / 2) {
 			double dphi;
-			float vo, lvl;
+			float vo, lvl, flvld;
 
 			ch->MskClk -= 3 * M_PI / 2.0;
 
@@ -104,12 +116,16 @@ void demodMSK(channel_t *ch, int len)
 			o = MFLTOVER * (ch->MskClk / s + 0.5);
 			if (o > MFLTOVER)
 				o = MFLTOVER;
+			flvld = havgd[o];
 			for (v = 0, j = 0; j < BITLEN; j++, o += MFLTOVER)
 				v += h[o] * ch->inb[(j + idx) % BITLEN];
 
 			/* normalize */
 			lvl = cabsf(v) + 1e-8F;
 			v /= lvl;
+
+			/* adjust lvl to filter average deviation */
+			lvl *= 10.0F * flvld;
 
 			/* update magnitude exp moving average. Average over last 8 bits */
 			ch->MskMag = ch->MskMag - (1.0F/8.0F * (ch->MskMag - lvl));
