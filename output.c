@@ -752,7 +752,7 @@ void outputmsg(const msgblk_t *blk)
 
 	bool down = IS_DOWNLINK_BLK(msg.bid);
 #ifdef HAVE_LIBACARS
-	char msn_seq;
+	char msn_seq = 0;	// init to silence GCC invalid warning
 	la_msg_dir msg_dir = down ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR;
 	msg.reasm_status = LA_REASM_SKIPPED; // default value (valid for message with empty text)
 #endif
