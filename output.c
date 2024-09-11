@@ -741,7 +741,7 @@ static int fmt_monitor(acarsmsg_t *msg, int chn, struct timeval tv, char *buf, s
 void outputmsg(const msgblk_t *blk)
 {
 	acarsmsg_t msg;
-	int i, j, k;
+	int i, k;
 	int outflg = 0;
 	flight_t *fl = NULL;
 	output_t *out;
@@ -751,34 +751,26 @@ void outputmsg(const msgblk_t *blk)
 	msg.lvl = blk->lvl;
 	msg.err = blk->err;
 
-	k = 0;
-	msg.mode = blk->txt[k];
-	k++;
+	msg.mode = blk->txt.d.mode;
 
-	for (i = 0, j = 0; i < 7; i++, k++) {
-		if (blk->txt[k] != '.') {
-			msg.addr[j] = blk->txt[k];
-			j++;
-		}
+	for (i = 0; i < sizeof(blk->txt.d.addr); i++) {
+		if (blk->txt.d.addr[i] != '.')	// skip leading dots -- XXX libacars/dumpvdl2 doesn't
+			break;
 	}
-	msg.addr[j] = '\0';
+	memcpy(msg.addr, blk->txt.d.addr+i, sizeof(blk->txt.d.addr)-i);
+	msg.addr[sizeof(msg.addr)-i] = '\0';
 
 	/* ACK/NAK */
-	msg.ack = blk->txt[k];
+	msg.ack = blk->txt.d.ack;
 	if (msg.ack == 0x15) // NAK is nonprintable
 		msg.ack = '!';
-	k++;
 
-	msg.label[0] = blk->txt[k];
-	k++;
-	msg.label[1] = blk->txt[k];
+	memcpy(&msg.label, blk->txt.d.label, sizeof(blk->txt.d.label));
 	if (msg.label[1] == 0x7f)
 		msg.label[1] = 'd';
-	k++;
 	msg.label[2] = '\0';
 
-	msg.bid = blk->txt[k];
-	k++;
+	msg.bid = blk->txt.d.bid;
 
 	bool down = IS_DOWNLINK_BLK(msg.bid);
 #ifdef HAVE_LIBACARS
@@ -787,8 +779,7 @@ void outputmsg(const msgblk_t *blk)
 #endif
 
 	/* txt start  */
-	msg.bs = blk->txt[k];
-	k++;
+	msg.bs = blk->txt.d.sot;
 
 	if (R.airflt && !down)
 		return;
@@ -796,13 +787,13 @@ void outputmsg(const msgblk_t *blk)
 		return;
 
 	/* txt end */
-	msg.be = blk->txt[blk->len - 1];
+	msg.be = blk->txt.raw[blk_textlen(blk) - 1];
 
 	if (msg.bs != 0x03) {
 		if (down) {
 			/* message no */
-			for (i = 0; i < 4 && k < blk->len - 1; i++, k++)
-				msg.no[i] = blk->txt[k];
+			for (i = 0; i < 4 && i < blk_textlen(blk) - 1; i++)
+				msg.no[i] = blk->txt.d.text[i];
 			msg.no[i] = '\0';
 #ifdef HAVE_LIBACARS
 			/* The 3-char prefix is used in reassembly hash table key, so we need */
@@ -812,19 +803,20 @@ void outputmsg(const msgblk_t *blk)
 			msg.msn[3] = '\0';
 			msg.msn_seq = msg.no[3];
 #endif
+			k = 4;
 			/* Flight id */
-			for (i = 0; i < 6 && k < blk->len - 1; i++, k++)
-				msg.fid[i] = blk->txt[k];
+			for (i = 0; i < 6 && k < blk_textlen(blk) - 1; i++, k++)
+				msg.fid[i] = blk->txt.d.text[k];
 			msg.fid[i] = '\0';
 
 			outflg = 1;
 		}
-		int txt_len = blk->len - k - 1;
+		int txt_len = blk_textlen(blk) - k - 1;
 #ifdef HAVE_LIBACARS
 
 		// Extract sublabel and MFI if present
 		int offset = la_acars_extract_sublabel_and_mfi(msg.label, msg_dir,
-							       (const char *)blk->txt + k, txt_len, msg.sublabel, msg.mfi);
+							       (const char *)blk->txt.d.text + k, txt_len, msg.sublabel, msg.mfi);
 		if (offset > 0) {
 			k += offset;
 			txt_len -= offset;
@@ -851,7 +843,7 @@ void outputmsg(const msgblk_t *blk)
 			msg.reasm_status = la_reasm_fragment_add(acars_rtable,
 								 &(la_reasm_fragment_info){
 									 .msg_info = &msg,
-									 .msg_data = (uint8_t *)(blk->txt + k),
+									 .msg_data = (uint8_t *)(blk->txt.d.text + k),
 									 .msg_data_len = txt_len,
 									 .total_pdu_len = 0, // not used
 									 .seq_num = down ? msg.msn_seq - 'A' : msg.bid - 'A',
@@ -874,7 +866,7 @@ void outputmsg(const msgblk_t *blk)
 			if (!msg.txt)
 				perror(NULL);
 			else if (txt_len > 0) {
-				memcpy(msg.txt, blk->txt + k, txt_len);
+				memcpy(msg.txt, blk->txt.d.text + k, txt_len);
 			}
 #ifdef HAVE_LIBACARS
 		}

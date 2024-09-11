@@ -56,11 +56,24 @@ typedef struct mskblk_s {
 	struct timeval tv;
 	float lvl;
 	uint8_t chn;	// there will never be 255 channels
-	uint8_t len;
+	uint8_t txtlen;
 	uint8_t err;
 	uint8_t crc[2];
-	uint8_t txt[235];
+	union {
+		struct txtdata_s {
+			char mode;
+			char addr[7];
+			char ack;
+			char label[2];
+			char bid;
+			char sot;
+			char text[220+1+2+1];	// text + suffix + CRC + DEL (latter 2 needed for missing suffix recovery)
+		} d;
+		uint8_t raw[sizeof(struct txtdata_s)];
+	} txt;
 } msgblk_t;
+
+#define blk_textlen(blkp)	(blkp->txtlen - offsetof(struct txtdata_s, text))
 
 typedef struct {
 	msgblk_t *blk;

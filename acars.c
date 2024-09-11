@@ -34,10 +34,10 @@
 #define DEL 0x7f
 
 // mode + address + TA + lbl + BI + SoT + TXT + suffix + CRC + DEL
-#define TXTMAXLEN (1 + 7 + 1 + 2 + 1 + 1 + 220 + 1 + 2 + 1)
+#define TXTMAXLEN (sizeof(struct txtdata_s))
 
-// mode + address + TA + lbl + BI + SoT + (no text) + (no suffix when no text)
-#define TXTMINLEN (1 + 7 + 1 + 2 + 1 + 1 +   0 + 0)
+// mode + address + TA + lbl + BI + SoT + (no txt+suffix / no crc / no DEL)
+#define TXTMINLEN (sizeof(struct txtdata_s) - sizeof(((struct txtdata_s *)0)->text))
 
 /* message queue */
 static pthread_mutex_t blkq_mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -56,8 +56,8 @@ static int fixprerr(msgblk_t *blk, const uint16_t crc, uint8_t *pr, uint8_t pn)
 	if (pn > 0) {
 		/* try to recursievly fix parity error */
 		for (i = 0; i < 8; i++) {
-			if (fixprerr(blk, crc ^ syndrom[i + 8 * (blk->len - *pr + 1)], pr + 1, pn - 1)) {
-				blk->txt[*pr] ^= (1 << i);
+			if (fixprerr(blk, crc ^ syndrom[i + 8 * (blk->txtlen - *pr + 1)], pr + 1, pn - 1)) {
+				blk->txt.raw[*pr] ^= (1 << i);
 				return 1;
 			}
 		}
@@ -87,15 +87,15 @@ static int fixdberr(msgblk_t *blk, const uint16_t crc)
 		}
 
 	/* test double error in bytes */
-	for (k = 0; k < blk->len; k++) {
-		int bo = 8 * (blk->len - k + 1);
+	for (k = 0; k < blk->txtlen; k++) {
+		int bo = 8 * (blk->txtlen - k + 1);
 		for (i = 0; i < 8; i++)
 			for (j = 0; j < 8; j++) {
 				if (i == j)
 					continue;
 				if ((crc ^ syndrom[i + bo] ^ syndrom[j + bo]) == 0) {
-					blk->txt[k] ^= (1 << i);
-					blk->txt[k] ^= (1 << j);
+					blk->txt.raw[k] ^= (1 << i);
+					blk->txt.raw[k] ^= (1 << j);
 					return 1;
 				}
 			}
@@ -136,21 +136,21 @@ static void *blk_thread(void *arg)
 			statsd_inc_per_channel(chn, "decoder.msg.count");
 
 		/* handle message */
-		if (blk->len < TXTMINLEN) {
-			vprerr("#%d too short: %d\n", chn+1, blk->len);
+		if (blk->txtlen < TXTMINLEN) {
+			vprerr("#%d too short: %d\n", chn+1, blk->txtlen);
 			if (R.statsd)
 				statsd_inc_per_channel(chn, "decoder.errors.too_short");
 			goto fail;
 		}
 
 		/* force STX/ETX */
-		blk->txt[12] &= (ETX | STX);
-		blk->txt[12] |= (ETX & STX);
+		blk->txt.d.sot &= (ETX | STX);
+		blk->txt.d.sot |= (ETX & STX);
 
 		/* parity check */
 		pn = 0;
-		for (i = 0; i < blk->len; i++) {
-			if (parity8(blk->txt[i]) == 0) {
+		for (i = 0; i < blk->txtlen; i++) {
+			if (parity8(blk->txt.raw[i]) == 0) {
 				if (pn < MAXPERR) {
 					pr[pn] = i;
 				}
@@ -166,8 +166,8 @@ static void *blk_thread(void *arg)
 
 		/* crc check */
 		crc = 0;
-		for (i = 0; i < blk->len; i++)
-			crc = update_crc16(crc, blk->txt[i]);
+		for (i = 0; i < blk->txtlen; i++)
+			crc = update_crc16(crc, blk->txt.raw[i]);
 		crc = update_crc16(crc, blk->crc[0]);
 		crc = update_crc16(crc, blk->crc[1]);
 
@@ -194,9 +194,9 @@ static void *blk_thread(void *arg)
 
 		/* redo parity checking and removing */
 		bool pfail = 0;
-		for (i = 0; i < blk->len; i++) {	// vectorizable (in clang at least)
-			pfail |= !parity8(blk->txt[i]);
-			blk->txt[i] &= 0x7f;
+		for (i = 0; i < blk->txtlen; i++) {	// vectorizable (in clang at least)
+			pfail |= !parity8(blk->txt.raw[i]);
+			blk->txt.raw[i] &= 0x7f;
 		}
 		if (pfail) {
 			vprerr("#%d parity check failed\n", chn+1);
@@ -210,7 +210,7 @@ static void *blk_thread(void *arg)
 				{ .type = STATSD_UCOUNTER, .name = "decoder.msg.good", .value.u = 1 },
 				{ .type = STATSD_LGAUGE, .name = "decoder.msg.errs", .value.l = blk->err },
 				{ .type = STATSD_FGAUGE, .name = "decoder.msg.lvl", .value.f = blk->lvl },
-				{ .type = STATSD_LGAUGE, .name = "decoder.msg.len", .value.l = blk->len },
+				{ .type = STATSD_LGAUGE, .name = "decoder.msg.len", .value.l = blk->txtlen },
 			};
 			// use the frequency if available, else the channel number
 			snprintf(pfx, sizeof(pfx), "%u.", R.channels[chn].Fr ? R.channels[chn].Fr : chn+1);
@@ -344,7 +344,7 @@ synced:
 			gettimeofday(&(ch->blk->tv), NULL);
 			ch->Acarsstate = TXT;
 			ch->blk->chn = ch->chn;
-			ch->blk->len = 0;
+			ch->blk->txtlen = 0;
 			ch->blk->err = 0;
 			return;
 		}
@@ -352,20 +352,20 @@ synced:
 		break;	// else fail
 
 	case TXT:
-		if (unlikely(ch->blk->len > TXTMAXLEN)) {
+		if (unlikely(ch->blk->txtlen > TXTMAXLEN)) {
 			vprerr("#%d too long\n", ch->chn + 1);
 			break;	// fail
 		}
-		ch->blk->txt[ch->blk->len++] = r;
+		ch->blk->txt.raw[ch->blk->txtlen++] = r;
 		if (r == ETX || r == ETB) {
 			ch->Acarsstate = CRC1;
 			return;
 		}
-		if (unlikely(r == DEL && ch->blk->len >= TXTMINLEN + 3)) {
+		if (unlikely(r == DEL && ch->blk->txtlen >= TXTMINLEN + 3)) {
 			vprerr("#%d missed txt end\n", ch->chn + 1);
-			ch->blk->len -= 3;
-			ch->blk->crc[0] = ch->blk->txt[ch->blk->len];
-			ch->blk->crc[1] = ch->blk->txt[ch->blk->len + 1];
+			ch->blk->txtlen -= 3;
+			ch->blk->crc[0] = ch->blk->txt.raw[ch->blk->txtlen];
+			ch->blk->crc[1] = ch->blk->txt.raw[ch->blk->txtlen + 1];
 			ch->Acarsstate = END;
 			goto putmsg_lbl;
 		}
