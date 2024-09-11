@@ -203,6 +203,13 @@ int initRtl(char *optarg)
 		return 1;
 	}
 
+	uint32_t bw = (R.maxFc - R.minFc) + 2 * INTRATE;
+	fprintf(stderr, "Setting bandwidth to: %.2f kHz\n", bw / 1e3);
+	r = rtlsdr_set_tuner_bandwidth(dev, bw);
+	if (r) {
+		fprintf(stderr, WARNPFX "Failed to set bandwidth.\n");
+	}
+
 	r = rtlsdr_reset_buffer(dev);
 	if (r) {
 		fprintf(stderr, ERRPFX "Failed to reset buffers.\n");
