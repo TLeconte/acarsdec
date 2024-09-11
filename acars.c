@@ -33,6 +33,12 @@
 #define ETB 0x97	// 0x17|0x80
 #define DEL 0x7f
 
+// mode + address + TA + lbl + BI + SoT + TXT + suffix + CRC + DEL
+#define TXTMAXLEN (1 + 7 + 1 + 2 + 1 + 1 + 220 + 1 + 2 + 1)
+
+// mode + address + TA + lbl + BI + SoT + (no text) + (no suffix when no text)
+#define TXTMINLEN (1 + 7 + 1 + 2 + 1 + 1 +   0 + 0)
+
 /* message queue */
 static pthread_mutex_t blkq_mtx = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t blkq_wcd = PTHREAD_COND_INITIALIZER;
@@ -130,8 +136,8 @@ static void *blk_thread(void *arg)
 			statsd_inc_per_channel(chn, "decoder.msg.count");
 
 		/* handle message */
-		if (blk->len < 13) {
-			vprerr("#%d too short\n", chn+1);
+		if (blk->len < TXTMINLEN) {
+			vprerr("#%d too short: %d\n", chn+1, blk->len);
 			if (R.statsd)
 				statsd_inc_per_channel(chn, "decoder.errors.too_short");
 			goto fail;
@@ -344,7 +350,7 @@ synced:
 		break;	// else fail
 
 	case TXT:
-		if (unlikely(ch->blk->len > 240)) {
+		if (unlikely(ch->blk->len > TXTMAXLEN)) {
 			vprerr("#%d too long\n", ch->chn + 1);
 			break;	// fail
 		}
@@ -353,8 +359,8 @@ synced:
 			ch->Acarsstate = CRC1;
 			return;
 		}
-		if (unlikely(r == DEL && ch->blk->len > 20)) {
-			vprerr("#%d miss txt end\n", ch->chn + 1);
+		if (unlikely(r == DEL && ch->blk->len >= TXTMINLEN + 3)) {
+			vprerr("#%d missed txt end\n", ch->chn + 1);
 			ch->blk->len -= 3;
 			ch->blk->crc[0] = ch->blk->txt[ch->blk->len];
 			ch->blk->crc[1] = ch->blk->txt[ch->blk->len + 1];

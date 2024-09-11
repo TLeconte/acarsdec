@@ -58,7 +58,7 @@ typedef struct mskblk_s {
 	int len;
 	int err;
 	unsigned char crc[2];
-	char txt[250];
+	char txt[235];
 } msgblk_t;
 
 typedef struct {
