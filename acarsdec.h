@@ -101,8 +101,8 @@ typedef struct {
 	float complex *restrict oscillator;	// scaled oversampled INTRATE oscillator
 	float *restrict dm_buffer;		// INTRATE-sampled signal magnitude buffer
 	float complex *restrict inb;		// oversampled bit buffer
-	double MskPhi;
-	double MskDf;
+	float MskPhi;				// MSK oscillator phase
+	float MskDf;				// MSK oscillator phase offset
 	float MskMag;				// signal magnitude moving average
 	float MskPwr;				// signal power moving average (average of magnitude squared)
 	float MskNF;				// noise floor moving average (average of magnitude outside of msg blocks)

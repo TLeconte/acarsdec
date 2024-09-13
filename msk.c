@@ -85,16 +85,16 @@ void demodMSK(channel_t *ch, int len)
 	/* MSK demod */
 	int n;
 	unsigned int idx = ch->idx;
-	double p = ch->MskPhi;
+	float p = ch->MskPhi;
 
 	for (n = 0; n < len; n++) {
 		float in;
-		double s;
+		float s;
 		float complex v;
 		unsigned int j, o;
 
 		/* VCO */
-		s = (double)MSKFREQCNTR / INTRATE * 2.0 * M_PI + ch->MskDf;
+		s = (float)MSKFREQCNTR / INTRATE * 2.0 * M_PI + ch->MskDf;
 		p += s;
 		if (p >= 2.0 * M_PI)
 			p -= 2.0 * M_PI;
@@ -107,7 +107,7 @@ void demodMSK(channel_t *ch, int len)
 		/* bit clock */
 		ch->MskClk += s;
 		if (ch->MskClk >= 3 * M_PI / 2.0 - s / 2) {
-			double dphi;
+			float dphi;
 			float vo, lvl, flvld;
 
 			ch->MskClk -= 3 * M_PI / 2.0;
