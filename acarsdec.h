@@ -20,6 +20,7 @@
 #ifndef acarsdec_h
 #define acarsdec_h
 
+#include <stdint.h>
 #include <stdbool.h>
 #include <sys/time.h>
 #include <time.h>
@@ -54,11 +55,11 @@ typedef struct mskblk_s {
 	struct mskblk_s *prev;
 	struct timeval tv;
 	float lvl;
-	int chn;
-	int len;
-	int err;
-	unsigned char crc[2];
-	char txt[235];
+	uint8_t chn;	// there will never be 255 channels
+	uint8_t len;
+	uint8_t err;
+	uint8_t crc[2];
+	uint8_t txt[235];
 } msgblk_t;
 
 typedef struct {
@@ -73,13 +74,13 @@ typedef struct {
 	float MskClk;
 	unsigned int MskS, idx;
 
-	int chn;
 	unsigned int Fr;		// channel frequency (in Hz)
 
 	enum { PREKEY, SYNC, SOH1, TXT, CRC1, CRC2, END } Acarsstate;
-	int count;
-	int nbits;
-	unsigned char outbits;
+	uint8_t chn;
+	int8_t count;
+	uint8_t nbits;
+	uint8_t outbits;
 } channel_t;
 
 typedef struct output_s {

@@ -49,7 +49,7 @@ static int acars_shutdown = 1;
 
 #include "syndrom.h"
 
-static int fixprerr(msgblk_t *blk, const unsigned short crc, int *pr, int pn)
+static int fixprerr(msgblk_t *blk, const uint16_t crc, uint8_t *pr, uint8_t pn)
 {
 	int i;
 
@@ -76,7 +76,7 @@ static int fixprerr(msgblk_t *blk, const unsigned short crc, int *pr, int pn)
 	}
 }
 
-static int fixdberr(msgblk_t *blk, const unsigned short crc)
+static int fixdberr(msgblk_t *blk, const uint16_t crc)
 {
 	int i, j, k;
 
@@ -108,9 +108,9 @@ static void *blk_thread(void *arg)
 {
 	do {
 		msgblk_t *blk;
-		int i, pn, chn;
-		unsigned short crc;
-		int pr[MAXPERR];
+		uint8_t i, pn, chn;
+		uint16_t crc;
+		uint8_t pr[MAXPERR];
 
 		vprerr("blk_starting\n");
 
@@ -248,7 +248,7 @@ int initAcars(channel_t *ch)
 
 void decodeAcars(channel_t *ch)
 {
-	unsigned char r = ch->outbits;
+	uint8_t r = ch->outbits;
 	//vprerr("#%d r: %x, count: %d, st: %d\n", ch->chn+1, r, ch->count, ch->Acarsstate);
 
 	ch->nbits = 8;	// by default we'll read another byte next
@@ -256,7 +256,7 @@ void decodeAcars(channel_t *ch)
 	switch (ch->Acarsstate) {
 	case PREKEY:
 		if (ch->count >= 12 && 0xFF != r) {	// we have our first non-0xFF byte after a sequence - XXX REVISIT: expect at least 16: adjust count depending on how fast the MSK PLL locks
-			unsigned char q = ~r;	// avoid type promotion in calling ffs(~r)
+			uint8_t q = ~r;	// avoid type promotion in calling ffs(~r)
 			int l = ffs(q);		// find the first (LSb) 0 in r
 
 			vprerr("#%d synced, count: %d, r: %x, fz: %d, lvl: %5.1f\n", ch->chn+1, ch->count, r, l, 10 * log10(ch->MskLvl));

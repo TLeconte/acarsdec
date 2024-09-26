@@ -824,7 +824,7 @@ void outputmsg(const msgblk_t *blk)
 
 		// Extract sublabel and MFI if present
 		int offset = la_acars_extract_sublabel_and_mfi(msg.label, msg_dir,
-							       blk->txt + k, txt_len, msg.sublabel, msg.mfi);
+							       (const char *)blk->txt + k, txt_len, msg.sublabel, msg.mfi);
 		if (offset > 0) {
 			k += offset;
 			txt_len -= offset;

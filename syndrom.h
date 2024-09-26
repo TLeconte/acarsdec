@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2015 Thierry Leconte
  */
-static const unsigned char  numbits[256]={
+static const uint8_t  numbits[256]={
 0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
 1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
 1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
@@ -13,14 +13,14 @@ static const unsigned char  numbits[256]={
 };
 
 #ifdef __GNUC__
- #define popcount8(x)	__builtin_popcount((x))		// NB compiler sign-extends: doesn't matter for parity check
+ #define popcount8(x)	__builtin_popcount((x))
  #define parity8(x)	__builtin_parity((x))
 #else
- #define popcount8(x)	numbits[(unsigned char)(x)]
+ #define popcount8(x)	numbits[(uint8_t)(x)]
  #define parity8(x)	(popcount8((x)) & 1)
 #endif
 
-const unsigned short crc_ccitt_table[256] = {
+const uint16_t crc_ccitt_table[256] = {
 	0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
 	0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
 	0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e,
