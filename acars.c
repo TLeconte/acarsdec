@@ -23,12 +23,15 @@
 #include "output.h"
 #include "statsd.h"
 
+// ACARS is LSb first, 7-bit ASCII range. MSb is odd parity bit.
+
+// include parity MSb
 #define SYN 0x16
 #define SOH 0x01
 #define STX 0x02
-#define ETX 0x83
-#define ETB 0x97
-#define DLE 0x7f
+#define ETX 0x83	// 0x03|0x80
+#define ETB 0x97	// 0x17|0x80
+#define DEL 0x7f
 
 /* message queue */
 static pthread_mutex_t blkq_mtx;
@@ -227,6 +230,14 @@ static void *blk_thread(void *arg)
 	return NULL;
 }
 
+static void resetAcars(channel_t *ch)
+{
+	ch->Acarsstate = PREKEY;
+	ch->MskDf = 0;
+	ch->nbits = 8;
+	ch->count = 0;
+}
+
 int initAcars(channel_t *ch)
 {
 	if (ch->chn == 0) {
@@ -239,29 +250,18 @@ int initAcars(channel_t *ch)
 		acars_shutdown = 0;
 	}
 
-	ch->outbits = 0;
-	ch->nbits = 8;
-	ch->Acarsstate = PREKEY;
-
+	resetAcars(ch);
 	ch->blk = NULL;
 
 	return 0;
 }
 
-static void resetAcars(channel_t *ch)
-{
-	ch->Acarsstate = PREKEY;
-	ch->MskDf = 0;
-	ch->nbits = 8;
-	ch->count = 0;
-}
-
-// ACARS is LSb first
-
 void decodeAcars(channel_t *ch)
 {
 	unsigned char r = ch->outbits;
 	//vprerr("#%d r: %x, count: %d, st: %d\n", ch->chn+1, r, ch->count, ch->Acarsstate);
+
+	ch->nbits = 8;	// by default we'll read another byte next
 
 	switch (ch->Acarsstate) {
 	case PREKEY:
@@ -292,12 +292,11 @@ void decodeAcars(channel_t *ch)
 				goto synced;
 		}
 		else {	// otherwise eat bytes until we get a sequence of more than 16 consecutive 0xFF or 0x00
-			ch->nbits = 8;
 			switch (r) {
 			case 0x00:
 				if (--ch->count <= -10) {
 					// we really are hearing 0xFF, only inverted
-					vprerr("#%d: inverting polarity\n", ch->chn+1);
+					vprerr("#%d inverting polarity\n", ch->chn+1);
 					ch->MskS ^= 2;	// inverted polarity
 					ch->count = -ch->count;
 				}
@@ -318,33 +317,28 @@ synced:
 		switch (ch->count) {
 		case 0:	// expect '+' with parity bit set
 			if (('+'|0x80) != r) {
-				vprerr("#%d: didn't get '+': %x\n", ch->chn+1, r);
-				resetAcars(ch);
-				return;
+				vprerr("#%d didn't get '+': %x\n", ch->chn+1, r);
+				goto fail;
 			}
 			break;
 		case 1:	// expect '*'
 			if ('*' != r) {
-				vprerr("#%d: didn't get '*': %x\n", ch->chn+1, r);
-				resetAcars(ch);
-				return;
+				vprerr("#%d didn't get '*': %x\n", ch->chn+1, r);
+				goto fail;
 			}
 			break;
-		case 2:	// expect SYN
 		case 3:	// expect SYN
+			ch->Acarsstate = SOH1;
+			// fallthrough
+		case 2:	// expect SYN
 			if (SYN != r) {
-				vprerr("#%d: didn't get SYN: %x\n", ch->chn+1, r);
-				resetAcars(ch);
-				return;
+				vprerr("#%d didn't get SYN: %x\n", ch->chn+1, r);
+				goto fail;
 			}
-			if (3 == ch->count)
-				ch->Acarsstate = SOH1;
 			break;
 		default:	// cannot happen
-			resetAcars(ch);
-			return;
+			goto fail;
 		}
-		ch->nbits = 8;
 		ch->count++;
 		return;
 
@@ -354,8 +348,7 @@ synced:
 				ch->blk = malloc(sizeof(*ch->blk));
 				if (ch->blk == NULL) {
 					perror(NULL);
-					resetAcars(ch);
-					return;
+					break;	// fail
 				}
 			}
 			gettimeofday(&(ch->blk->tv), NULL);
@@ -363,33 +356,26 @@ synced:
 			ch->blk->chn = ch->chn;
 			ch->blk->len = 0;
 			ch->blk->err = 0;
-			ch->nbits = 8;
 			ch->MskLvlSum = 0;
 			ch->MskBitCount = 0;
 			return;
 		}
-		resetAcars(ch);
-		return;
+		vprerr("#%d didn't get SOH: %x\n", ch->chn+1, r);
+		break;	// else fail
 
 	case TXT:
-
-		ch->blk->txt[ch->blk->len] = r;
-		ch->blk->len++;
+		ch->blk->txt[ch->blk->len++] = r;
 		if ((numbits[(unsigned char)r] & 1) == 0) {
-			ch->blk->err++;
-
-			if (ch->blk->err > MAXPERR + 1) {
+			if (++ch->blk->err > MAXPERR + 1) {
 				vprerr("#%d too many parity errors\n", ch->chn + 1);
-				resetAcars(ch);
-				return;
+				break;	// fail
 			}
 		}
 		if (r == ETX || r == ETB) {
 			ch->Acarsstate = CRC1;
-			ch->nbits = 8;
 			return;
 		}
-		if (ch->blk->len > 20 && r == DLE) {
+		if (ch->blk->len > 20 && r == DEL) {
 			vprerr("#%d miss txt end\n", ch->chn + 1);
 			ch->blk->len -= 3;
 			ch->blk->crc[0] = ch->blk->txt[ch->blk->len];
@@ -399,17 +385,15 @@ synced:
 		}
 		if (ch->blk->len > 240) {
 			vprerr("#%d too long\n", ch->chn + 1);
-			resetAcars(ch);
-			return;
+			break;	// fail
 		}
-		ch->nbits = 8;
 		return;
 
 	case CRC1:
 		ch->blk->crc[0] = r;
 		ch->Acarsstate = CRC2;
-		ch->nbits = 8;
 		return;
+
 	case CRC2:
 		ch->blk->crc[1] = r;
 putmsg_lbl:
@@ -429,13 +413,15 @@ putmsg_lbl:
 
 		ch->blk = NULL;
 		ch->Acarsstate = END;
-		ch->nbits = 8;
 		return;
+
 	case END:
-		resetAcars(ch);
-		ch->nbits = 8;
-		return;
+		break;	// reset
 	}
+
+fail:
+	resetAcars(ch);
+	return;
 }
 
 int deinitAcars(void)
