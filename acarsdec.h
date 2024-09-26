@@ -30,7 +30,7 @@
 #include <libacars/reassembly.h>
 #endif
 
-#define ACARSDEC_VERSION "4.0"
+#define ACARSDEC_VERSION "4.1"
 
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 255
