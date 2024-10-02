@@ -68,7 +68,8 @@ int	ppm		= 0;
 #endif
 #ifdef WITH_SOAPY
 char *antenna=NULL;
-double gain = -10.0;
+struct soapy_gain *gains = NULL;
+size_t gains_len = 0;
 int ppm = 0;
 int rateMult = 160;
 int freq = 0;
@@ -121,7 +122,7 @@ static void usage(void)
 	fprintf (stderr, " [-L lnaState] [-G GRdB] [-p ppm] -s f1 [f2] .. [fN]");
 #endif
 #ifdef	WITH_SOAPY
-	fprintf (stderr, " [--antenna antenna] [-g gain] [-p ppm] [-c freq] -d devicestring f1 [f2] .. [fN]");
+	fprintf (stderr, " [--antenna antenna] [-g [name1:]gain1] [-g [name2:]gain2] .. [-p ppm] [-c freq] -d devicestring f1 [f2] .. [fN]");
 #endif
 	fprintf(stderr, "\n\n");
 #ifdef HAVE_LIBACARS
@@ -192,7 +193,7 @@ static void usage(void)
 	fprintf(stderr, 
 		" --antenna antenna\t: set antenna port to use\n");
 	fprintf(stderr,
-		" -g gain\t\t: set gain in db (-10 will result in AGC; default is AGC)\n");
+		" -g [name:]gain\t\t: set gain of specific name (optional, e.g. \"LNA\" \"VGA\") in db (-10 will result in AGC; default is AGC; set the default gain if no name is set, only one default gain or AGC permitted per device, or use multiple gains with names)\n");
 	fprintf(stderr, " -p ppm\t\t\t: set ppm frequency correction\n");
 	fprintf(stderr, " c freq\t\t\t: set center frequency to tune to\n");
 	fprintf(stderr, " -m rateMult\t\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n");
@@ -319,7 +320,40 @@ int main(int argc, char **argv)
 			freq = atoi(optarg);
 			break;
 		case 'g':
-			gain = atof(optarg);
+			if (verbose) {
+				fprintf(stderr, "Got gain argument: '%s'\n", optarg);
+			}
+			char *gaini = strchr(optarg, ':');
+			if (gaini) {
+				for (int i = 0; i < gains_len; i ++) {
+					if (!gains[i].name) {
+						fprintf(stderr, "You can only specify either one default gain (no name), like `-g 10`, or a set of gain with names, e.g. `-g LNA:10 -g VGA:20 -g AMP:30`.\n");
+						exit(1);
+					}
+				}
+			} else if (gains_len) {
+				fprintf(stderr, "You can only specify either one default gain (no name), like `-g 10`, or a set of gain with names, e.g. `-g LNA:10 -g VGA:20 -g AMP:30`.\n");
+				exit(1);
+			}
+			if (!(gains = realloc(gains, (++gains_len) * sizeof(struct soapy_gain)))) {
+				fprintf(stderr, "Cannot allocate memory.\n");
+				exit(1);
+			}
+			struct soapy_gain *g = &gains[gains_len - 1];
+			memset(g, 0, sizeof(struct soapy_gain));
+			if (gaini) {
+			    char *dup = strdup(optarg);
+			    *strchr(dup, ':') = 0;
+			    g->gain = atof(gaini + 1);
+			    g->name = dup;
+			} else {
+			    g->gain = atof(optarg);
+			    g->name = NULL;
+			}
+			if (gaini && g->gain == -10.0) {
+				fprintf(stderr, "Setting gain to AGC is allowed only for the default gain. I.e., you can only specify one `-g -10` if you want to use AGC.\n");
+				exit(1);
+			}
 			break;
 		case 'm':
 			rateMult = atoi(optarg);
@@ -508,6 +542,13 @@ int main(int argc, char **argv)
 	fprintf(stderr, "exiting ...\n");
 
 	deinitAcars();
+#ifdef WITH_SOAPY
+	for (int i = 0; i < gains_len; i ++) {
+		if (gains[i].name)
+			free(gains[i].name);
+	}
+	free(gains);
+#endif
 
 #ifdef WITH_MQTT
 	MQTTend();
