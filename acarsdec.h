@@ -175,7 +175,12 @@ extern int runSoapySample(void);
 extern int runSoapyClose(void);
 extern int rateMult;
 extern int freq;
-extern double gain;
+struct soapy_gain {
+    char *name;
+    double gain;
+};
+extern struct soapy_gain *gains;
+extern size_t gains_len;
 #else
 extern int gain;
 #endif

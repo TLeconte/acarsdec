@@ -90,21 +90,43 @@ int initSoapy(char **argv, int optind)
 
 	soapyInBuf = malloc(sizeof(int16_t) * soapyInBufSize);
 
-	if (gain == -10.0) {
+	if (!gains_len) {
 		if (verbose)
 			fprintf(stderr, "Tuner gain: AGC\n");
 		r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 1);
 		if (r != 0)
 			fprintf(stderr, "WARNING: Failed to turn on AGC: %s\n", SoapySDRDevice_lastError());
-	} else {
-		r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 0);
-		if (r != 0)
-			fprintf(stderr, "WARNING: Failed to turn off AGC: %s\n", SoapySDRDevice_lastError());
-        if (verbose)
-            fprintf(stderr, "Setting gain to: %f\n", gain);
-		r = SoapySDRDevice_setGain(dev, SOAPY_SDR_RX, 0, gain);
-		if (r != 0)
-			fprintf(stderr, "WARNING: Failed to set gain: %s\n", SoapySDRDevice_lastError());
+	}
+	for (int i = 0; i < gains_len; i ++) {
+		const struct soapy_gain *g = &gains[i];
+		if (!g->name) {
+			if (g->gain == -10.0) {
+				if (verbose)
+					fprintf(stderr, "Tuner gain: AGC\n");
+				r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 1);
+				if (r != 0)
+					fprintf(stderr, "WARNING: Failed to turn on AGC: %s\n", SoapySDRDevice_lastError());
+			} else {
+				r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 0);
+				if (r != 0)
+					fprintf(stderr, "WARNING: Failed to turn off AGC: %s\n", SoapySDRDevice_lastError());
+        			if (verbose)
+            				fprintf(stderr, "Setting gain to: %f\n", g->gain);
+				r = SoapySDRDevice_setGain(dev, SOAPY_SDR_RX, 0, g->gain);
+				if (r != 0)
+					fprintf(stderr, "WARNING: Failed to set gain: %s\n", SoapySDRDevice_lastError());
+			}
+			break;
+		} else {
+			r = SoapySDRDevice_setGainMode(dev, SOAPY_SDR_RX, 0, 0);
+			if (r != 0)
+				fprintf(stderr, "WARNING: Failed to turn off AGC: %s\n", SoapySDRDevice_lastError());
+        		if (verbose)
+            			fprintf(stderr, "Setting %s gain to: %f\n", g->name, g->gain);
+			r = SoapySDRDevice_setGainElement(dev, SOAPY_SDR_RX, 0, g->name, g->gain);
+			if (r != 0)
+				fprintf(stderr, "WARNING: Failed to set %s gain: %s\n", g->name, SoapySDRDevice_lastError());
+		}
 	}
 
 	if (ppm != 0) {
