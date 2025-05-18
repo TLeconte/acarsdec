@@ -76,6 +76,14 @@ int initSoapy(char *optarg)
 		return r;
 	}
 
+	double bw = (R.maxFc - R.minFc) + 2 * INTRATE;
+	r = SoapySDRDevice_setBandwidth(dev, SOAPY_SDR_RX, 0, bw);
+	if (r)
+		fprintf(stderr, WARNPFX "Failed to set bandwidth: %s\n", SoapySDRDevice_lastError());	// ignore error
+	else
+		vprerr("Setting bandwidth to: %.2f kHz\n", bw / 1e3);
+
+
 	if (R.antenna) {
 		if (SoapySDRDevice_setAntenna(dev, SOAPY_SDR_RX, 0, R.antenna) != 0) {
 			fprintf(stderr, ERRPFX "Failed to set antenna (check antenna validity)\n");
