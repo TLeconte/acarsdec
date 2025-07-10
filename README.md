@@ -193,7 +193,7 @@ See https://tleconte.github.io/R820T/r820IF.html
  -g <gain>		set gain in db (-10 will result in AGC; default is AGC)\n"
  -p <ppm>		set ppm frequency correction (default: 0)\n"
  -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n"
- -m <rateMult>		set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
+ -m <rateMult>		set sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: 100)\n"
  -a <antenna>		set antenna port to use (default: soapy default)\n");
 ```
 

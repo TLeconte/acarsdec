@@ -184,7 +184,7 @@ static void usage(void)
 		" -g <gain>\t\t: set gain in db (-10 will result in AGC; default is AGC)\n"
 		" -p <ppm>\t\t: set ppm frequency correction (default: 0)\n"
 		" -c <freq>\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n"
-		" -m <rateMult>\t\t: set sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
+		" -m <rateMult>\t\t: set sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: 100)\n"
 		" -a <antenna>\t\t: set antenna port to use (default: soapy default)\n");
 #endif
 	exit(1);
@@ -462,7 +462,7 @@ int main(int argc, char **argv)
 #ifdef WITH_SOAPY
 	case IN_SOAPY:
 		if (!R.rateMult)
-			R.rateMult = 160U;
+			R.rateMult = 100U;	// TODO auto setup, need to process SoapySDRDevice_getSampleRateRange() - meanwhile apply an easy to read / mentally compute minimum
 		if (!R.gain)
 			R.gain = -10;
 		res = initSoapy(inarg);
