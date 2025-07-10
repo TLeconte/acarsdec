@@ -19,7 +19,7 @@ Since 3.0, it can work with a database backend: [acarsserv](https://github.com/T
 
 GPLv2-only - http://www.gnu.org/licenses/gpl-2.0.html
 
-Copyright: (C) 2015-2022 Thierry Leconte 2015-2022, (C) 2024 Thibaut VARENE
+Copyright: (C) 2015-2022 Thierry Leconte, (C) 2024-2025 Thibaut VARENE
 
 > This program is free software; you can redistribute it and/or
 > modify it under the terms of the GNU General Public License
@@ -65,9 +65,8 @@ It can be ommitted for a platform-generic build (with possibly reduced performan
  
 #### Raspberry Pi builds
 
-It seems that the compile option `-march=native` may be problematic on Raspberry Pi.
-
-In that case, one can use the following cmake parameter instead in the above procedure:
+In case the compile option `-march=native` doesn't work correctly on Raspberry Pi,
+the following cmake parameter can be used instead in the above procedure:
 
  * for PI 2B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a7 -mfpu=neon-vfpv4"`
  * for PI 3B : `-DCMAKE_C_FLAGS="-mcpu=cortex-a53 -mfpu=neon-fp-armv8"`
@@ -165,6 +164,16 @@ DESTPARAMS are:
  -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
 ```
 
+#### SoapySDR
+
+```
+ --soapysdr <params>	decode from a SoapySDR designed by device_string <params>
+ -g <gain>		set gain in db (-10 will result in AGC; default is AGC)
+ -p <ppm>		set ppm frequency correction (default: 0)
+ -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
+ -m <rateMult>		set sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: 100)
+ -a <antenna>		set antenna port to use (default: soapy default)
+```
 
 #### Airspy R2 / Mini
 
@@ -186,17 +195,6 @@ See https://tleconte.github.io/R820T/r820IF.html
 
 ```
 
-#### SoapySDR
-
-```
- --soapysdr <params>	decode from a SoapySDR designed by device_string <params>\n"
- -g <gain>		set gain in db (-10 will result in AGC; default is AGC)\n"
- -p <ppm>		set ppm frequency correction (default: 0)\n"
- -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n"
- -m <rateMult>		set sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: 100)\n"
- -a <antenna>		set antenna port to use (default: soapy default)\n");
-```
-
 All SDR sources described above expect a list of frequencies `<f1> [<f2> [...]]` to decode from, expressed in decimal MHz
 e.g. `131.525 131.725 131.825`.
 
@@ -205,13 +203,13 @@ e.g. `131.525 131.725 131.825`.
 All formats supported by libsndfile can be processed.
 
 ```
- --sndfile <file>	decode from <file>, which must be a libsndfile supported format and sampled at a multiple of 12.5kHz
+ --sndfile <file>	decode from <file>, which must be a libsndfile supported format and sampled at a multiple of 12kHz
 ```
 
 To decode raw audio, extra parameters must be provided. Example:
 
 ```
- --sndfile <file>,subtype=<N>	decode single-channel raw in libsndfile-supported <N> subtype from <file> sampled at 12.5KHz.
+ --sndfile <file>,subtype=<N>	decode single-channel raw in libsndfile-supported <N> subtype from <file> sampled at a multiple of 12KHz.
 ```
 
 For raw audio, the sample rate multiplier can be adjusted using `-m`. See `--sndfile help` for more details.
@@ -261,93 +259,70 @@ Decoding raw CPU-endian single-channel PCM16 from stdin, providing one line per 
 #### One line by mesg format (`--output oneline:file`)
 
 ```
-    #2 (L:  -5 E:0) 25/12/2016 16:26:40 .EC-JBA IB3166 X B9 J80A /EGLL.TI2/000EGLLAABB2
-    #3 (L:   8 E:0) 25/12/2016 16:26:44 .G-OZBF ZB494B 2 Q0 S12A 
-    #3 (L:   0 E:0) 25/12/2016 16:26:44 .F-HZDP XK773C 2 16 M38A LAT N 47.176/LON E  2.943
+#1 (L:-11.7/-59.1 E:0) 10/07/2025 13:31:56.647  F-GSPN AF0650 2 _d S90A 
+#3 (L:-30.5/-58.6 E:0) 10/07/2025 13:32:01.341  G-VIIS BA0127 2 H1 O49C 00011100111111100000001111  -350000000001011011111111101100
+#3 (L:-33.5/-55.5 E:0) 10/07/2025 13:32:09.020  G-VIIS BA0127 2 H1 O49D 000001111  -32000000000101101111111110110001000001110011111
+#3 (L:-35.7/-54.0 E:0) 10/07/2025 13:32:15.592  G-VIIS BA0127 2 H1 O49E 0000001011011111111101100010000011100111111100000001111  -2
+#3 (L:-32.8/-52.4 E:0) 10/07/2025 13:32:25.149  G-VIIS BA0127 2 H1 O49F 11101100010000011100111111100000001111  -250000000001011011
+#1 (L:-13.9/-49.6 E:0) 10/07/2025 13:32:26.087  F-GSPN AF0650 2 H1 D21A OP FUELPROBES  106110 94105 98 82 84 77 72 66 65 62 10 62 5
 ```
 
 #### Full message format (`--output full:file`)
 
 ```
-    [#1 (F:131.825 L:   4 E:0) 25/12/2016 16:27:45 --------------------------------
-    Aircraft reg: .A6-EDY Flight id: EK0205
-    Mode : 2 Label : SA Id : 4 Ack : !
-    Message no: S31A :
-    0EV162743VS/
-    
-    [#3 (F:131.825 L:   3 E:0) 25/12/2016 16:28:08 --------------------------------
-    Aircraft reg: .F-GSPZ Flight id: AF0940
-    Mode : 2 Label : B2 Id : 1 Ack : !
-    Message no: L07A :
-    /PIKCLYA.OC1/CLA 1627 161225 EGGX CLRNCE 606
-    AFR940 CLRD TO MUHA VIA ETIKI
-    RANDOM ROUTE
-    46N020W 45N027W 44N030W 40N040W 36N050W
-    34N055W 32N060W 27N070W
-    FM ETIKI/1720 MNTN F340 M083
-    ATC/LEVEL CHANGE
-    END O
+[#1 (F:131.525 L:-25.6/-46.6 E:0) 10/07/2025 13:28:57.434 --------------------------------
+Mode : 2 Label : B2 Id : 3 Nak
+Aircraft reg: F-GSPN Flight id: AF0650
+No: L05A
+Reassembly: in progress
+/PIKCLYA.OC1/CLA 1328 250710 EGGX CLRNCE 320
+AFR650 CLRD TO MMUN VIA BUNAV
+RANDOM ROUTE
+46N015W 44N020W 40N030W 35N040W 32N050W
+30N060W 27N070W
+FM BUNAV/1424 MNTN F340 M084
+ATC/ENTRY POINT CHANGE ROUTE AM
+ETB
+```
+
+##### with libacars and ARINC 622 decoding 
+
+```
+[#1 (F:131.525 L:-33.3/-46.4 E:0) 10/07/2025 13:24:08.751 --------------------------------
+Mode : 2 Label : BA Id : 3 Nak
+Aircraft reg: F-GSPK Flight id: AF0032
+No: L08A
+Reassembly: skipped
+/SOUCAYA.AT1.F-GSPK618AD60600F470
+FANS-1/A CPDLC Message:
+ CPDLC Downlink Message:
+  Header:
+   Msg ID: 3
+   Msg Ref: 5
+   Timestamp: 13:24:06
+  Message data:
+   WILCO
 ```
 
 #### Monitoring mode (`--output monitoring:file`) (wait for a while before output begins)
 
 ```
-                 Acarsdec monitor
-     Aircraft Flight  Nb Channels   Last     First
-     .CN-RNV  AT852X   9 .x.      16:25:58 16:21:05
-     .F-HBMI  ZI0321   1 .x.      16:25:52 16:25:52
-     .F-GSPZ  AF0940   6 ..x      16:25:21 16:22:30
-     .D-ABUF  DE0252   1 .x.      16:25:20 16:25:20
+	 Acarsdec monitor
+Aircraft Flight  Nb Channels   Last     First
+.CN-RNV  AT852X   9 .x.      16:25:58 16:21:05
+.F-HBMI  ZI0321   1 .x.      16:25:52 16:25:52
+.F-GSPZ  AF0940   6 ..x      16:25:21 16:22:30
+.D-ABUF  DE0252   1 .x.      16:25:20 16:25:20
 ```
 
 #### JSON mode (`--output json:file`)
 
 ```
-    {"timestamp":1516206744.1849549,"channel":2,"freq":130.025,"level":-22,"error":0,"mode":"2","label":"H1","block_id":"6","ack":false,"tail":".N842UA","flight":"UA1412","msgno":"D04G","text":"#DFB9102,0043,188/9S101,0039,181/S0101,0043,188/0S100,0039,182/T1100,0043,188/1T099,0039,182/T2099,0043,189/2T098,0039,182/T3098,0043,189/3T097,0039,182/T4098,0043,189/4T097,0039,183/T5098,0043,189/5T097,0039,1","end":true,"station_id":"sigint"}
-    {"timestamp":1516206745.249615,"channel":2,"freq":130.025,"level":-24,"error":2,"mode":"2","label":"RA","block_id":"R","ack":false,"tail":".N842UA","flight":"","msgno":"","text":"QUHDQWDUA?1HOWGOZIT\r\n ** PART 01 OF 01 **\r\nHOWGOZIT 1412-17 SJC\r\nCI: 17        RLS: 01 \r\nSJC 1615/1625     171A\r\nBMRNG    1630 37  159-\r\nTIPRE    1638 37  145\r\nINSLO    1701 37  125\r\nGAROT    1726 37  106\r\nEKR      1800 ","end":true,"station_id":"sigint"}
+{"timestamp":1752154097.8392439,"station_id":"MY-STATION-ID","channel":2,"freq":131.825,"level":-34.6,"noise":-48.7,"error":3,"mode":"2","label":"H1","block_id":"9","ack":false,"tail":"N827NW","flight":"NW0183","msgno":"D52A","text":"239182200601010098079\r\nR39/A33039,1,1\r\n239N827NW183 071025132804821 4783-  205339-19-49297 29AB0510111800\r\n 286 451 000303600030IH-LIRFKJFK","sublabel":"DF","assstat":"skipped","app":{"name":"acarsdec","ver":"4.1"}}
 ```
 
 #### JSON route mode (`--output routejson:file`) (wait for a while before output begins)
 
 ```
-    {"timestamp":1543677178.9600339,"flight":"BA750P","depa":"EGLL","dsta":"LFSB"}
-```
-
-#### with libacars and ARINC 622 decoding 
-
-```
-    [#2 (F:131.725 L:-33 E:0) 30/11/2018 19:45:46.645 --------------------------------
-    Mode : 2 Label : H1 Id : 3 Nak
-    Aircraft reg: G-OOBE Flight id: BY01WH
-    No: F57A
-    #M1B/B6 LPAFAYA.ADS.G-OOBE0720BD17DFD188CAEAE01F0C50F3715C88200D2344EFF62F08CA8883238E3FF7748768C00E0C88D9FFFC0F08A9847FFCFC16
-    ADS-C message:
-     Basic report:
-      Lat: 46.0385513
-      Lon: -5.6569290
-      Alt: 36012 ft
-      Time: 2744.000 sec past hour (:45:44.000)
-      Position accuracy: <0.05 nm
-      NAV unit redundancy: OK
-      TCAS: OK
-     Flight ID data:
-      Flight ID: TOM1WH
-     Predicted route:
-      Next waypoint:
-       Lat: 49.5972633
-       Lon: -1.7255402
-       Alt: 36008 ft
-       ETA: 2179 sec
-      Next+1 waypoint:
-       Lat: 49.9999809
-       Lon: -1.5020370
-       Alt: 30348 ft
-     Earth reference data:
-      True track: 35.2 deg
-      Ground speed: 435.5 kt
-      Vertical speed: -16 ft/min
-     Air reference data:
-     True heading: 24.3 deg
-     Mach speed: 0.7765
-     Vertical speed: -16 ft/min
+{"timestamp":1752155500.3385351,"station_id":"MY-STATION-ID","flight":"BA0263","depa":"EGLL","dsta":"OERK"}
 ```
