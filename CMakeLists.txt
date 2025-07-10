@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.2)
+cmake_minimum_required (VERSION 3.2...3.12)
 project (acarsdec C)
 
 add_compile_options(-Ofast)
