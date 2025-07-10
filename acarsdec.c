@@ -159,7 +159,7 @@ static void usage(void)
 		" --rtlsdr <device>\t: decode from rtl dongle number <device> or S/N <device>\n"
 		" -g <gain>\t\t: set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)\n"
 		" -p <ppm>\t\t: set rtl ppm frequency correction (default: 0)\n"
-		" -m <rateMult>\t\t: set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)\n"
+		" -m <rateMult>\t\t: set rtl sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: automatic)\n"
 		" -B <bias>\t\t: enable (1) or disable (0) the bias tee (default is 0)\n"
 		" -c <freq>\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n");
 #endif
@@ -420,6 +420,9 @@ int main(int argc, char **argv)
 			return res;
 	}
 
+	// default min multiplier - see find_centerfreq() for computation margins applied
+	n = ((R.maxFc - R.minFc) + 4 * INTRATE + INTRATE) / INTRATE;
+
 	/* init input  */
 	switch (R.inmode) {
 #ifdef WITH_ALSA
@@ -437,7 +440,7 @@ int main(int argc, char **argv)
 #ifdef WITH_RTL
 	case IN_RTL:
 		if (!R.rateMult)
-			R.rateMult = 160U;
+			R.rateMult = (n > 80U) ? n : 80U;	// rtl has a hole in available sr between 300kHz and 900kHZ
 		if (!R.gain)
 			R.gain = -10;
 		res = initRtl(inarg);

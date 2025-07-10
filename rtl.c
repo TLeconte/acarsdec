@@ -26,13 +26,6 @@
 #include "acarsdec.h"
 #include "lib.h"
 
-// set the sameple rate by changing RTMULT
-// 2.5Ms/s is the best but could be over limit for some hardware
-// 2.0Ms/s is safer
-// rateMult 160	// 2.0000 Ms/s
-// rateMult 192	// 2.4000 Ms/s
-// rateMult 200   // 2.5000 Ms/s
-
 #define RTLMULTMAX 320U // this is well beyond the rtl-sdr capabilities
 
 #define ERRPFX	"ERROR: RTLSDR: "

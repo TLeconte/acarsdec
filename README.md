@@ -160,7 +160,7 @@ DESTPARAMS are:
  --rtlsdr <device>	decode from rtl dongle number <device> or S/N <device>
  -g <gain>		set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)
  -p <ppm>		set rtl ppm frequency correction (default: 0)
- -m <rateMult>		set rtl sample rate multiplier: 160 for 2 MS/s or 192 for 2.4 MS/s (default: 160)
+ -m <rateMult>		set rtl sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: automatic)
  -B <bias>		enable (1) or disable (0) the bias tee (default is 0)
  -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
 ```
