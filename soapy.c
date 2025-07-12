@@ -27,6 +27,12 @@ int initSoapy(char *optarg)
 	if (!optarg)
 		return 1;	// cannot happen after getopt()
 
+	if (!R.rateMult)
+		R.rateMult = 100U;	// TODO auto setup, need to process SoapySDRDevice_getSampleRateRange() - meanwhile apply an easy to read / mentally compute minimum
+
+	if (!R.gain)
+		R.gain = -10;
+
 	Fc = find_centerfreq(R.minFc, R.maxFc, R.rateMult);
 	if (!Fc)
 		return 1;

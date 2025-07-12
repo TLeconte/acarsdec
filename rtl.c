@@ -134,10 +134,18 @@ int initRtl(char *optarg)
 {
 	int r;
 	int dev_index;
-	unsigned int Fc;
+	unsigned int Fc, m;
 
 	if (!optarg)
 		return 1;	// cannot happen with getopt()
+
+	if (!R.rateMult) {
+		m = min_multiplier(R.minFc, R.maxFc);
+		R.rateMult = (m > 80U) ? m : 80U;	// rtl has a hole in available sr between 300kHz and 900kHZ
+	}
+
+	if (!R.gain)
+		R.gain = -10;
 
 	if (R.rateMult > RTLMULTMAX) {
 		fprintf(stderr, ERRPFX "rateMult can't be larger than %d\n", RTLMULTMAX);

@@ -67,6 +67,9 @@ int initSoundfile(char *optarg)
 	SF_INFO infsnd = {0};
 	unsigned int n;
 
+	if (!R.rateMult)
+		R.rateMult = 1U;
+
 	do {
 		retp = parse_params(&optarg, soundp, ARRAY_SIZE(soundp));
 		if (retp) {

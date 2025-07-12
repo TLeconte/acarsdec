@@ -30,7 +30,7 @@
 #include "lib.h"
 #include <mirsdrapi-rsp.h>
 
-#define SDRPLAY_MULT 160
+#define SDRPLAY_MULT 160U
 #define SDRPLAY_INRATE (INTRATE * SDRPLAY_MULT)
 
 #define ERRPFX	"ERROR: SDRplay: "
@@ -73,6 +73,8 @@ int initSdrplay(void)
 	uint deviceIndex, numofDevs;
 	mir_sdr_DeviceT devDesc[4];
 	mir_sdr_ErrT err;
+
+	R.rateMult = SDRPLAY_MULT;
 
 	Fc = find_centerfreq(R.minFc, R.maxFc, SDRPLAY_MULT);
 	if (Fc == 0)

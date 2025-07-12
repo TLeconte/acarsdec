@@ -419,9 +419,6 @@ int main(int argc, char **argv)
 			return res;
 	}
 
-	// default min multiplier - see find_centerfreq() for computation margins applied
-	n = ((R.maxFc - R.minFc) + 4 * INTRATE + INTRATE) / INTRATE;
-
 	/* init input  */
 	switch (R.inmode) {
 #ifdef WITH_ALSA
@@ -431,39 +428,26 @@ int main(int argc, char **argv)
 #endif
 #ifdef WITH_SNDFILE
 	case IN_SNDFILE:
-		if (!R.rateMult)
-			R.rateMult = 1U;
 		res = initSoundfile(inarg);
 		break;
 #endif
 #ifdef WITH_RTL
 	case IN_RTL:
-		if (!R.rateMult)
-			R.rateMult = (n > 80U) ? n : 80U;	// rtl has a hole in available sr between 300kHz and 900kHZ
-		if (!R.gain)
-			R.gain = -10;
 		res = initRtl(inarg);
 		break;
 #endif
 #ifdef WITH_AIR
 	case IN_AIR:
-		if (!R.gain)
-			R.gain = 18;
 		res = initAirspy(inarg);
 		break;
 #endif
 #ifdef WITH_SDRPLAY
 	case IN_SDRPLAY:
-		R.rateMult = 160U;
 		res = initSdrplay();
 		break;
 #endif
 #ifdef WITH_SOAPY
 	case IN_SOAPY:
-		if (!R.rateMult)
-			R.rateMult = 100U;	// TODO auto setup, need to process SoapySDRDevice_getSampleRateRange() - meanwhile apply an easy to read / mentally compute minimum
-		if (!R.gain)
-			R.gain = -10;
 		res = initSoapy(inarg);
 		break;
 #endif

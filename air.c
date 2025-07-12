@@ -84,6 +84,9 @@ int initAirspy(char *optarg)
 	int airspy_device_count = 0;
 	uint64_t *airspy_device_list = NULL;
 
+	if (!R.gain)
+		R.gain = 18;
+
 	chD = calloc(R.nbch, sizeof(*chD));
 	if (!chD) {
 		perror(NULL);

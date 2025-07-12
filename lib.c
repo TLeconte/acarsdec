@@ -32,6 +32,18 @@
  #include "soundfile.h"
 #endif
 
+/**
+ * Return the minimum sample rate multiplier suitable to cover the target frequency range.
+ * @param minFc lowest frequency in the range
+ * @param maxFc highest frequency in the range
+ * @return suitable multiplier
+ */
+unsigned int min_multiplier(unsigned int minFc, unsigned int maxFc)
+{
+	// default min multiplier - see find_centerfreq() for computation margins applied
+	return ((maxFc - minFc) + 4 * INTRATE + INTRATE) / INTRATE;
+}
+
 unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned int multiplier)
 {
 	if (R.Fc)

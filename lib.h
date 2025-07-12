@@ -20,6 +20,7 @@
 #ifndef lib_h
 #define lib_h
 
+unsigned int min_multiplier(unsigned int minFc, unsigned int maxFc);
 unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned int multiplier);
 int channels_init_sdr(unsigned int Fc, unsigned int multiplier, float scale);
 void channels_mix_phasors(const float complex *phasors, unsigned int len, const unsigned int multiplier);
