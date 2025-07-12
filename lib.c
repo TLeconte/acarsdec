@@ -55,25 +55,8 @@ unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned in
 	}
 
 	// the original tried to pin the center frequency to one of the provided ACARS freqs
-	// there is no reason to do this, so keep this simple:
+	// there is no reason to do this (and in fact it's better to avoid the DC spike), so keep this simple:
 	return (maxFc + minFc) / 2;
-
-#if 0
-	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
-		for (n = 0; n < nbch; n++) {
-			if (abs(Fc - Fd[n]) > multiplier * INTRATE / 2 - 2 * INTRATE)
-				break;
-			if (abs(Fc - Fd[n]) < 2 * INTRATE)
-				break;
-			if (n > 0 && Fc - Fd[n - 1] == Fd[n] - Fc)
-				break;
-		}
-		if (n == nbch)
-			break;
-	}
-
-	return Fc;
-#endif
 }
 
 int channels_init_sdr(unsigned int Fc, unsigned int multiplier, float scale)
