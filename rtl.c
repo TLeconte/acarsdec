@@ -26,7 +26,7 @@
 #include "acarsdec.h"
 #include "lib.h"
 
-#define RTLMULTMAX 320U // this is well beyond the rtl-sdr capabilities
+#define RTLMULTMAX (3200000U/INTRATE) // rtl officially maxes out at 3.2 MSps - well beyond real-ife capabilities anyway
 
 #define ERRPFX	"ERROR: RTLSDR: "
 #define WARNPFX	"WARNING: RTLSDR: "
