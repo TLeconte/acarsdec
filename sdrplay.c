@@ -36,8 +36,6 @@
 #define ERRPFX	"ERROR: SDRplay: "
 #define WARNPFX	"WARNING: SDRplay: "
 
-static int hwVersion;
-
 static int RSP1_Table[] = { 0, 24, 19, 43 };
 
 static int RSP1A_Table[] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 };
@@ -96,7 +94,7 @@ int initSdrplay(void)
 	}
 
 	deviceIndex = 0;
-	hwVersion = devDesc[deviceIndex].hwVer;
+	int hwVersion = devDesc[deviceIndex].hwVer;
 	fprintf(stderr, "%s %s\n", devDesc[deviceIndex].DevNm, devDesc[deviceIndex].SerNo);
 	err = mir_sdr_SetDeviceIdx(deviceIndex);
 	if (err != mir_sdr_Success) {
