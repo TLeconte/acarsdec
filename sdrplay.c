@@ -30,7 +30,7 @@
 #include "lib.h"
 #include <mirsdrapi-rsp.h>
 
-#define SDRPLAY_MULT 160U
+#define SDRPLAY_MULT 170U	// supports arbitrary SR between 2 and 10MSps
 #define SDRPLAY_INRATE (INTRATE * SDRPLAY_MULT)
 
 #define ERRPFX	"ERROR: SDRplay: "
