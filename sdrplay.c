@@ -36,8 +36,6 @@
 #define ERRPFX	"ERROR: SDRplay: "
 #define WARNPFX	"WARNING: SDRplay: "
 
-extern void *compute_thread(void *arg);
-
 static int hwVersion;
 
 static int RSP1_Table[] = { 0, 24, 19, 43 };

@@ -32,7 +32,6 @@ static unsigned int AIRMULT;
 static unsigned int AIRINRATE;
 
 static struct airspy_device *device = NULL;
-extern void *compute_thread(void *arg);
 
 static const unsigned int r820t_hf[] = { 1953050, 1980748, 2001344, 2032592, 2060291, 2087988 };
 static const unsigned int r820t_lf[] = { 525548, 656935, 795424, 898403, 1186034, 1502073, 1715133, 1853622 };
