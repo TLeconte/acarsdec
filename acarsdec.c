@@ -183,7 +183,7 @@ static void usage(void)
 		" -g <gain>\t\t: set gain in db (-10 will result in AGC; default is AGC)\n"
 		" -p <ppm>\t\t: set ppm frequency correction (default: 0)\n"
 		" -c <freq>\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n"
-		" -m <rateMult>\t\t: set sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: 100)\n"
+		" -m <rateMult>\t\t: set sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: automatic)\n"
 		" -a <antenna>\t\t: set antenna port to use (default: soapy default)\n");
 #endif
 	exit(1);
