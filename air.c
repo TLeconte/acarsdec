@@ -28,6 +28,8 @@
 #include "lib.h"
 #include "msk.h"
 
+#warning "Untested and potentially broken - help wanted"
+
 static unsigned int AIRMULT;
 static unsigned int AIRINRATE;
 

@@ -175,7 +175,7 @@ DESTPARAMS are:
  -a <antenna>		set antenna port to use (default: soapy default)
 ```
 
-#### Airspy R2 / Mini
+#### Airspy R2 / Mini (untested and potentially broken - help wanted)
 
 ```
  --airspy <device>	decode from airspy dongle number <device> or hex serial <device>
@@ -185,14 +185,13 @@ DESTPARAMS are:
 Note: acarsdec will try to set the R820T tuner bandwidth to suit given frequencies.
 See https://tleconte.github.io/R820T/r820IF.html
 
-#### SDRplay
+#### SDRplay (untested, uses legacy v2 API - help wanted)
 
 ```
  --sdrplay 		decode from sdrplay
  -L <lnaState>		set the lnaState (depends on the device)
  -G <GRdB>		gain reduction in dB's, range 20 .. 59 (default: -100 is autogain)
  -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
-
 ```
 
 All SDR sources described above expect a list of frequencies `<f1> [<f2> [...]]` to decode from, expressed in decimal MHz
