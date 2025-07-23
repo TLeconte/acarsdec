@@ -31,7 +31,7 @@
 #endif
 
 #ifndef VERSION
-#define ACARSDEC_VERSION "4.2"
+#define ACARSDEC_VERSION "4.3"
 #else
 #define ACARSDEC_VERSION VERSION
 #endif
