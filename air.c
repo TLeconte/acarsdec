@@ -169,8 +169,7 @@ int initAirspy(char *optarg)
 
 	/* init airspy */
 
-	// XXX REVIEW: airspy can do AIRSPY_SAMPLE_FLOAT32_IQ, like everyone else. Is there a reason to use real?
-	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_FLOAT32_REAL);
+	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_FLOAT32_IQ);
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_set_sample_type() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
@@ -247,86 +246,16 @@ int initAirspy(char *optarg)
 	}
 	vprerr("Set freq. to %d hz\n", Fc);
 
-	/* computes mixers osc. */
-	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channels[n]);
-		int i;
-		double AMFreq, Ph;
-
-		ch->oscillator = malloc(AIRMULT * sizeof(*ch->oscillator));
-		ch->dm_buffer = malloc(DMBUFSZ * sizeof(*ch->dm_buffer));
-		if (ch->oscillator == NULL || ch->dm_buffer == NULL) {
-			perror(NULL);
-			airspy_close(device);
-			airspy_exit();
-			return -1;
-		}
-
-		AMFreq = 2.0 * M_PI * (Fc - ch->Fr + (double)AIRINRATE / 4) / (double)(AIRINRATE);
-		for (i = 0, Ph = 0; i < AIRMULT; i++) {
-			ch->oscillator[i] = cexpf(Ph * -I) / AIRMULT;
-			Ph += AMFreq;
-			if (Ph > 2.0 * M_PI)
-				Ph -= 2.0 * M_PI;
-			if (Ph < -2.0 * M_PI)
-				Ph += 2.0 * M_PI;
-		}
-	}
+	result = channels_init_sdr(Fc, AIRMULT, 1.0F);
+	if (result)
+		return result;
 
 	return 0;
 }
 
 static int rx_callback(airspy_transfer_t *transfer)
 {
-	static int ind = 0;
-	float *pt_rx_buffer;
-	int n, i;
-	int bo, be, ben, nbk;
-
-	pt_rx_buffer = (float *)(transfer->samples);
-
-	bo = AIRMULT - ind;
-	nbk = (transfer->sample_count - bo) / AIRMULT;
-	be = nbk * AIRMULT + bo;
-	ben = transfer->sample_count - be;
-
-	for (n = 0; n < R.nbch; n++) {
-		channel_t *ch = &(R.channels[n]);
-		float S;
-		int k, bn, m;
-		float complex D;
-
-		D = chD[n];
-
-		/* compute */
-		m = 0;
-		k = 0;
-		for (i = ind; i < AIRMULT; i++, k++) {
-			S = pt_rx_buffer[k];
-			D += ch->oscillator[i] * S;
-		}
-		ch->dm_buffer[m++] = cabsf(D);
-
-		for (bn = 0; bn < nbk; bn++) {
-			D = 0;
-			for (i = 0; i < AIRMULT; i++, k++) {
-				S = pt_rx_buffer[k];
-				D += ch->oscillator[i] * S;
-			}
-			ch->dm_buffer[m++] = cabsf(D);
-		}
-
-		D = 0;
-		for (i = 0; i < ben; i++, k++) {
-			S = pt_rx_buffer[k];
-			D += ch->oscillator[i] * S;
-		}
-		chD[n] = D;
-
-		demodMSK(ch, m);
-	}
-	ind = ben;
-
+	channels_mix_phasors(transfer->samples, transfer->sample_count, AIRMULT);
 	return 0;
 }
 
