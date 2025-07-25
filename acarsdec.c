@@ -166,6 +166,7 @@ static void usage(void)
 	fprintf(stderr,
 		"\n airspyopts:\n"
 		" --airspy <device>\t: decode from airspy dongle number <device> or hex serial <device>\n"
+		" -B <bias>\t\t: enable (1) or disable (0) the bias tee (default is 0)\n"
 		" -g <linearity_gain>\t: set linearity gain [0-21] (default: 18)\n");
 #endif
 #ifdef WITH_SDRPLAY
@@ -346,15 +347,15 @@ int main(int argc, char **argv)
 		case 'm':
 			R.rateMult = (unsigned)atoi(optarg);
 			break;
+		case 'B':
+			R.bias = atoi(optarg);
+			break;
 #ifdef WITH_RTL
 		case IN_RTL:
 			if (R.inmode)
 				errx(-1, "Only 1 input allowed");
 			R.inmode = IN_RTL;
 			inarg = optarg;
-			break;
-		case 'B':
-			R.bias = atoi(optarg);
 			break;
 #endif
 #ifdef WITH_SDRPLAY

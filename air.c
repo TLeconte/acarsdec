@@ -226,6 +226,11 @@ int initAirspy(char *optarg)
 	/* enable packed samples */
 	airspy_set_packing(device, 1);
 
+	result = airspy_set_rf_bias(device, (uint8_t) R.bias);
+	if (result != AIRSPY_SUCCESS) {
+		fprintf(stderr, "airspy_set_rf_bias() failed: %s (%d)\n", airspy_error_name(result), result);
+    }
+
 	result = airspy_set_linearity_gain(device, (int)R.gain);
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_set_vga_gain() failed: %s (%d)\n", airspy_error_name(result), result);
