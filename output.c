@@ -27,6 +27,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <errno.h>
+#include <stddef.h>
 #ifdef HAVE_LIBACARS
 #include <sys/time.h>
 #include <libacars/libacars.h>
