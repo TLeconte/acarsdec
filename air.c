@@ -187,16 +187,25 @@ int initAirspy(char *optarg)
 		return -1;
 	}
 	airspy_get_samplerates(device, supported_samplerates, count);
+	int use_samplerate_index = -1;
 	for (i = 0; i < count; i++) {
-		if (supported_samplerates[i] > 10000000)
-			continue;
-		AIRINRATE = supported_samplerates[i];
-		AIRMULT = AIRINRATE / INTRATE;
-		if ((AIRMULT * INTRATE) == AIRINRATE)
-			break;
+		uint32_t new_rate = supported_samplerates[i];
+		uint32_t new_mult = new_rate / INTRATE;
+		if ((new_mult * INTRATE) == new_rate) {
+			// new_rate is usable if it's a divisible by INTRATE
+			if (use_samplerate_index == -1 || new_rate < AIRINRATE) {
+				// use new_rate if we don't have a rate set yet or if it's lower than the other one
+				// for airspy mini this is just gonna end up being 3 MSPS which should be sufficient
+				// airspy R2 has rates 2.5 and 10 MSPS which both aren't divisable so it's not
+				// usable with 12 kHz INTRATE
+				AIRINRATE = new_rate;
+				AIRMULT = new_mult;
+				use_samplerate_index = i;
+			}
+		}
 	}
 
-	if (i >= count) {
+	if (use_samplerate_index == -1) {
 		fprintf(stderr, "did not find needed sampling rate\n");
 		airspy_close(device);
 		airspy_exit();
@@ -207,7 +216,7 @@ int initAirspy(char *optarg)
 
 	vprerr("Using %d sampling rate\n", AIRINRATE);
 
-	result = airspy_set_samplerate(device, i);
+	result = airspy_set_samplerate(device, use_samplerate_index);
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_set_samplerate() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
