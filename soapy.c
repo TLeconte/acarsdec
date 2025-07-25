@@ -19,6 +19,18 @@
 
 static SoapySDRDevice *dev = NULL;
 
+static int comp_range_pointer(const void *p1, const void *p2) {
+	SoapySDRRange *r1 = (SoapySDRRange *) p1;
+	SoapySDRRange *r2 = (SoapySDRRange *) p2;
+	if (r1->maximum < r2->maximum) {
+		return -1;
+	}
+	if (r1->maximum > r2->maximum) {
+		return 1;
+	}
+	return 0;
+}
+
 static unsigned int soapy_ratemult(const SoapySDRDevice *device, const int direction, const size_t channel)
 {
 	unsigned int minsr, mult = 0;
@@ -30,6 +42,7 @@ static unsigned int soapy_ratemult(const SoapySDRDevice *device, const int direc
 
 	// parse list of supported SR - XXX TODO we ignore the step size
 	sr_range = SoapySDRDevice_getSampleRateRange(device, direction, channel, &len);
+	qsort(sr_range, len, sizeof(SoapySDRRange), comp_range_pointer);
 	for (i = 0; i < len; i++) {
 		// if (max < minsr) continue
 		if (sr_range[i].maximum < (double)minsr)
