@@ -175,11 +175,12 @@ DESTPARAMS are:
  -a <antenna>		set antenna port to use (default: soapy default)
 ```
 
-#### Airspy R2 / Mini (untested and potentially broken - help wanted)
+#### Airspy Mini (R2 is currently not supported)
 
 ```
  --airspy <device>	decode from airspy dongle number <device> or hex serial <device>
  -g <linearity_gain>	set linearity gain [0-21] (default: 18)
+ -B <bias>		enable (1) or disable (0) the bias tee (default is 0)
 ```
  
 Note: acarsdec will try to set the R820T tuner bandwidth to suit given frequencies.
