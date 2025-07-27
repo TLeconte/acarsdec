@@ -37,7 +37,6 @@ static struct airspy_device *device = NULL;
 
 static const unsigned int r820t_hf[] = { 1953050, 1980748, 2001344, 2032592, 2060291, 2087988 };
 static const unsigned int r820t_lf[] = { 525548, 656935, 795424, 898403, 1186034, 1502073, 1715133, 1853622 };
-static float complex *chD;
 
 static unsigned int chooseFc(unsigned int minF, unsigned int maxF, int filter)
 {
@@ -87,12 +86,6 @@ int initAirspy(char *optarg)
 
 	if (!R.gain)
 		R.gain = 18;
-
-	chD = calloc(R.nbch, sizeof(*chD));
-	if (!chD) {
-		perror(NULL);
-		return -1;
-	}
 
 	// Request the total number of libairspy devices connected, allocate space, then request the list.
 	result = airspy_device_count = airspy_list_devices(NULL, 0);
@@ -281,8 +274,6 @@ int runAirspySample(void)
 	}
 
 	airspy_stop_rx(device);
-
-	free(chD);
 
 	return 0;
 }
