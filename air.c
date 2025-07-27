@@ -28,7 +28,8 @@
 #include "lib.h"
 #include "msk.h"
 
-#warning "Untested and potentially broken - help wanted"
+#define ERRPFX	"ERROR: AIRSPY: "
+#define WARNPFX	"WARNING: AIRSPY: "
 
 static unsigned int AIRMULT;
 static unsigned int AIRINRATE;
@@ -53,7 +54,7 @@ static unsigned int chooseFc(unsigned int minF, unsigned int maxF, int filter)
 				break;
 
 		if (i < 0) {
-			fprintf(stderr, "Unable to use airspy R820T filter optimization, continuing.\n");
+			fprintf(stderr, WARNPFX "Unable to use airspy R820T filter optimization, continuing.\n");
 		} else {
 			fprintf(stderr, "Enabling airspy R820T filter optimization.\n");
 
@@ -91,9 +92,9 @@ int initAirspy(char *optarg)
 	airspy_device_count = airspy_list_devices(NULL, 0);
 	if (airspy_device_count < 1) {
 		if (airspy_device_count == 0)
-			fprintf(stderr, "No airspy devices found.\n");
+			fprintf(stderr, ERRPFX "No airspy devices found.\n");
 		else
-			fprintf(stderr, "airspy_list_devices() failed: %s (%d).\n", airspy_error_name(airspy_device_count), airspy_device_count);
+			fprintf(stderr, ERRPFX "airspy_list_devices() failed: %s (%d).\n", airspy_error_name(airspy_device_count), airspy_device_count);
 		return -1;
 	}
 
@@ -104,7 +105,7 @@ int initAirspy(char *optarg)
 	}
 	result = airspy_list_devices(airspy_device_list, airspy_device_count);
 	if (result != airspy_device_count) {
-		fprintf(stderr, "airspy_list_devices() failed.\n");
+		fprintf(stderr, ERRPFX "airspy_list_devices() failed.\n");
 		free(airspy_device_list);
 		return -1;
 	}
@@ -151,7 +152,7 @@ int initAirspy(char *optarg)
 	if (device == NULL) {
 		result = airspy_open(&device);
 		if (result != AIRSPY_SUCCESS) {
-			fprintf(stderr, "Failed to open any airspy device.\n");
+			fprintf(stderr, ERRPFX "Failed to open any airspy device.\n");
 			return -1;
 		}
 	}
@@ -160,7 +161,7 @@ int initAirspy(char *optarg)
 
 	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_FLOAT32_IQ);
 	if (result != AIRSPY_SUCCESS) {
-		fprintf(stderr, "airspy_set_sample_type() failed: %s (%d)\n", airspy_error_name(result), result);
+		fprintf(stderr, ERRPFX "airspy_set_sample_type() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
 		return -1;
 	}
@@ -192,7 +193,7 @@ int initAirspy(char *optarg)
 	}
 
 	if (use_samplerate_index == -1) {
-		fprintf(stderr, "did not find suitable sampling rate\n");
+		fprintf(stderr, ERRPFX "did not find suitable sampling rate\n");
 		airspy_close(device);
 		return -1;
 	}
@@ -203,7 +204,7 @@ int initAirspy(char *optarg)
 
 	result = airspy_set_samplerate(device, use_samplerate_index);
 	if (result != AIRSPY_SUCCESS) {
-		fprintf(stderr, "airspy_set_samplerate() failed: %s (%d)\n", airspy_error_name(result), result);
+		fprintf(stderr, ERRPFX "airspy_set_samplerate() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
 		return -1;
 	}
@@ -213,21 +214,21 @@ int initAirspy(char *optarg)
 
 	result = airspy_set_rf_bias(device, (uint8_t) R.bias);
 	if (result != AIRSPY_SUCCESS)
-		fprintf(stderr, "airspy_set_rf_bias() failed: %s (%d)\n", airspy_error_name(result), result);
+		fprintf(stderr, WARNPFX "airspy_set_rf_bias() failed: %s (%d)\n", airspy_error_name(result), result);
 
 	result = airspy_set_linearity_gain(device, (int)R.gain);
 	if (result != AIRSPY_SUCCESS)
-		fprintf(stderr, "airspy_set_linearity_gain() failed: %s (%d)\n", airspy_error_name(result), result);
+		fprintf(stderr, WARNPFX "airspy_set_linearity_gain() failed: %s (%d)\n", airspy_error_name(result), result);
 
 	Fc = chooseFc(R.minFc, R.maxFc, AIRINRATE == 5000000);
 	if (Fc == 0) {
-		fprintf(stderr, "Frequencies too far apart\n");
+		fprintf(stderr, ERRPFX "Frequencies too far apart\n");
 		return 1;
 	}
 
 	result = airspy_set_freq(device, Fc);
 	if (result != AIRSPY_SUCCESS) {
-		fprintf(stderr, "airspy_set_freq() failed: %s (%d)\n", airspy_error_name(result), result);
+		fprintf(stderr, ERRPFX "airspy_set_freq() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
 		return -1;
 	}
@@ -252,7 +253,7 @@ int runAirspySample(void)
 
 	result = airspy_start_rx(device, rx_callback, NULL);
 	if (result != AIRSPY_SUCCESS) {
-		fprintf(stderr, "airspy_start_rx() failed: %s (%d)\n", airspy_error_name(result), result);
+		fprintf(stderr, ERRPFX "airspy_start_rx() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
 		return -1;
 	}
