@@ -87,10 +87,10 @@ they are detailed below:
 ### Common options
 
 ```
- -i <stationid>	station id used in statsd reports and network destinations (default: hostname)
  -A		don't output uplink messages (ie : only aircraft messages)
- -e		don't output empty messages (ie : _d,Q0, etc ...)
  -b <filter>	filter output by label (ex: -b "H1:Q0" : only output messages  with label H1 or Q0)
+ -e		don't output empty messages (ie : _d,Q0, etc ...)
+ -i <stationid>	station id used in statsd reports and network destinations (default: hostname)
  -t <seconds>	set forget time (TTL) in seconds for monitor mode (default: 600)
 
  --statsd host=HOST,port=1234		enable statsd reporting to host "HOST" (name or IP) on port "1234"
@@ -157,30 +157,31 @@ DESTPARAMS are:
 
 ```
  --rtlsdr <device>	decode from rtl dongle number <device> or S/N <device>
- -g <gain>		set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)
- -p <ppm>		set rtl ppm frequency correction (default: 0)
- -m <rateMult>		set rtl sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: automatic)
  -B <bias>		enable (1) or disable (0) the bias tee (default is 0)
  -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
+ -g <gain>		set rtl gain in db (0 to 49.6; >52 and -10 will result in AGC; default is AGC)
+ -m <rateMult>		set rtl sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: automatic)
+ -p <ppm>		set rtl ppm frequency correction (default: 0)
 ```
 
 #### SoapySDR
 
 ```
  --soapysdr <params>	decode from a SoapySDR designed by device_string <params>
- -g <gain>		set gain in db (-10 will result in AGC; default is AGC)
- -p <ppm>		set ppm frequency correction (default: 0)
- -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
- -m <rateMult>		set sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: automatic)
  -a <antenna>		set antenna port to use (default: soapy default)
+ -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
+ -g <gain>		set gain in db (-10 will result in AGC; default is AGC)
+ -m <rateMult>		set sample rate multiplier: sample rate is <rateMult> * 12000 S/s (default: automatic)
+ -p <ppm>		set ppm frequency correction (default: 0)
 ```
 
 #### Airspy Mini (R2 is currently not supported)
 
 ```
  --airspy <device>	decode from airspy dongle number <device> or hex serial <device>
- -g <linearity_gain>	set linearity gain [0-21] (default: 18)
  -B <bias>		enable (1) or disable (0) the bias tee (default is 0)
+ -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
+ -g <linearity_gain>	set linearity gain [0-21] (default: 18)
 ```
  
 Note: acarsdec will try to set the R820T tuner bandwidth to suit given frequencies.
@@ -190,9 +191,9 @@ See https://tleconte.github.io/R820T/r820IF.html
 
 ```
  --sdrplay 		decode from sdrplay
- -L <lnaState>		set the lnaState (depends on the device)
- -G <GRdB>		gain reduction in dB's, range 20 .. 59 (default: -100 is autogain)
  -c <freq>		set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)
+ -G <GRdB>		gain reduction in dB's, range 20 .. 59 (default: -100 is autogain)
+ -L <lnaState>		set the lnaState (depends on the device)
 ```
 
 All SDR sources described above expect a list of frequencies `<f1> [<f2> [...]]` to decode from, expressed in decimal MHz
