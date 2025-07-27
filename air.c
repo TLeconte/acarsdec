@@ -94,7 +94,6 @@ int initAirspy(char *optarg)
 			fprintf(stderr, "No airspy devices found.\n");
 		else
 			fprintf(stderr, "airspy_list_devices() failed: %s (%d).\n", airspy_error_name(airspy_device_count), airspy_device_count);
-		airspy_exit();
 		return -1;
 	}
 
@@ -107,7 +106,6 @@ int initAirspy(char *optarg)
 	if (result != airspy_device_count) {
 		fprintf(stderr, "airspy_list_devices() failed.\n");
 		free(airspy_device_list);
-		airspy_exit();
 		return -1;
 	}
 
@@ -154,7 +152,6 @@ int initAirspy(char *optarg)
 		result = airspy_open(&device);
 		if (result != AIRSPY_SUCCESS) {
 			fprintf(stderr, "Failed to open any airspy device.\n");
-			airspy_exit();
 			return -1;
 		}
 	}
@@ -165,7 +162,6 @@ int initAirspy(char *optarg)
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_set_sample_type() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 
@@ -174,7 +170,6 @@ int initAirspy(char *optarg)
 	if (supported_samplerates == NULL) {
 		perror(NULL);
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 	airspy_get_samplerates(device, supported_samplerates, count);
@@ -199,7 +194,6 @@ int initAirspy(char *optarg)
 	if (use_samplerate_index == -1) {
 		fprintf(stderr, "did not find suitable sampling rate\n");
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 
@@ -211,7 +205,6 @@ int initAirspy(char *optarg)
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_set_samplerate() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 
@@ -236,7 +229,6 @@ int initAirspy(char *optarg)
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_set_freq() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 	vprerr("Set freq. to %d hz\n", Fc);
@@ -262,7 +254,6 @@ int runAirspySample(void)
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_start_rx() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 
