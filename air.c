@@ -88,13 +88,12 @@ int initAirspy(char *optarg)
 		R.gain = 18;
 
 	// Request the total number of libairspy devices connected, allocate space, then request the list.
-	result = airspy_device_count = airspy_list_devices(NULL, 0);
-	if (result < 1) {
-		if (result == 0) {
+	airspy_device_count = airspy_list_devices(NULL, 0);
+	if (airspy_device_count < 1) {
+		if (airspy_device_count == 0)
 			fprintf(stderr, "No airspy devices found.\n");
-		} else {
-			fprintf(stderr, "airspy_list_devices() failed: %s (%d).\n", airspy_error_name(result), result);
-		}
+		else
+			fprintf(stderr, "airspy_list_devices() failed: %s (%d).\n", airspy_error_name(airspy_device_count), airspy_device_count);
 		airspy_exit();
 		return -1;
 	}
@@ -131,10 +130,10 @@ int initAirspy(char *optarg)
 
 	if ((optarg != argF) && (errno == 0)) {
 		if ((airspy_serial < airspy_device_count)) {
-			vprerr("Attempting to open airspy device slot #%lu with serial %016lx.\n", airspy_serial, airspy_device_list[airspy_serial]);
+			vprerr("Attempting to open airspy device slot #%llu with serial %016llx.\n", airspy_serial, airspy_device_list[airspy_serial]);
 			result = airspy_open_sn(&device, airspy_device_list[airspy_serial]);
 		} else {
-			vprerr("Attempting to open airspy serial 0x%016lx\n", airspy_serial);
+			vprerr("Attempting to open airspy serial 0x%016llx\n", airspy_serial);
 			result = airspy_open_sn(&device, airspy_serial);
 		}
 	}
@@ -198,7 +197,7 @@ int initAirspy(char *optarg)
 	}
 
 	if (use_samplerate_index == -1) {
-		fprintf(stderr, "did not find needed sampling rate\n");
+		fprintf(stderr, "did not find suitable sampling rate\n");
 		airspy_close(device);
 		airspy_exit();
 		return -1;
@@ -220,14 +219,12 @@ int initAirspy(char *optarg)
 	airspy_set_packing(device, 1);
 
 	result = airspy_set_rf_bias(device, (uint8_t) R.bias);
-	if (result != AIRSPY_SUCCESS) {
+	if (result != AIRSPY_SUCCESS)
 		fprintf(stderr, "airspy_set_rf_bias() failed: %s (%d)\n", airspy_error_name(result), result);
-    }
 
 	result = airspy_set_linearity_gain(device, (int)R.gain);
-	if (result != AIRSPY_SUCCESS) {
-		fprintf(stderr, "airspy_set_vga_gain() failed: %s (%d)\n", airspy_error_name(result), result);
-	}
+	if (result != AIRSPY_SUCCESS)
+		fprintf(stderr, "airspy_set_linearity_gain() failed: %s (%d)\n", airspy_error_name(result), result);
 
 	Fc = chooseFc(R.minFc, R.maxFc, AIRINRATE == 5000000);
 	if (Fc == 0) {
