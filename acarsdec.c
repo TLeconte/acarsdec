@@ -59,8 +59,6 @@
 
 runtime_t R = {
 	.mdly = 600,
-	.lnaState = 2,
-	.GRdB = 20,
 };
 
 static void print_available_ins(void)

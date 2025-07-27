@@ -74,6 +74,12 @@ int initSdrplay(void)
 
 	R.rateMult = SDRPLAY_MULT;
 
+	if (!R.GRdB)
+		R.GRdB = -100;
+
+	if (!R.lnaState)
+		R.lnaState = 2;
+
 	Fc = find_centerfreq(R.minFc, R.maxFc, SDRPLAY_MULT);
 	if (Fc == 0)
 		return 1;
