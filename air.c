@@ -88,6 +88,12 @@ int initAirspy(char *optarg)
 	if (!R.gain)
 		R.gain = 18;
 
+	if (R.rateMult)
+		fprintf(stderr, WARNPFX "user-provided rate multiplier ignored.\n");
+
+	if (R.ppm)
+		fprintf(stderr, WARNPFX "user-provided ppm correction ignored.\n");
+
 	// Request the total number of libairspy devices connected, allocate space, then request the list.
 	airspy_device_count = airspy_list_devices(NULL, 0);
 	if (airspy_device_count < 1) {
