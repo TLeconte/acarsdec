@@ -59,6 +59,12 @@ unsigned int find_centerfreq(unsigned int minFc, unsigned int maxFc, unsigned in
 	return (maxFc + minFc) / 2;
 }
 
+/**
+ * Allocate and init the internal oscillators.
+ * @param Fc the chosen center frequency
+ * @param multiplier the chosen oversampling multiplier
+ * @param scale the phasor scale (e.g. 1.0F for complex float32 phasors; 32768.0F for int16 phasors, ...)
+ */
 int channels_init_sdr(unsigned int Fc, unsigned int multiplier, float scale)
 {
 	unsigned int n, ind;
