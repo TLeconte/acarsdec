@@ -151,7 +151,7 @@ int initAirspy(char *optarg)
 				break;
 		}
 	}
-	memset(airspy_device_list, 0, sizeof(*airspy_device_list) * airspy_device_count);
+
 	free(airspy_device_list);
 	airspy_device_list = NULL;
 
@@ -168,17 +168,16 @@ int initAirspy(char *optarg)
 	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_FLOAT32_IQ);
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, ERRPFX "airspy_set_sample_type() failed: %s (%d)\n", airspy_error_name(result), result);
-		airspy_close(device);
-		return -1;
+		goto fail;
 	}
 
 	airspy_get_samplerates(device, &count, 0);
 	supported_samplerates = malloc(count * sizeof(*supported_samplerates));
 	if (supported_samplerates == NULL) {
 		perror(NULL);
-		airspy_close(device);
-		return -1;
+		goto fail;
 	}
+
 	airspy_get_samplerates(device, supported_samplerates, count);
 	int use_samplerate_index = -1;
 	for (i = 0; i < count; i++) {
@@ -198,21 +197,19 @@ int initAirspy(char *optarg)
 		}
 	}
 
+	free(supported_samplerates);
+
 	if (use_samplerate_index == -1) {
 		fprintf(stderr, ERRPFX "did not find suitable sampling rate\n");
-		airspy_close(device);
-		return -1;
+		goto fail;
 	}
-
-	free(supported_samplerates);
 
 	vprerr("Using %d sampling rate\n", AIRINRATE);
 
 	result = airspy_set_samplerate(device, use_samplerate_index);
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, ERRPFX "airspy_set_samplerate() failed: %s (%d)\n", airspy_error_name(result), result);
-		airspy_close(device);
-		return -1;
+		goto fail;
 	}
 
 	/* enable packed samples */
@@ -229,22 +226,25 @@ int initAirspy(char *optarg)
 	Fc = chooseFc(R.minFc, R.maxFc, AIRINRATE == 5000000);
 	if (Fc == 0) {
 		fprintf(stderr, ERRPFX "Frequencies too far apart\n");
-		return 1;
+		goto fail;
 	}
 
 	result = airspy_set_freq(device, Fc);
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, ERRPFX "airspy_set_freq() failed: %s (%d)\n", airspy_error_name(result), result);
-		airspy_close(device);
-		return -1;
+		goto fail;
 	}
 	vprerr("Set freq. to %d hz\n", Fc);
 
 	result = channels_init_sdr(Fc, AIRMULT, 1.0F);
 	if (result)
-		return result;
+		goto fail;
 
 	return 0;
+
+fail:
+	airspy_close(device);
+	return -1;
 }
 
 static int rx_callback(airspy_transfer_t *transfer)
@@ -269,6 +269,7 @@ int runAirspySample(void)
 	}
 
 	airspy_stop_rx(device);
+	airspy_close(device);
 
 	return 0;
 }
