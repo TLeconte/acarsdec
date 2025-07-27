@@ -36,6 +36,7 @@ static unsigned int AIRINRATE;
 
 static struct airspy_device *device = NULL;
 
+#if 0		// according to the webpage, this only works in real mode and we're no longer using that
 static const unsigned int r820t_hf[] = { 1953050, 1980748, 2001344, 2032592, 2060291, 2087988 };
 static const unsigned int r820t_lf[] = { 525548, 656935, 795424, 898403, 1186034, 1502073, 1715133, 1853622 };
 
@@ -72,6 +73,7 @@ static unsigned int chooseFc(unsigned int minF, unsigned int maxF, int filter)
 
 	return (((maxF + minF) / 2 + off + INTRATE / 2) / INTRATE * INTRATE);
 }
+#endif
 
 int initAirspy(char *optarg)
 {
@@ -223,11 +225,9 @@ int initAirspy(char *optarg)
 	if (result != AIRSPY_SUCCESS)
 		fprintf(stderr, WARNPFX "airspy_set_linearity_gain() failed: %s (%d)\n", airspy_error_name(result), result);
 
-	Fc = chooseFc(R.minFc, R.maxFc, AIRINRATE == 5000000);
-	if (Fc == 0) {
-		fprintf(stderr, ERRPFX "Frequencies too far apart\n");
+	Fc = find_centerfreq(R.minFc, R.maxFc, AIRMULT);
+	if (!Fc)
 		goto fail;
-	}
 
 	result = airspy_set_freq(device, Fc);
 	if (result != AIRSPY_SUCCESS) {

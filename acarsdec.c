@@ -167,6 +167,7 @@ static void usage(void)
 		"\n airspyopts:\n"
 		" --airspy <device>\t: decode from airspy dongle number <device> or hex serial <device>\n"
 		" -B <bias>\t\t: enable (1) or disable (0) the bias tee (default is 0)\n"
+		" -c <freq>\t\t: set center frequency to tune to in MHz, e.g. 131.800 (default: automatic)\n"
 		" -g <linearity_gain>\t: set linearity gain [0-21] (default: 18)\n");
 #endif
 #ifdef WITH_SDRPLAY
