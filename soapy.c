@@ -43,7 +43,7 @@ static unsigned int soapy_ratemult(const SoapySDRDevice *device, const int direc
 	// parse list of supported SR - XXX TODO we ignore the step size
 	sr_range = SoapySDRDevice_getSampleRateRange(device, direction, channel, &len);
 	// we need an ascending ordered list, some modules do not provide that
-	mergesort(sr_range, len, sizeof(*sr_range), comp_range_pointer);
+	qsort(sr_range, len, sizeof(*sr_range), comp_range_pointer);
 	for (i = 0; i < len; i++) {
 		// if (max < minsr) continue
 		if (sr_range[i].maximum < (double)minsr)
