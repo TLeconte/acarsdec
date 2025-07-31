@@ -1,6 +1,11 @@
-# ACARSDEC
+# ACARSDEC 3.x
+
+This is a legacy repository of the original code of acarsdec by T.Leconte
+
+For newer versions see :
+https://github.com/f00b4r0/acarsdec/
+
 Acarsdec is a multi-channels acars decoder with built-in rtl_sdr, airspy front end or sdrplay device.
-Since 3.0, It comes with a database backend : acarsserv to store received acars messages. (See acarsserv chapter below).
 
 ## Features :
 
